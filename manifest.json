@@ -1,0 +1,70 @@
+{
+  "manifest_version": 2,
+  "name": "PixelCat",
+  "version": "1.0",
+  "description": "Adds a playful pixel cat companion to YouTube with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
+  "permissions": [
+    "storage",
+    "*://www.youtube.com/*",
+    "*://youtube.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ],
+    "persistent": false
+  },
+  "icons": {
+    "48": "assets/icons/icon48.png",
+    "96": "assets/icons/icon96.png"
+  },
+  "browser_action": {
+    "default_popup": "ui/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "96": "assets/icons/icon96.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.youtube.com/*",
+        "*://youtube.com/*"
+      ],
+      "css": [
+        "ui/styles.css"
+      ],
+      "js": [
+        "src/quests.js",
+        "src/cat-storage.js",
+        "src/cat-coins.js",
+        "src/cat-fish.js",
+        "src/cat-balls.js",
+        "src/cat-portals.js",
+        "src/cat-speech.js",
+        "src/content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    "assets/icons/*.png",
+    "assets/animations/*.png",
+    "assets/fishes/*.png",
+    "assets/balls/*.png",
+    "assets/fonts/*.woff2"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "pixelcat-youtube@pixelcat.extension",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
