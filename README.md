@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/icons/icon16.png" width="48" alt="PixelCat icon" />
+<img src="https://i.ibb.co/vvDwxjRN/icon96.png" width="64" alt="PixelCat icon" />
 
 # PixelCat for YouTube
 
@@ -23,20 +23,20 @@ PixelCat is a Firefox extension that adds a small animated pixel-art cat to ever
 
 | Feature | Description |
 |---|---|
-| 🐱 **Animations** | The cat has a full set of sprite-based states — idle, walk, run, jump, sleep, sit, and attack — with smooth transitions between them |
-| 🪙 **Coins** | Coins randomly drop on the page while you watch. The cat chases and collects them automatically |
-| 🐟 **Fish** | Three types of fish can appear as treats. Feed them to the cat to earn XP and keep it happy |
-| ⚽ **Balls** | Multiple ball types spawn on the page — baseball, basketball, tennis, football, golf, and more. The cat chases and catches them |
-| 🕷️ **Spiders** | Spider enemies crawl onto the page. The cat hunts them down and fights them. Unlocked at level 3 |
-| 🌀 **Portals** | Green and purple portals appear on the page. The cat can interact with and enter them. Unlocked at level 7 |
-| ⭐ **XP & Levels** | Every action earns XP. Leveling up unlocks new skills and behaviors progressively |
-| 🔓 **Unlockable Skills** | Skills unlock as you level up — balls at level 2, spiders at 3, size control at 4, companion mode at 5, page mischief at 6, portals at 7 |
-| 📋 **Quests** | Daily quests refresh with new objectives like collecting coins, feeding fish, catching spiders, and watching together |
-| 🏆 **Achievements** | Earn badges for milestones — First Friend, Spider Hunter, 7-Day Streak, Master of Mischief, and more |
-| 💬 **Speech Bubbles** | The cat reacts to page events and level-ups with speech bubbles. Supports English, French, and Arabic |
-| 🎭 **Page Mischief** | At higher levels the cat starts interacting with YouTube UI elements on the page. Unlocked at level 6 |
-| 🧑‍🤝‍🧑 **Companion Mode** | The cat follows you around the page in a loyal companion mode. Unlocked at level 5 |
-| 🔒 **Privacy** | No accounts, no tracking, no network requests. All progress is saved locally with `browser.storage` |
+| 🐱 **Animations** | Full sprite-based states — idle, walk, run, jump, sleep, sit, and attack |
+| 🪙 **Coins** | Coins drop randomly on the page. The cat chases and collects them |
+| 🐟 **Fish** | Three fish types appear as treats. Feed them to earn XP |
+| ⚽ **Balls** | Baseball, basketball, tennis, football, golf and more. The cat chases them |
+| 🕷️ **Spiders** | Spider enemies crawl onto the page. The cat hunts and fights them *(level 3)* |
+| 🌀 **Portals** | Green and purple portals spawn on the page. The cat can enter them *(level 7)* |
+| ⭐ **XP & Levels** | Every action earns XP. Leveling up unlocks new skills progressively |
+| 🔓 **Skills** | Balls (2) · Spiders (3) · Size control (4) · Companion (5) · Mischief (6) · Portals (7) |
+| 📋 **Quests** | Daily quests with objectives like collecting coins, feeding fish, and catching spiders |
+| 🏆 **Achievements** | Unlock badges — First Friend, Spider Hunter, 7-Day Streak, Master of Mischief |
+| 💬 **Speech** | The cat reacts to events with speech bubbles. Supports English, French, and Arabic |
+| 🎭 **Page Mischief** | The cat interacts with YouTube UI elements at higher levels *(level 6)* |
+| 🧑‍🤝‍🧑 **Companion** | The cat follows you in loyal companion mode *(level 5)* |
+| 🔒 **Privacy** | No tracking, no network requests. Progress saved locally via `browser.storage` |
 
 ## Install (Developer Mode)
 
