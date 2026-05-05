@@ -2,7 +2,7 @@
 
 <img src="https://i.ibb.co/vvDwxjRN/icon96.png" width="64" alt="PixelCat icon" />
 
-# PixelCat
+# PIXELCAT
 
 A pixel-art cat companion that lives on YouTube.
 
