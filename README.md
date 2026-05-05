@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/icons/icon16.png" width="48" alt="PixelCat icon" />
+<img src="/assets/icons/icon16.png" width="48" alt="PixelCat icon" />
 
 # PixelCat for YouTube
 
