@@ -10,6 +10,8 @@ A pixel-art cat companion that lives on YouTube.
 [![Firefox](https://img.shields.io/badge/Firefox-supported-orange?logo=firefox-browser&logoColor=white)]()
 [![Chrome](https://img.shields.io/badge/Chrome-supported-yellow?logo=google-chrome&logoColor=white)]()
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/pixelcats)
+
 </div>
 
 ---
