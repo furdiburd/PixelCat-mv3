@@ -85,7 +85,7 @@ const Privacy = {
 <br/>
 
 <p align="center">
-  Made with 🧡 by <b>IMAD EL KHAIDER</b>
+  <img src="https://i.ibb.co/ZpY2kxtH/Myname.png" alt="PixelCat" width="100%" />
 </p>
 
 <p align="center">
