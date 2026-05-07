@@ -9,8 +9,8 @@
   <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge"/>
 </p>
 <p align="center">
-  <a href="https://ko-fi.com/pixelcats">
-    <img src="https://img.shields.io/badge/%20Support%20Me-Ko--fi-7B5EA7?style=for-the-badge&logo=ko-fi&logoColor=white&labelColor=5A3E8A"/>
+  <a href="https://ko-fi.com/pixelcats" target="_blank">
+    <img src="https://img.shields.io/badge/Support%20Me-Ko--fi-7B5EA7?style=for-the-badge&logo=ko-fi&logoColor=white&labelColor=5A3E8A"/>
   </a>
 </p>
 
