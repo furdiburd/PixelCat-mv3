@@ -6,8 +6,11 @@
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Firefox-supported-orange?style=for-the-badge&logo=firefox-browser&logoColor=white"/>
   <img src="https://img.shields.io/badge/Version-1.0-informational?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge"/>
+</p>
+<p align="center">
   <a href="https://ko-fi.com/pixelcats">
-    <img src="https://ko-fi.com/img/githubbutton_sm.svg" height="28"/>
+    <img src="https://img.shields.io/badge/%20Support%20Me-Ko--fi-7B5EA7?style=for-the-badge&logo=ko-fi&logoColor=white&labelColor=5A3E8A"/>
   </a>
 </p>
 
@@ -49,12 +52,12 @@ const PixelCatFeatures = {
 ## ❯ `skill_unlocks`
 
 <p align="center">
-  <img src="https://img.shields.io/badge/2-Balls-ff9a3c?style=for-the-badge&label=Level&labelColor=0d1117"/>
-  <img src="https://img.shields.io/badge/3-Spiders-e05252?style=for-the-badge&label=Level&labelColor=0d1117"/>
-  <img src="https://img.shields.io/badge/4-Size%20Control-4ecbff?style=for-the-badge&label=Level&labelColor=0d1117"/>
-  <img src="https://img.shields.io/badge/5-Companion-0075ca?style=for-the-badge&label=Level&labelColor=0d1117"/>
-  <img src="https://img.shields.io/badge/6-Mischief-ff69b4?style=for-the-badge&label=Level&labelColor=0d1117"/>
-  <img src="https://img.shields.io/badge/7-Portals-8A2BE2?style=for-the-badge&label=Level&labelColor=0d1117"/>
+  <img src="https://img.shields.io/badge/Level%202-Balls-ff9a3c?style=for-the-badge&labelColor=1a1a1a"/>
+  <img src="https://img.shields.io/badge/Level%203-Spiders-e05252?style=for-the-badge&labelColor=1a1a1a"/>
+  <img src="https://img.shields.io/badge/Level%204-Size%20Control-4ecbff?style=for-the-badge&labelColor=1a1a1a"/>
+  <img src="https://img.shields.io/badge/Level%205-Companion-0075ca?style=for-the-badge&labelColor=1a1a1a"/>
+  <img src="https://img.shields.io/badge/Level%206-Mischief-ff69b4?style=for-the-badge&labelColor=1a1a1a"/>
+  <img src="https://img.shields.io/badge/Level%207-Portals-8A2BE2?style=for-the-badge&labelColor=1a1a1a"/>
 </p>
 
 
