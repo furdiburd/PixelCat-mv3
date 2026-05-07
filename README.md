@@ -1,10 +1,8 @@
 <div align="center">
 
-<img src="https://i.ibb.co/vvDwxjRN/icon96.png" width="64" alt="PixelCat icon" />
+<img src="https://i.ibb.co/B2n2hZv5/Chat-GPT-Image-May-6-2026-01-47-01-PM.png" alt="PixelCat banner" width="100%" />
 
-# PIXELCAT
-
-A pixel-art cat companion that lives on YouTube.
+---
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Firefox](https://img.shields.io/badge/Firefox-supported-orange?logo=firefox-browser&logoColor=white)]()
