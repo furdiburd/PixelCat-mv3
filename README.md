@@ -73,13 +73,6 @@ Chrome:
 ```
 <br/>
 
-## ❯ `downloads`
-```bash
-Firefox build: PixelCat-Firefox-v2.5.0.zip
-Chrome MV3 build: PixelCat-Chrome-MV3-v2.5.0.zip
-```
-<br/>
-
 ## ❯ `changelog_2.5`
 ```ts
 const Version_2_5 = {
