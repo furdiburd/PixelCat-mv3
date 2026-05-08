@@ -33,7 +33,8 @@ body.pixelcat-hidden-fullscreen .pixel-portal {
     image-rendering: crisp-edges;
     image-rendering: -moz-crisp-edges;
     transform-origin: bottom center;
-    contain: layout style;
+    contain: strict;
+    isolation: isolate;
     /* GPU acceleration and jitter prevention */
     will-change: transform;
     backface-visibility: hidden;
@@ -509,4 +510,10 @@ body.pixelcat-hidden-fullscreen .pixel-portal {
   50% { transform: translateX(3px); }
   75% { transform: translateX(-2px); }
   100% { transform: translateX(0); }
+}
+
+.youtube-pixel-cat.pixelcat-pet-fox {
+    width: 32px;
+    height: 32px;
+    /* The fox sheet is 32x32; runtime renderScale makes it cat-height on screen. */
 }

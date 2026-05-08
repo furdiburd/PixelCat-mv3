@@ -15,7 +15,8 @@
     'ball_football', 'ball_volleyball', 'ball_bowling'
   ]);
   const BOOST_IDS = new Set(['toy_feather', 'treat_gold', 'coin_magnet', 'lucky_charm']);
-  const SHOP_IDS = new Set([...BALL_IDS, ...BOOST_IDS]);
+  const PET_IDS = new Set(['pet_cat', 'pet_fox']);
+  const SHOP_IDS = new Set([...BALL_IDS, ...BOOST_IDS, ...PET_IDS]);
   const QUEST_TYPES = new Set(['pet_sessions', 'fish_served', 'watch_seconds', 'coins_collected', 'ball_catches', 'spiders_caught']);
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -25,6 +26,7 @@
     shopOwned: [],
     shopActiveBoosts: [],
     activeBall: 'ball_baseball',
+    activePet: 'pet_cat',
     dailyStreak: 0,
     lastStreakDate: '',
     speechEnabled: false,
@@ -139,6 +141,8 @@
       .filter((id) => ownedSet.has(id));
     let activeBall = typeof source.activeBall === 'string' && BALL_IDS.has(source.activeBall) ? source.activeBall : 'ball_baseball';
     if (activeBall !== 'ball_baseball' && !ownedSet.has(activeBall)) activeBall = 'ball_baseball';
+    let activePet = typeof source.activePet === 'string' && PET_IDS.has(source.activePet) ? source.activePet : 'pet_cat';
+    if (activePet !== 'pet_cat' && !ownedSet.has(activePet)) activePet = 'pet_cat';
 
     const state = {
       catXP: xp,
@@ -146,6 +150,7 @@
       shopOwned: owned,
       shopActiveBoosts: activeBoosts,
       activeBall,
+      activePet,
       dailyStreak: clampInteger(source.dailyStreak, 0, 3660, 0),
       lastStreakDate: typeof source.lastStreakDate === 'string' && DATE_RE.test(source.lastStreakDate) ? source.lastStreakDate : '',
       speechEnabled: Boolean(source.speechEnabled),
@@ -336,10 +341,15 @@
       const state = normalizeState(Object.assign({}, progress || {}, { activeBall: clean.activeBall }));
       clean.activeBall = state.activeBall;
     }
-    if ('shopOwned' in clean || 'shopActiveBoosts' in clean) {
+    if ('activePet' in clean) {
+      const state = normalizeState(Object.assign({}, progress || {}, { activePet: clean.activePet }));
+      clean.activePet = state.activePet;
+    }
+    if ('shopOwned' in clean || 'shopActiveBoosts' in clean || 'activePet' in clean) {
       const state = normalizeState(Object.assign({}, progress || {}, clean));
       if ('shopOwned' in clean) clean.shopOwned = state.shopOwned;
       if ('shopActiveBoosts' in clean) clean.shopActiveBoosts = state.shopActiveBoosts;
+      if ('activePet' in clean) clean.activePet = state.activePet;
     }
     return clean;
   }

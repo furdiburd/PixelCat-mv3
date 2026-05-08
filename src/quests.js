@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyQuestState';
   const STATS_KEY = 'dailyQuestStats';
-  const QUEST_VERSION = 1;
+  const QUEST_VERSION = 3;
 
   // minXP: quest only enters the pool once catXP >= this value
   const QUEST_DEFINITIONS = [
@@ -11,7 +11,7 @@
     {
       type: 'pet_sessions',
       icon: 'care',
-      title: 'Pet the Cat',
+      title: 'Pet Session',
       minXP: 0,
       targets: [1, 2, 3],
       description: (t) => `Complete ${t} pet session${t === 1 ? '' : 's'}.`
@@ -19,10 +19,10 @@
     {
       type: 'fish_served',
       icon: 'treat',
-      title: 'Give Fish',
+      title: 'Catch Fish',
       minXP: 0,
       targets: [1, 2, 3],
-      description: (t) => `Give ${t} fish treat${t === 1 ? '' : 's'}.`
+      description: (t) => `Catch or feed ${t} fish${t === 1 ? '' : 'es'}.`
     },
     {
       type: 'watch_seconds',
@@ -47,7 +47,7 @@
       title: 'Play Fetch',
       minXP: 10,
       targets: [2, 4, 6],
-      description: (t) => `Cat catches ${t} ball${t === 1 ? '' : 's'}.`
+      description: (t) => `Catch ${t} ball${t === 1 ? '' : 's'}.`
     },
     //  Unlocked at XP 25 (spider) 
     {
@@ -206,6 +206,12 @@
     }
 
     const quests = state.quests.map(normalizeQuest).filter(Boolean);
+    const availableQuestCount = QUEST_DEFINITIONS.filter(d => Math.max(0, catXP || 0) >= d.minXP).length;
+    const expectedQuestCount = Math.min(3, availableQuestCount);
+    if (quests.length < expectedQuestCount) {
+      return { state: generateState(normalizedDateKey, catXP), changed: true };
+    }
+
     const changed = quests.length !== state.quests.length || quests.some((quest, index) => {
       const original = state.quests[index];
       return !original || quest.id !== original.id || quest.progress !== original.progress ||
@@ -224,6 +230,7 @@
     }
     return `${s} sec`;
   }
+
 
   function formatQuestProgress(quest) {
     if (quest.type === 'watch_seconds') {

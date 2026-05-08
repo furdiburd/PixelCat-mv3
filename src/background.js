@@ -30,6 +30,7 @@ const ALLOWED_SETTINGS = {
   uiLanguage: 'string',
   catSkin: 'string',
   activeBall: 'string',
+  activePet: 'string',
   shopOwned: 'array',
   shopActiveBoosts: 'array'
 };
@@ -64,9 +65,10 @@ function sanitizeSettings(settings) {
     }
     if (expected === 'string') {
       if (key === 'catEnergyLevel' && ['sleepy', 'active', 'hyper'].includes(value)) clean[key] = value;
-      else if (key === 'uiLanguage' && ['en', 'fr', 'ar'].includes(value)) clean[key] = value;
+      else if (key === 'uiLanguage' && ['en', 'fr', 'it', 'ar'].includes(value)) clean[key] = value;
       else if (key === 'catSkin' && ['white', 'orange', 'rainbow'].includes(value)) clean[key] = value;
       else if (key === 'activeBall' && /^ball_[a-z0-9_]{1,40}$/.test(value)) clean[key] = value;
+      else if (key === 'activePet' && ['pet_cat', 'pet_fox'].includes(value)) clean[key] = value;
       return;
     }
     if (expected === 'array') {

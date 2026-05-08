@@ -71,6 +71,7 @@
         ctx.lastBallDragY = b.y;
         ctx.lastBallDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
+        if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('ball');
       });
 
       el.addEventListener('touchstart', (e) => {
@@ -91,6 +92,7 @@
         ctx.lastBallDragY = b.y;
         ctx.lastBallDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
+        if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('ball');
       }, { passive: false });
 
       ctx.activeBalls.push(b);

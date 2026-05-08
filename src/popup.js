@@ -30,6 +30,7 @@
     dailyStreak: 0,
     lastStreakDate: '',
     activeBall: 'ball_baseball',
+    activePet: 'pet_cat',
     uiLanguage: 'en'
   };
 
@@ -48,7 +49,7 @@
       requiresLevel5: 'Requires Level 5', mischiefRate: 'Mischief Rate',
       size: 'Size', sizeWarning: 'This might cause unexpected behavior',
       clearMemory: 'Clear Memory', resetProgress: 'Reset Progress',
-      balls: 'Balls', boosts: 'Boosts',
+      balls: 'Balls', boosts: 'Boosts', pets: 'Pets',
     },
     fr: {
       coins: 'Pièces', xpHint: 'Nourrissez le chat ou jouez pour gagner de l\'XP',
@@ -64,7 +65,49 @@
       requiresLevel5: 'Niveau 5 requis', mischiefRate: 'Taux de bêtises',
       size: 'Taille', sizeWarning: 'Risque de bug',
       clearMemory: 'Effacer la mémoire', resetProgress: 'Réinitialiser la progression',
-      balls: 'Balles', boosts: 'Boosts',
+      balls: 'Balles', boosts: 'Boosts', pets: 'Animaux',
+    },
+    it: {
+      "coins": "Monete",
+      "xpHint": "Dai pesci o gioca a palla per guadagnare XP",
+      "dailyBonusReady": "Bonus giornaliero pronto!",
+      "tapToClaim": "Tocca per reclamare le tue monete",
+      "claim": "Riscatta",
+      "level4needed": "Livello 4 richiesto",
+      "companion": "Compagno",
+      "loyalMode": "Modalità fedele",
+      "catSkin": "Skin gatto",
+      "quests": "Missioni",
+      "achievements": "Obiettivi",
+      "dailyQuests": "Missioni giornaliere",
+      "energyLevel": "Livello energia",
+      "affectsSpeed": "Influisce sulla velocità di movimento",
+      "sleepy": "Sonnolento",
+      "active": "Attivo",
+      "autoSpawn": "Spawn automatico",
+      "aggressiveMode": "Modalità aggressiva",
+      "basic": "Base",
+      "advanced": "Avanzato",
+      "danger": "Pericolo",
+      "speed": "Velocità",
+      "requiresLevel2": "Richiede livello 2",
+      "speechBubbles": "Fumetti",
+      "smartMemory": "Memoria intelligente",
+      "hideFullscreen": "Nascondi a schermo intero",
+      "language": "Lingua",
+      "lowPowerMode": "Modalità risparmio",
+      "level5needed": "Livello 5 richiesto",
+      "pageMischief": "Dispetti pagina",
+      "rareEvents": "Eventi rari",
+      "requiresLevel5": "Richiede livello 5",
+      "mischiefRate": "Tasso dispetti",
+      "size": "Dimensione",
+      "sizeWarning": "Potrebbe causare comportamenti strani",
+      "clearMemory": "Cancella memoria",
+      "resetProgress": "Reimposta progressi",
+      "balls": "Palle",
+      "boosts": "Boost",
+      "pets": "Animali"
     },
     ar: {
       coins: 'عملات', xpHint: 'أطعم القطة أو العب لكسب نقاط الخبرة',
@@ -80,7 +123,7 @@
       requiresLevel5: 'يتطلب المستوى 5', mischiefRate: 'معدل الشقاوة',
       size: 'الحجم', sizeWarning: 'قد يسبب خللاً',
       clearMemory: 'مسح الذاكرة', resetProgress: 'إعادة تعيين التقدم',
-      balls: 'كرات', boosts: 'مُعززات',
+      balls: 'كرات', boosts: 'مُعززات', pets: 'حيوانات',
     }
   };
 
@@ -119,10 +162,11 @@
       claimCoinsToday: 'Claim +{count} coins today', coinsAmount: '+{count} coins',
       ballBaseball: 'Baseball', ballTennis: 'Tennis Ball', ballGolf: 'Golf Ball', ballBasketball: 'Basketball',
       ballFootball: 'Football', ballVolleyball: 'Volleyball', ballBowling: 'Bowling Ball',
+      petCat: 'Cat', petFox: 'Fox',
       boostFeather: 'Feather Wand', boostFeatherDesc: '+2 coins per pet', boostTreat: 'Golden Treat',
       boostTreatDesc: 'Double fish coins', boostMagnet: 'Coin Magnet', boostMagnetDesc: 'Pulls nearby coins to the cat',
       boostLucky: 'Lucky Charm', boostLuckyDesc: 'More frequent drops',
-      questPet: 'Pet the Cat', questFish: 'Give Fish', questWatch: 'Watch Together', questCoins: 'Collect Coins',
+      questPet: 'Pet Session', questFish: 'Give Fish', questWatch: 'Watch Together', questCoins: 'Collect Coins',
       questFetch: 'Play Fetch', questSpiders: 'Catch Spiders', questDoubleAffection: 'Double Affection',
       questFishFeast: 'Fish Feast', questLongSession: 'Long Session',
       showToggleInfo: 'Show setting info', hideToggleInfo: 'Hide setting info',
@@ -173,10 +217,11 @@
       claimCoinsToday: '+{count} pièces aujourd’hui', coinsAmount: '+{count} pièces',
       ballBaseball: 'Balle de baseball', ballTennis: 'Balle de tennis', ballGolf: 'Balle de golf', ballBasketball: 'Ballon de basket',
       ballFootball: 'Ballon de football', ballVolleyball: 'Ballon de volley', ballBowling: 'Boule de bowling',
+      petCat: 'Chat', petFox: 'Renard',
       boostFeather: 'Baguette plume', boostFeatherDesc: '+2 pièces par caresse', boostTreat: 'Friandise dorée',
       boostTreatDesc: 'Pièces poisson x2', boostMagnet: 'Aimant à pièces', boostMagnetDesc: 'Attire les pièces',
       boostLucky: 'Porte-bonheur', boostLuckyDesc: 'Butins fréquents',
-      questPet: 'Caresser le chat', questFish: 'Donner du poisson', questWatch: 'Regarder ensemble', questCoins: 'Collecter des pièces',
+      questPet: 'Session câlin', questFish: 'Donner du poisson', questWatch: 'Regarder ensemble', questCoins: 'Collecter des pièces',
       questFetch: 'Jouer à rapporter', questSpiders: 'Attraper des araignées', questDoubleAffection: 'Double affection',
       questFishFeast: 'Festin de poisson', questLongSession: 'Longue session',
       showToggleInfo: 'Voir l’info', hideToggleInfo: 'Masquer l’info',
@@ -190,6 +235,130 @@
       infoMischief: 'Autorise de petites interactions avec la page.',
       infoRareEvents: 'Active des surprises occasionnelles.',
       confirm: 'Confirmer', cancel: 'Annuler', openInfo: 'Ouvrir les infos'
+    },
+    it: {
+      "disabled": "Disattivato",
+      "fish": "Pesce",
+      "ball": "Palla",
+      "spider": "Ragno",
+      "portal": "Portale",
+      "hyper": "Iper",
+      "about": "Info",
+      "stats": "Statistiche",
+      "unavailable": "Non disponibile",
+      "objectivesUnavailable": "Obiettivi non disponibili in questa sessione.",
+      "remaining": "{time} rimanenti",
+      "streak": "Serie: {count}",
+      "complete": "Completo",
+      "allObjectivesComplete": "Tutti gli obiettivi completati. {count} completati in totale.",
+      "remainingToday": "{remaining} rimanenti oggi. {count} completati in totale.",
+      "level": "Livello {level}",
+      "xpProgress": "{current} / {needed} XP",
+      "requires": "Richiede {level}",
+      "unlockSpeechBall": "Raggiungi il livello 2 per sbloccare fumetti e palla",
+      "unlockSpiders": "Raggiungi il livello 3 per sbloccare i ragni",
+      "unlockCompanion": "Raggiungi il livello 5 per sbloccare il gatto compagno",
+      "unlockSize": "Raggiungi il livello 4 per sbloccare la dimensione",
+      "unlockMischief": "Raggiungi il livello 6 per sbloccare i dispetti pagina",
+      "unlockPortals": "Raggiungi il livello 7 per sbloccare i portali",
+      "unlockHyper": "Raggiungi il livello 8 per sbloccare energia iper",
+      "level9Hint": "Livello 9 - Quasi un compagno maestro!",
+      "level10Hint": "Livello 10 - Livello massimo raggiunto!",
+      "maxLevel": "Livello massimo! Tutte le funzioni sbloccate.",
+      "showSkillsTree": "Mostra albero abilità",
+      "hideSkillsTree": "Nascondi albero abilità",
+      "aboutPixelCatTitle": "Che cos è PixelCat?",
+      "aboutPixelCatBody": "Un pet pixel per YouTube, creato da IMAD. Gira, gioca e cresce mentre guardi video.",
+      "aboutLevelsTitle": "Come funzionano i livelli",
+      "aboutLevelsBody": "Guadagna XP accarezzando, nutrendo e giocando. Sali di livello per sbloccare nuove funzioni.",
+      "aboutCoinsTitle": "Guadagnare monete",
+      "aboutCoinsBody": "Le monete cadono durante il gioco. Cliccale per raccoglierle! Apri il popup per il bonus giornaliero.",
+      "aboutQuestsTitle": "Missioni giornaliere",
+      "aboutQuestsBody": "Completa 3 attività ogni giorno per ottenere ricompense e mantenere la serie.",
+      "aboutAchievementsTitle": "Obiettivi",
+      "aboutAchievementsBody": "Ottieni badge per traguardi speciali, come la prima carezza o tanti ragni catturati.",
+      "aboutSpawningTitle": "Generazione oggetti",
+      "aboutSpawningBody": "Usa Spawn automatico per far cadere pesci, palle o ragni con cui il gatto può giocare.",
+      "aboutShopTitle": "Shop e boost",
+      "aboutShopBody": "Usa le monete per comprare nuove skin per le palle e boost permanenti.",
+      "aboutTipsTitle": "Consigli",
+      "aboutTipsBody": "Accarezza il gatto dopo che mangia per un bonus. Usa Modalità fedele per farlo seguire il mouse.",
+      "supportPixelCat": "Supporta PixelCat",
+      "supportKoFi": "Supporta PixelCat su Ko-fi",
+      "statFishEaten": "Pesci mangiati",
+      "statSpidersCaught": "Ragni catturati",
+      "statPetSessions": "Sessioni carezze",
+      "statCoinsCollected": "Monete raccolte",
+      "statBallCatches": "Prese palla",
+      "statQuestsDone": "Missioni completate",
+      "statPerfectDays": "Giorni perfetti",
+      "statDailyStreak": "Serie giornaliera",
+      "skillsTree": "Albero abilità",
+      "dragTree": "Trascina l albero per esplorare",
+      "basicInstincts": "Istinti base",
+      "core": "Base",
+      "speechBubble": "Fumetto",
+      "fishHunt": "Caccia al pesce",
+      "wallNinja": "Ninja sul muro",
+      "sizeWeight": "Dimensione e peso",
+      "petBond": "Legame pet",
+      "ballChaser": "Cacciatore di palla",
+      "spiderHunter": "Cacciatore di ragni",
+      "companionMode": "Modalità compagno",
+      "portalTraveler": "Viaggiatore portali",
+      "hyperEnergy": "Energia iper",
+      "madeBy": "Creato da",
+      "firstFriend": "Primo amico",
+      "hundredPets": "100 carezze",
+      "sevenDayStreak": "Serie 7 giorni",
+      "masterMischief": "Maestro dei dispetti",
+      "buyCoins": "{price} monete",
+      "activeItem": "Attivo",
+      "setActive": "Rendi attivo",
+      "enable": "Attiva",
+      "disable": "Disattiva",
+      "claimCoinsToday": "Riscatta +{count} monete oggi",
+      "coinsAmount": "+{count} monete",
+      "ballBaseball": "Baseball",
+      "ballTennis": "Palla da tennis",
+      "ballGolf": "Palla da golf",
+      "ballBasketball": "Basketball",
+      "ballFootball": "Pallone",
+      "ballVolleyball": "Pallavolo",
+      "ballBowling": "Palla da bowling",
+      "petCat": "Gatto",
+      "petFox": "Volpe",
+      "boostFeather": "Bacchetta piuma",
+      "boostFeatherDesc": "+2 monete per carezza",
+      "boostTreat": "Dolcetto dorato",
+      "boostTreatDesc": "Monete pesce doppie",
+      "boostMagnet": "Magnete monete",
+      "boostMagnetDesc": "Attira monete vicine al gatto",
+      "boostLucky": "Portafortuna",
+      "boostLuckyDesc": "Drop più frequenti",
+      "questPet": "Sessione coccole",
+      "questFish": "Dai un pesce",
+      "questWatch": "Guarda insieme",
+      "questCoins": "Raccogli monete",
+      "questFetch": "Gioca al riporto",
+      "questSpiders": "Cattura ragni",
+      "questDoubleAffection": "Doppio affetto",
+      "questFishFeast": "Banchetto di pesce",
+      "questLongSession": "Sessione lunga",
+      "showToggleInfo": "Mostra info impostazione",
+      "hideToggleInfo": "Nascondi info impostazione",
+      "infoCompanion": "Aggiunge un secondo gatto quando sbloccato.",
+      "infoLoyal": "Fa seguire il cursore al gatto.",
+      "infoAggressive": "Rende reazioni e lotte con ragni più forti.",
+      "infoSpeech": "Permette al gatto di parlare con i fumetti.",
+      "infoMemory": "Ricorda piccoli momenti per reazioni migliori.",
+      "infoFullscreen": "Nasconde PixelCat durante i video a schermo intero.",
+      "infoLowPower": "Meno animazione, modalità più fluida.",
+      "infoMischief": "Permette piccole interazioni giocose con la pagina.",
+      "infoRareEvents": "Attiva eventi sorpresa occasionali.",
+      "confirm": "Conferma",
+      "cancel": "Annulla",
+      "openInfo": "Apri info"
     },
     ar: {
       coins: 'عملات', xpHint: 'أطعم السمك أو العب بالكرة لكسب الخبرة',
@@ -227,10 +396,11 @@
       claimCoinsToday: '+{count} عملات اليوم', coinsAmount: '+{count} عملات',
       ballBaseball: 'كرة بيسبول', ballTennis: 'كرة تنس', ballGolf: 'كرة غولف', ballBasketball: 'كرة سلة',
       ballFootball: 'كرة قدم', ballVolleyball: 'كرة طائرة', ballBowling: 'كرة بولينغ',
+      petCat: 'قطة', petFox: 'ثعلب',
       boostFeather: 'عصا الريشة', boostFeatherDesc: '+2 عملات لكل مداعبة', boostTreat: 'حلوى ذهبية',
       boostTreatDesc: 'عملات السمك x2', boostMagnet: 'مغناطيس العملات', boostMagnetDesc: 'يجذب العملات',
       boostLucky: 'تميمة الحظ', boostLuckyDesc: 'إسقاطات أكثر',
-      questPet: 'داعب القط', questFish: 'قدّم السمك', questWatch: 'شاهدوا معاً', questCoins: 'اجمع العملات',
+      questPet: 'جلسة مداعبة', questFish: 'قدّم السمك', questWatch: 'شاهدوا معاً', questCoins: 'اجمع العملات',
       questFetch: 'العب جلب الكرة', questSpiders: 'اصطد العناكب', questDoubleAffection: 'عاطفة مضاعفة',
       questFishFeast: 'وليمة سمك', questLongSession: 'جلسة طويلة',
       showToggleInfo: 'إظهار المعلومات', hideToggleInfo: 'إخفاء المعلومات',
@@ -291,6 +461,9 @@
     { id: 'ball_football',  imgFile: 'football.png',  name: 'Football',    nameKey: 'ballFootball',   price: 20,  type: 'ball' },
     { id: 'ball_volleyball',imgFile: 'valleyball.png',name: 'Volleyball',  nameKey: 'ballVolleyball', price: 25,  type: 'ball' },
     { id: 'ball_bowling',   imgFile: 'bowling.png',   name: 'Bowling Ball',nameKey: 'ballBowling',    price: 30,  type: 'ball' },
+    // - PETS -
+    { id: 'pet_cat', imgFile: 'cat_icon.png', name: 'Cat', nameKey: 'petCat', price: 0, type: 'pet', free: true },
+    { id: 'pet_fox', imgFile: 'fox_icon.png', name: 'Fox', nameKey: 'petFox', price: 50, type: 'pet' },
     // - BOOSTS -
     { id: 'toy_feather',  emoji: '✨', name: 'Feather Wand',  nameKey: 'boostFeather', desc: '+2 coins per pet',        descKey: 'boostFeatherDesc', price: 30,  type: 'boost', effect: 'petCoins' },
     { id: 'treat_gold',   emoji: '🍖', name: 'Golden Treat',  nameKey: 'boostTreat',   desc: 'Double fish coins',       descKey: 'boostTreatDesc',   price: 50,  type: 'boost', effect: 'fishCoins' },
@@ -321,6 +494,7 @@
   const loyalToggle = document.getElementById('loyalToggle');
   const companionToggle = document.getElementById('companionToggle');
   const aggroToggle = document.getElementById('aggroToggle');
+  const aggroRow = aggroToggle ? aggroToggle.closest('.control-row') : null;
   const spiderSpawnBtn = document.getElementById('spiderSpawnBtn');
   const uiMischiefToggle = document.getElementById('uiMischiefToggle');
   const speechToggle = document.getElementById('speechToggle');
@@ -378,6 +552,8 @@
   const companionLock = document.getElementById('companionLock');
   const companionSwitchWrap = document.getElementById('companionSwitchWrap');
   const companionRow = document.getElementById('companionRow');
+  const skinSelect = document.getElementById('skinSelect');
+  const skinRow = skinSelect ? skinSelect.closest('.control-row') : null;
   const speechLock = document.getElementById('speechLock');
   const speechSwitchWrap = document.getElementById('speechSwitchWrap');
   const speechRow = document.getElementById('speechRow');
@@ -399,6 +575,7 @@
   // Track previous XP to detect unlocks. The storage key remains catXP for older installs.
   let prevXP = -1;
   let latestXP = 0;
+  let latestActivePet = defaultSettings.activePet;
   let latestDailyStreak = 0;
   let latestAchievementStats = {};
 
@@ -542,8 +719,10 @@
       btn.classList.toggle('active', btn.dataset.shoptab === shoptab);
     });
     const shopBallsView = document.getElementById('shopBallsView');
+    const shopPetsView = document.getElementById('shopPetsView');
     const shopBoostsView = document.getElementById('shopBoostsView');
     if (shopBallsView) shopBallsView.style.display = shoptab === 'balls' ? 'grid' : 'none';
+    if (shopPetsView) shopPetsView.style.display = shoptab === 'pets' ? 'grid' : 'none';
     if (shopBoostsView) shopBoostsView.style.display = shoptab === 'boosts' ? 'grid' : 'none';
   }
 
@@ -839,6 +1018,7 @@
     // Default sub-tabs when entering main panels
     if (tabName === 'quests') {
       setActiveSubTab('daily');
+      refreshQuests().catch(() => renderQuestPanel(null));
     } else if (tabName === 'shop') {
       setActiveShopTab('balls');
     } else if (tabName === 'advanced') {
@@ -868,6 +1048,47 @@
     });
   }
 
+  function applyPetSpecificLocks(activePet) {
+    const foxActive = activePet === 'pet_fox';
+    const companionUnlocked = latestXP >= MILESTONES.companion.xp;
+    const mischiefUnlocked = latestXP >= MILESTONES.uiMischief.xp;
+    const mischiefRateUnlocked = latestXP >= MILESTONES.mischiefRate.xp;
+
+    if (companionToggle) {
+      companionToggle.disabled = foxActive || !companionUnlocked;
+      if (foxActive || !companionUnlocked) companionToggle.checked = false;
+    }
+    if (companionSwitchWrap) companionSwitchWrap.classList.toggle('control-locked', foxActive || !companionUnlocked);
+    if (companionRow) companionRow.classList.toggle('control-locked', foxActive || !companionUnlocked);
+
+    if (skinSelect) skinSelect.classList.toggle('control-locked', foxActive);
+    if (skinRow) skinRow.classList.toggle('control-locked', foxActive);
+    document.querySelectorAll('.color-box').forEach((box) => {
+      if (foxActive) {
+        box.classList.add('skin-locked');
+        box.classList.remove('active');
+        box.setAttribute('aria-disabled', 'true');
+        box.title = 'Cat-only while fox is active';
+      }
+    });
+
+    if (aggroToggle) {
+      aggroToggle.disabled = foxActive;
+      if (foxActive) aggroToggle.checked = false;
+    }
+    if (aggroRow) aggroRow.classList.toggle('control-locked', foxActive);
+
+    if (uiMischiefToggle) {
+      uiMischiefToggle.disabled = foxActive || !mischiefUnlocked;
+      if (foxActive || !mischiefUnlocked) uiMischiefToggle.checked = false;
+    }
+    if (mischiefSwitchWrap) mischiefSwitchWrap.classList.toggle('control-locked', foxActive || !mischiefUnlocked);
+    if (mischiefRow) mischiefRow.classList.toggle('control-locked', foxActive || !mischiefUnlocked);
+    if (mischiefMinus) mischiefMinus.disabled = foxActive || !mischiefRateUnlocked;
+    if (mischiefPlus) mischiefPlus.disabled = foxActive || !mischiefRateUnlocked;
+    if (mischiefRateRow) mischiefRateRow.classList.toggle('control-locked', foxActive || !mischiefRateUnlocked);
+  }
+
   function formatResetCountdown(totalSeconds) {
     const seconds = Math.max(0, Math.floor(totalSeconds || 0));
     const hours = Math.floor(seconds / 3600);
@@ -891,10 +1112,6 @@
         : `${minutes} ${minLabel} ${String(remainder).padStart(2, '0')} ${secLabel}`;
     }
     return `${seconds} ${secLabel}`;
-  }
-
-  function formatXpGap(value) {
-    return Number.parseFloat(Math.max(0, value).toFixed(1)).toString();
   }
 
   function getLevelFromXP(value) {
@@ -942,16 +1159,27 @@
   function getLockedSettingsPatch(data) {
     const xp = Math.min(MAX_LEVEL_XP, Math.max(0, Number(data.catXP) || 0));
     const patch = {};
+    const foxActive = data.activePet === 'pet_fox';
+
     if (xp < MILESTONES.speech.xp && data.speechEnabled) patch.speechEnabled = false;
     if (xp < MILESTONES.ball.xp && data.ballEnabled) patch.ballEnabled = false;
     if (xp < MILESTONES.spider.xp && data.spiderEnabled) patch.spiderEnabled = false;
     if (xp < MILESTONES.rainbowSkin.xp && data.catSkin === 'rainbow') patch.catSkin = 'white';
     if (xp < MILESTONES.size.xp && Number(data.sizeMultiplier) !== 1.0) patch.sizeMultiplier = 1.0;
-    if (xp < MILESTONES.companion.xp && data.companionEnabled) patch.companionEnabled = false;
-    if (xp < MILESTONES.uiMischief.xp && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
+    if ((xp < MILESTONES.companion.xp || foxActive) && data.companionEnabled) patch.companionEnabled = false;
+    if ((xp < MILESTONES.uiMischief.xp || foxActive) && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
+    if (foxActive && data.aggressiveMode) patch.aggressiveMode = false;
     if (xp < MILESTONES.hyper.xp && data.catEnergyLevel === 'hyper') patch.catEnergyLevel = 'active';
     if (xp < MILESTONES.portal.xp && data.portalEnabled) patch.portalEnabled = false;
     return patch;
+  }
+
+  async function forceCatOnlySettingsOffForFox(activePet) {
+    if (activePet !== 'pet_fox') return;
+    const patch = { companionEnabled: false, aggressiveMode: false, uiMischiefEnabled: false };
+    await setLocal(patch);
+    await sendMessageToTabs({ action: 'stopCompanion' });
+    await sendMessageToTabs({ action: 'updateSettings', settings: patch });
   }
 
   const QUEST_TITLE_KEYS = {
@@ -972,16 +1200,20 @@
   }
 
   function renderQuestPanel(snapshot) {
-    if (!questList || !questResetText || !questCompletedValue || !questPerfectDaysValue || !questSummaryLine) {
-      return;
+    if (dailyQuestsView && !dailyQuestsView.style.display) {
+      dailyQuestsView.style.display = 'flex';
     }
 
+    if (!questList) return;
+
     if (!snapshot) {
-      questResetText.textContent = t('unavailable');
-      questCompletedValue.textContent = '--';
-      questPerfectDaysValue.textContent = '--';
-      questSummaryLine.textContent = t('objectivesUnavailable');
-      questList.replaceChildren();
+      if (questResetText) questResetText.textContent = t('unavailable');
+      if (questCompletedValue) questCompletedValue.textContent = '--';
+      if (questPerfectDaysValue) questPerfectDaysValue.textContent = '--';
+      const empty = document.createElement('div');
+      empty.className = 'quest-empty-card';
+      empty.textContent = t('objectivesUnavailable') || 'Quests are not available right now. Reopen the popup to refresh.';
+      questList.replaceChildren(empty);
       return;
     }
 
@@ -991,14 +1223,17 @@
     const remainingCount = Math.max(0, snapshot.totalCount - snapshot.completedCount);
     const overallPct = snapshot.totalCount > 0 ? Math.round((snapshot.completedCount / snapshot.totalCount) * 100) : 0;
 
-    questResetText.textContent = t('remaining', { time: formatResetCountdown(snapshot.secondsUntilReset) });
-    questCompletedValue.textContent = `${snapshot.completedCount} / ${snapshot.totalCount}`;
-    questPerfectDaysValue.textContent = t('streak', { count: snapshot.stats.perfectDays });
+    if (questResetText) questResetText.textContent = t('remaining', { time: formatResetCountdown(snapshot.secondsUntilReset) });
+    if (questCompletedValue) questCompletedValue.textContent = `${snapshot.completedCount} / ${snapshot.totalCount}`;
+    if (questPerfectDaysValue) questPerfectDaysValue.textContent = t('streak', { count: snapshot.stats.perfectDays });
     
-    if (snapshot.allComplete) {
-      questSummaryLine.textContent = t('allObjectivesComplete', { count: snapshot.stats.lifetimeCompleted });
-    } else {
-      questSummaryLine.textContent = t('remainingToday', { remaining: remainingCount, count: snapshot.stats.lifetimeCompleted });
+
+    if (!Array.isArray(snapshot.quests) || snapshot.quests.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'quest-empty-card';
+      empty.textContent = t('objectivesUnavailable') || 'No quests available right now. Reopen the popup to refresh.';
+      questList.replaceChildren(empty);
+      return;
     }
 
     const questCards = snapshot.quests.map((quest) => {
@@ -1057,8 +1292,18 @@
       return;
     }
 
-    const snapshot = await QuestEngine.getSnapshot(getQuestStorageArea());
-    renderQuestPanel(snapshot);
+    try {
+      const snapshot = await QuestEngine.getSnapshot(getQuestStorageArea());
+      renderQuestPanel(snapshot);
+    } catch (error) {
+      // Self-heal older or partially protected installs: fall back to raw local storage once.
+      try {
+        const snapshot = await QuestEngine.getSnapshot(API.storage.local);
+        renderQuestPanel(snapshot);
+      } catch (_) {
+        renderQuestPanel(null);
+      }
+    }
   }
 
   function setStat(el, value) {
@@ -1284,22 +1529,27 @@
 
     const currentSkinBox = document.querySelector('.color-box.active');
     const currentSkin = currentSkinBox ? currentSkinBox.dataset.skin : 'white';
-    updateSkinSwatches(currentSkin);
+    updateSkinSwatches(currentSkin, latestActivePet);
 
     prevXP = pct;
   }
 
 
-  function updateSkinSwatches(activeSkin) {
+  function updateSkinSwatches(activeSkin, activePet = 'pet_cat') {
+    const foxActive = activePet === 'pet_fox';
     const rainbowUnlocked = isMilestoneUnlocked('rainbowSkin');
     document.querySelectorAll('.color-box').forEach((box) => {
       const skin = box.dataset.skin;
-      const locked = skin === 'rainbow' && !rainbowUnlocked;
+      const locked = foxActive || (skin === 'rainbow' && !rainbowUnlocked);
       box.classList.toggle('skin-locked', locked);
-      box.classList.toggle('active', skin === activeSkin && !locked);
+      box.classList.toggle('active', !foxActive && skin === activeSkin && !locked);
       box.setAttribute('aria-disabled', String(locked));
-      if (skin === 'rainbow') {
+      if (foxActive) {
+        box.title = 'Cat-only while fox is active';
+      } else if (skin === 'rainbow') {
         box.title = rainbowUnlocked ? 'Rainbow' : 'Rainbow - Level 3';
+      } else {
+        box.title = skin.charAt(0).toUpperCase() + skin.slice(1);
       }
     });
   }
@@ -1315,13 +1565,14 @@
         await sendMessageToTabs({ action: 'stopCompanion' });
       }
     }
+    latestActivePet = data.activePet || 'pet_cat';
     updateMainToggleUI(data.catEnabled);
-    companionToggle.checked = data.companionEnabled;
+    companionToggle.checked = latestActivePet === 'pet_fox' ? false : data.companionEnabled;
     loyalToggle.checked = data.loyalMode;
-    aggroToggle.checked = data.aggressiveMode;
+    aggroToggle.checked = data.activePet === 'pet_fox' ? false : data.aggressiveMode;
     if (data.spiderEnabled) spiderSpawnBtn.classList.add('active');
     else spiderSpawnBtn.classList.remove('active');
-    uiMischiefToggle.checked = data.uiMischiefEnabled;
+    uiMischiefToggle.checked = latestActivePet === 'pet_fox' ? false : data.uiMischiefEnabled;
     speechToggle.checked = data.speechEnabled;
     memoryToggle.checked = data.memoryEnabled;
     rareEventsToggle.checked = data.rareEventsEnabled;
@@ -1330,6 +1581,14 @@
     speedVal.textContent = parseFloat(data.speedMultiplier).toFixed(1) + 'x';
     sizeVal.textContent = parseFloat(data.sizeMultiplier).toFixed(1) + 'x';
     mischiefRateVal.textContent = `${parseInt(data.uiMischiefRate, 10)}%`;
+    if (latestActivePet === 'pet_fox' && (data.companionEnabled || data.aggressiveMode || data.uiMischiefEnabled)) {
+      data.companionEnabled = false;
+      data.aggressiveMode = false;
+      data.uiMischiefEnabled = false;
+      companionToggle.checked = false;
+      uiMischiefToggle.checked = false;
+      await forceCatOnlySettingsOffForFox(latestActivePet);
+    }
 
     // Coins
     if (coinCount) coinCount.textContent = (data.coins || 0).toLocaleString();
@@ -1352,7 +1611,8 @@
 
     // Apply level / XP UI
     applyXpUI(data.catXP || 0, false);
-    updateSkinSwatches(data.catSkin);
+    applyPetSpecificLocks(latestActivePet);
+    updateSkinSwatches(data.catSkin, latestActivePet);
     await refreshQuests();
     await refreshStats();
   }
@@ -1371,6 +1631,12 @@
   });
 
   companionToggle.addEventListener('change', async (e) => {
+    const active = await getLocal({ activePet: 'pet_cat' });
+    if (active.activePet === 'pet_fox') {
+      e.target.checked = false;
+      await forceCatOnlySettingsOffForFox('pet_fox');
+      return;
+    }
     if (!isMilestoneUnlocked('companion')) {
       e.target.checked = false;
       return;
@@ -1381,12 +1647,26 @@
   });
 
   aggroToggle.addEventListener('change', async (e) => {
+    const active = await getLocal({ activePet: 'pet_cat' });
+    if (active.activePet === 'pet_fox') {
+      e.target.checked = false;
+      await setLocal({ aggressiveMode: false });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { aggressiveMode: false } });
+      return;
+    }
     const next = e.target.checked;
     await setLocal({ aggressiveMode: next });
     await sendMessageToTabs({ action: 'updateSettings', settings: { aggressiveMode: next } });
   });
 
   uiMischiefToggle.addEventListener('change', async (e) => {
+    const active = await getLocal({ activePet: 'pet_cat' });
+    if (active.activePet === 'pet_fox') {
+      e.target.checked = false;
+      await setLocal({ uiMischiefEnabled: false });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { uiMischiefEnabled: false } });
+      return;
+    }
     if (!isMilestoneUnlocked('uiMischief')) {
       e.target.checked = false;
       return;
@@ -1520,7 +1800,11 @@
   });
 
   mischiefMinus.addEventListener('click', async () => {
-    let data = await getLocal({ uiMischiefRate: 11 });
+    let data = await getLocal({ uiMischiefRate: 11, activePet: 'pet_cat' });
+    if (data.activePet === 'pet_fox') {
+      await forceCatOnlySettingsOffForFox('pet_fox');
+      return;
+    }
     let val = parseInt(data.uiMischiefRate, 10);
     val = Math.max(5, val - 5);
     mischiefRateVal.textContent = `${val}%`;
@@ -1529,7 +1813,11 @@
   });
 
   mischiefPlus.addEventListener('click', async () => {
-    let data = await getLocal({ uiMischiefRate: 11 });
+    let data = await getLocal({ uiMischiefRate: 11, activePet: 'pet_cat' });
+    if (data.activePet === 'pet_fox') {
+      await forceCatOnlySettingsOffForFox('pet_fox');
+      return;
+    }
     let val = parseInt(data.uiMischiefRate, 10);
     val = Math.min(30, val + 5);
     mischiefRateVal.textContent = `${val}%`;
@@ -1539,6 +1827,15 @@
 
   document.querySelectorAll('.color-box').forEach(box => {
     box.addEventListener('click', async () => {
+      const active = await getLocal({ activePet: 'pet_cat' });
+      if (active.activePet === 'pet_fox') {
+        box.classList.remove('lock-shake');
+        void box.offsetWidth;
+        box.classList.add('lock-shake');
+        setTimeout(() => box.classList.remove('lock-shake'), 260);
+        updateSkinSwatches('white', 'pet_fox');
+        return;
+      }
       const skin = box.dataset.skin;
       if (skin === 'rainbow' && !isMilestoneUnlocked('rainbowSkin')) {
         box.classList.remove('lock-shake');
@@ -1547,7 +1844,8 @@
         setTimeout(() => box.classList.remove('lock-shake'), 260);
         return;
       }
-      updateSkinSwatches(skin);
+      latestActivePet = active.activePet || 'pet_cat';
+      updateSkinSwatches(skin, latestActivePet);
       await setLocal({ catSkin: skin });
       await sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: skin } });
     });
@@ -1779,10 +2077,15 @@
             if (data.catSkin === 'rainbow') {
               setLocal({ catSkin: 'white' });
               sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: 'white' } });
-              updateSkinSwatches('white');
+              updateSkinSwatches('white', latestActivePet);
             }
           }).catch(() => {});
         }
+      }
+      if (changes.activePet) {
+        latestActivePet = changes.activePet.newValue || 'pet_cat';
+        applyPetSpecificLocks(latestActivePet);
+        getLocal({ catSkin: 'white' }).then((data) => updateSkinSwatches(data.catSkin || 'white', latestActivePet)).catch(() => {});
       }
       if (changes.coins && coinCount) {
         const newVal = changes.coins.newValue || 0;
@@ -1809,6 +2112,7 @@
 
   //  SHOP SYSTEM 
   const shopBallsView  = document.getElementById('shopBallsView');
+  const shopPetsView   = document.getElementById('shopPetsView');
   const shopBoostsView = document.getElementById('shopBoostsView');
   const homeBonusBanner = document.getElementById('homeBonusBanner');
   const homeBonusTitle  = document.getElementById('homeBonusTitle');
@@ -1833,12 +2137,13 @@
   }
 
   // Build a single shop item card
-  function buildShopCard(item, coins, owned, activeBall, activeBoosts, container) {
-    const isFree    = !!item.free;
-    const isOwned   = isFree || owned.includes(item.id);
+  function buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, container) {
+    const normalizedOwned = Array.isArray(owned) ? owned : [];
+    const isFree    = !!item.free || item.id === 'pet_cat';
+    const isOwned   = isFree || normalizedOwned.includes(item.id);
     const isActive  = item.type === 'ball'
       ? activeBall === item.id
-      : isOwned && activeBoosts.includes(item.id);
+      : (item.type === 'pet' ? activePet === item.id : isOwned && activeBoosts.includes(item.id));
     const canAfford = coins >= item.price;
 
     // Card classes
@@ -1849,11 +2154,13 @@
     
     const card = document.createElement('div');
     card.className = cardClass;
+    card.classList.add(`shop-type-${item.type}`);
     card.dataset.id = item.id;
 
-    // Icon: real <img> for balls, emoji for boosts
+    // Icon: real <img> for balls/pets, emoji for boosts
     if (item.imgFile) {
-      const src = (typeof browser !== 'undefined' ? browser : chrome).runtime.getURL(`assets/balls/${item.imgFile}`);
+      const basePath = item.type === 'pet' ? 'assets/animations' : 'assets/balls';
+      const src = (typeof browser !== 'undefined' ? browser : chrome).runtime.getURL(`${basePath}/${item.imgFile}`);
       const img = document.createElement('img');
       img.className = 'shop-item-img';
       img.src = src;
@@ -1868,7 +2175,7 @@
 
     // Button label/state
     let btnLabel, btnClass, btnDisabled;
-    if (item.type === 'ball') {
+    if (item.type === 'ball' || item.type === 'pet') {
       if (isActive) {
         btnLabel = `* ${t('activeItem')}`; btnClass = 'shop-buy-btn ball-active-btn'; btnDisabled = true;
       } else if (isOwned) {
@@ -1894,7 +2201,7 @@
     name.textContent = item.nameKey ? t(item.nameKey) : item.name;
     card.appendChild(name);
 
-    if (item.type !== 'ball' && item.desc) {
+    if (item.type !== 'ball' && item.type !== 'pet' && item.desc) {
       const desc = document.createElement('div');
       desc.className = 'shop-item-desc';
       desc.textContent = item.descKey ? t(item.descKey) : item.desc;
@@ -1908,13 +2215,14 @@
     card.appendChild(btn);
     if (!btnDisabled) {
       btn.addEventListener('click', async () => {
-        const result = await updateLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, activeBall: 'ball_baseball' }, (fresh) => {
+        const result = await updateLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, activeBall: 'ball_baseball', activePet: 'pet_cat' }, (fresh) => {
           const freshCoins = fresh.coins || 0;
           const freshOwned = Array.isArray(fresh.shopOwned) ? fresh.shopOwned : [];
+          const freshOwnedSet = new Set(freshOwned);
           const freshActiveBoosts = Array.isArray(fresh.shopActiveBoosts)
             ? fresh.shopActiveBoosts
             : freshOwned.filter(id => SHOP_ITEMS.some(shopItem => shopItem.id === id && shopItem.type === 'boost'));
-          const nowOwned = item.free || freshOwned.includes(item.id);
+          const nowOwned = item.free || item.id === 'pet_cat' || freshOwnedSet.has(item.id);
 
           if (item.type === 'ball') {
             if (nowOwned) {
@@ -1924,10 +2232,26 @@
               };
             }
             if (freshCoins < item.price) return null;
-            const newOwned = [...freshOwned, item.id];
+            const newOwned = Array.from(new Set([...freshOwned, item.id]));
             return {
               values: { coins: freshCoins - item.price, shopOwned: newOwned, activeBall: item.id },
               settings: { activeBall: item.id, shopOwned: newOwned }
+            };
+          }
+
+          if (item.type === 'pet') {
+            const foxPatch = item.id === 'pet_fox' ? { companionEnabled: false, aggressiveMode: false, uiMischiefEnabled: false } : {};
+            if (nowOwned) {
+              return {
+                values: { activePet: item.id, ...foxPatch },
+                settings: { activePet: item.id, ...foxPatch }
+              };
+            }
+            if (freshCoins < item.price) return null;
+            const newOwned = Array.from(new Set([...freshOwned, item.id]));
+            return {
+              values: { coins: freshCoins - item.price, shopOwned: newOwned, activePet: item.id, ...foxPatch },
+              settings: { activePet: item.id, shopOwned: newOwned, ...foxPatch }
             };
           }
 
@@ -1943,7 +2267,7 @@
           }
 
           if (freshCoins < item.price) return null;
-          const newOwned = [...freshOwned, item.id];
+          const newOwned = Array.from(new Set([...freshOwned, item.id]));
           const newActive = Array.from(new Set([...freshActiveBoosts, item.id]));
           return {
             values: { coins: freshCoins - item.price, shopOwned: newOwned, shopActiveBoosts: newActive },
@@ -1954,11 +2278,17 @@
         if (!result) return;
         if (result.settings) {
           sendMessageToTabs({ action: 'updateSettings', settings: result.settings }).catch(() => {});
+          if (result.settings.activePet === 'pet_fox' || result.settings.companionEnabled === false) {
+            sendMessageToTabs({ action: 'stopCompanion' }).catch(() => {});
+          }
         }
 
         card.classList.add('just-bought');
         setTimeout(() => card.classList.remove('just-bought'), 500);
         await refreshShop();
+        if (item.type === 'pet') {
+          await refreshQuests().catch(() => {});
+        }
       });
     }
 
@@ -1991,15 +2321,16 @@
   }
 
   async function refreshShop() {
-    const data = await getLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, dailyStreak: 0, lastStreakDate: '', activeBall: 'ball_baseball' });
+    const data = await getLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, dailyStreak: 0, lastStreakDate: '', activeBall: 'ball_baseball', activePet: 'pet_cat' });
     const coins      = data.coins || 0;
-    const owned      = data.shopOwned || [];
+    const owned      = Array.from(new Set(Array.isArray(data.shopOwned) ? data.shopOwned : []));
     const activeBoosts = Array.isArray(data.shopActiveBoosts)
       ? data.shopActiveBoosts
       : owned.filter(id => SHOP_ITEMS.some(item => item.id === id && item.type === 'boost'));
     const streak     = data.dailyStreak || 0;
     const lastDate   = data.lastStreakDate || '';
     const activeBall = data.activeBall || 'ball_baseball';
+    const activePet  = data.activePet || 'pet_cat';
     const today      = getDateKey();
 
     const alreadyClaimed = lastDate === today;
@@ -2031,7 +2362,7 @@
 
       // Add items with a tiny staggered delay for premium feel
       pageBalls.forEach((item, idx) => {
-        const card = buildShopCard(item, coins, owned, activeBall, activeBoosts, shopBallsView);
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopBallsView);
         card.style.animationDelay = `${idx * 40}ms`;
       });
 
@@ -2063,11 +2394,20 @@
       }
     }
 
+    // --- Render Pets grid ---
+    if (shopPetsView) {
+      shopPetsView.replaceChildren();
+      SHOP_ITEMS.filter(i => i.type === 'pet').forEach((item, idx) => {
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopPetsView);
+        card.style.animationDelay = `${idx * 40}ms`;
+      });
+    }
+
     // --- Render Boosts grid ---
     if (shopBoostsView) {
       shopBoostsView.replaceChildren();
       SHOP_ITEMS.filter(i => i.type === 'boost').forEach((item, idx) => {
-        const card = buildShopCard(item, coins, owned, activeBall, activeBoosts, shopBoostsView);
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopBoostsView);
         card.style.animationDelay = `${idx * 40}ms`;
       });
     }
@@ -2104,7 +2444,7 @@
       const keys = Object.keys(changes);
       const affectsProgress = keys.some((key) => [
         'catXP', 'coins', 'dailyQuestState', 'dailyQuestStats',
-        'dailyStreak', 'lastStreakDate', 'shopOwned', 'shopActiveBoosts', 'activeBall'
+        'dailyStreak', 'lastStreakDate', 'shopOwned', 'shopActiveBoosts', 'activeBall', 'activePet'
       ].includes(key));
       if (affectsProgress) schedulePopupRefresh();
     });

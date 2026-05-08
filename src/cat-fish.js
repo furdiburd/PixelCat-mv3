@@ -56,6 +56,7 @@
         ctx.lastFishDragY = f.y;
         ctx.lastFishDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
+        if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('fishing');
         if (ctx.state !== 'dragged') ctx.go('chasefish');
       });
 
@@ -77,6 +78,7 @@
         ctx.lastFishDragY = f.y;
         ctx.lastFishDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
+        if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('fishing');
         if (ctx.state !== 'dragged') ctx.go('chasefish');
       }, { passive: false });
 

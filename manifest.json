@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "PixelCat",
-  "version": "2.5",
+  "version": "2.5.1",
   "description": "Adds a playful pixel cat companion to YouTube with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
   "permissions": [
     "storage",

@@ -9,7 +9,7 @@
   <div class="header header-space-between">
     <span>PixelCat</span>
     <div class="header-actions">
-      <span class="version">v2.5</span>
+      <span class="version">v2.5.1</span>
       <button class="info-button" id="infoToggle" type="button" title="Info" aria-label="Open info">
         <!-- info icon (default) -->
         <svg id="infoIconInfo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="3" stroke-linecap="round"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
@@ -187,7 +187,6 @@
             <span id="questPerfectDaysValue">Streak: 0</span>
           </div>
         </div>
-        <div class="quest-summary-line" id="questSummaryLine" style="display: none;"></div>
         <div class="quest-list" id="questList"></div>
       </div>
 
@@ -320,6 +319,7 @@
         <select id="languageSelect" class="lang-select">
           <option value="en">English</option>
           <option value="fr">Français</option>
+          <option value="it">Italiano</option>
           <option value="ar">العربية</option>
         </select>
       </div>
@@ -457,11 +457,17 @@
       <!-- Sub-tabs: Balls / Boosts -->
       <div class="sub-tab-row">
         <button class="sub-tab-btn active" data-shoptab="balls" type="button" data-i18n="balls">Balls</button>
+        <button class="sub-tab-btn" data-shoptab="pets" type="button" data-i18n="pets">Pets</button>
         <button class="sub-tab-btn" data-shoptab="boosts" type="button" data-i18n="boosts">Boosts</button>
       </div>
 
       <!-- Balls grid -->
       <div id="shopBallsView" class="shop-grid">
+        <!-- injected by popup.js -->
+      </div>
+
+      <!-- Pets grid -->
+      <div id="shopPetsView" class="shop-grid" style="display:none;">
         <!-- injected by popup.js -->
       </div>
 

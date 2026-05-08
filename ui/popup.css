@@ -618,6 +618,7 @@ body.rtl-ui {
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
+  object-position: left top;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
   transition: all 0.3s ease;
 }
@@ -1728,11 +1729,26 @@ body.info-panel-open .settings-panel[data-panel="info"] {
 
 /*  BALL SHOP ITEMS (uses real PNG)  */
 .shop-item-img {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
+}
+
+
+
+.shop-type-pet .shop-item-img {
+  width: 54px;
+  height: 54px;
+  margin: -2px 0 0;
+  object-fit: contain;
+  transform: none;
+  transform-origin: center center;
+}
+
+.shop-type-pet .shop-item-name {
+  margin-top: 2px;
 }
 
 .shop-item-sprite {
@@ -2585,4 +2601,17 @@ body.rtl-ui {
 [dir="rtl"] .inline-lock {
   margin-left: 0;
   margin-right: 2px;
+}
+
+
+.quest-empty-card {
+  width: 100%;
+  padding: 10px;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  color: #a1a1aa;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
 }
