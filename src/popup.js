@@ -1,6 +1,7 @@
 (function() {
   const API = typeof browser !== 'undefined' ? browser : chrome;
   const QuestEngine = globalThis.PixelCatQuests || null;
+  const FairPlay = globalThis.PixelCatFairPlay || null;
 
   const defaultSettings = {
     catEnabled: true,
@@ -11,7 +12,7 @@
     catSkin: 'white',
     uiMischiefEnabled: false,
     speechEnabled: false,
-    memoryEnabled: true,
+    memoryEnabled: false,
     rareEventsEnabled: true,
     autoFishSpawnEnabled: false,
     lowPowerMode: false,
@@ -58,7 +59,7 @@
       sleepy: 'Somnolent', active: 'Actif', autoSpawn: 'Invocation auto', aggressiveMode: 'Mode agressif',
       basic: 'Basique', advanced: 'Avancé', danger: 'Danger', speed: 'Vitesse',
       requiresLevel2: 'Niveau 2 requis', speechBubbles: 'Bulles de dialogue', smartMemory: 'Mémoire intelligente',
-      hideFullscreen: 'Masquer en plein écran', language: 'Langue', lowPowerMode: 'Mode économie d\'énergie',
+      hideFullscreen: 'Masquer plein écran', language: 'Langue', lowPowerMode: 'Mode éco',
       level5needed: 'Niveau 5 requis', pageMischief: 'Espièglerie de page', rareEvents: 'Événements rares',
       requiresLevel5: 'Niveau 5 requis', mischiefRate: 'Taux de bêtises',
       size: 'Taille', sizeWarning: 'Risque de bug',
@@ -124,6 +125,16 @@
       questPet: 'Pet the Cat', questFish: 'Give Fish', questWatch: 'Watch Together', questCoins: 'Collect Coins',
       questFetch: 'Play Fetch', questSpiders: 'Catch Spiders', questDoubleAffection: 'Double Affection',
       questFishFeast: 'Fish Feast', questLongSession: 'Long Session',
+      showToggleInfo: 'Show setting info', hideToggleInfo: 'Hide setting info',
+      infoCompanion: 'Adds a second cat when unlocked.',
+      infoLoyal: 'Makes the cat follow your cursor.',
+      infoAggressive: 'Makes reactions and spider fights bolder.',
+      infoSpeech: 'Lets the cat talk in speech bubbles.',
+      infoMemory: 'Remembers simple moments for better reactions.',
+      infoFullscreen: 'Hides PixelCat during fullscreen videos.',
+      infoLowPower: 'Less animation, smoother mode.',
+      infoMischief: 'Allows small playful page interactions.',
+      infoRareEvents: 'Enables occasional surprise events.',
       confirm: 'Confirm', cancel: 'Cancel', openInfo: 'Open info'
     },
     fr: {
@@ -168,6 +179,16 @@
       questPet: 'Caresser le chat', questFish: 'Donner du poisson', questWatch: 'Regarder ensemble', questCoins: 'Collecter des pièces',
       questFetch: 'Jouer à rapporter', questSpiders: 'Attraper des araignées', questDoubleAffection: 'Double affection',
       questFishFeast: 'Festin de poisson', questLongSession: 'Longue session',
+      showToggleInfo: 'Voir l’info', hideToggleInfo: 'Masquer l’info',
+      infoCompanion: 'Ajoute un deuxième chat une fois débloqué.',
+      infoLoyal: 'Le chat suit votre curseur.',
+      infoAggressive: 'Réactions et combats plus audacieux.',
+      infoSpeech: 'Active les bulles de dialogue du chat.',
+      infoMemory: 'Retient de petits moments pour mieux réagir.',
+      infoFullscreen: 'Cache PixelCat en plein écran.',
+      infoLowPower: 'Moins d’animations, plus fluide.',
+      infoMischief: 'Autorise de petites interactions avec la page.',
+      infoRareEvents: 'Active des surprises occasionnelles.',
       confirm: 'Confirmer', cancel: 'Annuler', openInfo: 'Ouvrir les infos'
     },
     ar: {
@@ -212,6 +233,16 @@
       questPet: 'داعب القط', questFish: 'قدّم السمك', questWatch: 'شاهدوا معاً', questCoins: 'اجمع العملات',
       questFetch: 'العب جلب الكرة', questSpiders: 'اصطد العناكب', questDoubleAffection: 'عاطفة مضاعفة',
       questFishFeast: 'وليمة سمك', questLongSession: 'جلسة طويلة',
+      showToggleInfo: 'إظهار المعلومات', hideToggleInfo: 'إخفاء المعلومات',
+      infoCompanion: 'يضيف قطاً ثانياً بعد فتحه.',
+      infoLoyal: 'يجعل القط يتبع المؤشر.',
+      infoAggressive: 'يجعل ردود الفعل أقوى.',
+      infoSpeech: 'يفعّل فقاعات كلام القط.',
+      infoMemory: 'يتذكر لحظات بسيطة لتحسين التفاعل.',
+      infoFullscreen: 'يخفي PixelCat في وضع ملء الشاشة.',
+      infoLowPower: 'حركات أقل، أداء أفضل.',
+      infoMischief: 'يسمح بتفاعلات صغيرة مع الصفحة.',
+      infoRareEvents: 'يفعّل مفاجآت نادرة أحياناً.',
       confirm: 'تأكيد', cancel: 'إلغاء', openInfo: 'فتح المعلومات'
     }
   };
@@ -268,19 +299,20 @@
   ];
 
   //  LEVEL / XP MILESTONE DEFINITIONS  (10-level system)
-  // Per-level XP to earn: 10, 20, 30, 40, 50, 60, 70, 80, 100
-  // Cumulative totals:     0, 10, 30, 60,100,150,210,280,360,460
-  const MAX_LEVEL_XP = 460;
+  // Per-level XP to earn: 10, 15, 20, 25, 30, 35, 40, 45, 50
+  // Cumulative totals:     0, 10, 25, 45, 70, 100, 135, 175, 220, 270
+  const MAX_LEVEL_XP = 270;
   const MILESTONES = {
     speech:          { xp: 10,  level: 2,  label: 'Level 2'  },
     ball:            { xp: 10,  level: 2,  label: 'Level 2'  },
-    spider:          { xp: 30,  level: 3,  label: 'Level 3'  },
-    size:            { xp: 60,  level: 4,  label: 'Level 4'  },
-    companion:       { xp: 100, level: 5,  label: 'Level 5'  },
-    uiMischief:      { xp: 150, level: 6,  label: 'Level 6'  },
-    mischiefRate:    { xp: 150, level: 6,  label: 'Level 6'  },
-    portal:          { xp: 210, level: 7,  label: 'Level 7'  },
-    hyper:           { xp: 280, level: 8,  label: 'Level 8'  },
+    spider:          { xp: 25,  level: 3,  label: 'Level 3'  },
+    rainbowSkin:     { xp: 25,  level: 3,  label: 'Level 3'  },
+    size:            { xp: 45,  level: 4,  label: 'Level 4'  },
+    companion:       { xp: 70,  level: 5,  label: 'Level 5'  },
+    uiMischief:      { xp: 100, level: 6,  label: 'Level 6'  },
+    mischiefRate:    { xp: 100, level: 6,  label: 'Level 6'  },
+    portal:          { xp: 135, level: 7,  label: 'Level 7'  },
+    hyper:           { xp: 175, level: 8,  label: 'Level 8'  },
   };
 
   const toggle = document.getElementById('toggle');
@@ -370,6 +402,20 @@
   let latestDailyStreak = 0;
   let latestAchievementStats = {};
 
+  const TOGGLE_INFO_ITEMS = [
+    { toggleId: 'companionToggle', key: 'infoCompanion' },
+    { toggleId: 'loyalToggle', key: 'infoLoyal' },
+    { toggleId: 'aggroToggle', key: 'infoAggressive' },
+    { toggleId: 'speechToggle', key: 'infoSpeech' },
+    { toggleId: 'memoryToggle', key: 'infoMemory' },
+    { toggleId: 'hideInFullscreenToggle', key: 'infoFullscreen' },
+    { toggleId: 'lowPowerToggle', key: 'infoLowPower' },
+    { toggleId: 'uiMischiefToggle', key: 'infoMischief' },
+    { toggleId: 'rareEventsToggle', key: 'infoRareEvents' }
+  ];
+
+  setupToggleInfoButtons();
+
   // Apply saved language immediately so the UI doesn't flash English first
   getLocal({ uiLanguage: 'en' }).then(result => {
     applyTranslations(result.uiLanguage || 'en');
@@ -388,6 +434,9 @@
   }
 
   function getLocal(keys) {
+    if (FairPlay && typeof FairPlay.hasProtectedKey === 'function' && FairPlay.hasProtectedKey(keys)) {
+      return FairPlay.ensure(API.storage.local, keys);
+    }
     if (typeof API.storage.local.get === 'function' && API.storage.local.get.length <= 1) {
       return API.storage.local.get(keys);
     }
@@ -395,10 +444,23 @@
   }
 
   function setLocal(data) {
+    if (FairPlay && typeof FairPlay.hasProtectedKey === 'function' && FairPlay.hasProtectedKey(data)) {
+      return FairPlay.commit(API.storage.local, data);
+    }
     if (typeof API.storage.local.set === 'function' && API.storage.local.set.length <= 1) {
       return API.storage.local.set(data);
     }
     return new Promise((resolve) => API.storage.local.set(data, resolve));
+  }
+
+  function getQuestStorageArea() {
+    if (!FairPlay || typeof FairPlay.ensure !== 'function' || typeof FairPlay.commit !== 'function') {
+      return API.storage.local;
+    }
+    return {
+      get: (defaults) => FairPlay.ensure(API.storage.local, defaults),
+      set: (values) => FairPlay.commit(API.storage.local, values)
+    };
   }
 
   function removeLocal(keys) {
@@ -494,6 +556,134 @@
     if (infotab === 'stats') refreshStats().catch(() => {});
   }
 
+  const toggleInfoAutoHideTimers = new Map();
+
+  function syncToggleInfoState(button, panel, isOpen) {
+    if (!button || !panel) return;
+    panel.hidden = !isOpen;
+    button.classList.toggle('active', isOpen);
+    button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    const titleKey = isOpen ? 'hideToggleInfo' : 'showToggleInfo';
+    button.title = t(titleKey);
+    button.setAttribute('aria-label', t(titleKey));
+    const ownerRow = panel._ownerRow || null;
+    if (ownerRow) ownerRow.classList.toggle('info-open', isOpen);
+  }
+
+  function clearToggleInfoTimer(button) {
+    const existing = toggleInfoAutoHideTimers.get(button);
+    if (existing) {
+      clearTimeout(existing);
+      toggleInfoAutoHideTimers.delete(button);
+    }
+  }
+
+  function scheduleToggleInfoAutoHide(button, panel) {
+    clearToggleInfoTimer(button);
+    const timer = setTimeout(() => {
+      syncToggleInfoState(button, panel, false);
+      toggleInfoAutoHideTimers.delete(button);
+    }, 3000);
+    toggleInfoAutoHideTimers.set(button, timer);
+  }
+
+  function closeOtherToggleInfo(activeButton, activePanel) {
+    document.querySelectorAll('.toggle-info-panel').forEach((panel) => {
+      const button = document.querySelector(`.toggle-info-btn[data-info-for="${panel.dataset.infoPanelFor}"]`);
+      if (panel !== activePanel) {
+        if (button) clearToggleInfoTimer(button);
+        syncToggleInfoState(button, panel, false);
+      }
+    });
+    document.querySelectorAll('.toggle-info-btn').forEach((button) => {
+      if (button !== activeButton && !toggleInfoAutoHideTimers.has(button)) {
+        button.title = t('showToggleInfo');
+        button.setAttribute('aria-label', t('showToggleInfo'));
+      }
+    });
+  }
+
+  function setupToggleInfoButtons() {
+    TOGGLE_INFO_ITEMS.forEach(({ toggleId, key }) => {
+      const input = document.getElementById(toggleId);
+      const switchEl = input ? input.closest('.switch') : null;
+      const row = input ? input.closest('.control-row') : null;
+      const label = row ? row.querySelector('.control-label') : null;
+      if (!input || !switchEl || !row || !label) return;
+      if (label.querySelector('.control-desc:not(.toggle-info-line)')) return;
+      if (document.querySelector(`[data-info-for="${toggleId}"]`)) return;
+
+      const parentContainer = row.parentElement;
+      const insideCard = !!(parentContainer && (parentContainer.classList.contains('locked-card') || parentContainer.classList.contains('warning-card')));
+      let infoGroup = null;
+      if (!insideCard) {
+        infoGroup = row.closest('.toggle-info-group');
+        if (!infoGroup) {
+          infoGroup = document.createElement('div');
+          infoGroup.className = 'toggle-info-group';
+          parentContainer.insertBefore(infoGroup, row);
+          infoGroup.appendChild(row);
+        }
+      }
+
+      const infoPanel = document.createElement('div');
+      infoPanel.className = 'toggle-info-panel';
+      infoPanel.dataset.infoPanelFor = toggleId;
+      infoPanel.hidden = true;
+      infoPanel._ownerRow = row;
+
+      const infoText = document.createElement('span');
+      infoText.className = 'toggle-info-panel-text';
+      infoText.dataset.i18n = key;
+      infoText.textContent = t(key);
+      infoPanel.appendChild(infoText);
+
+      const infoButton = document.createElement('button');
+      infoButton.type = 'button';
+      infoButton.className = 'toggle-info-btn';
+      infoButton.dataset.infoFor = toggleId;
+      infoButton.dataset.infoKey = key;
+      infoButton.textContent = '?';
+      infoButton.title = t('showToggleInfo');
+      infoButton.setAttribute('aria-label', t('showToggleInfo'));
+      infoButton.setAttribute('aria-expanded', 'false');
+      infoButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const shouldOpen = infoPanel.hidden;
+        closeOtherToggleInfo(infoButton, infoPanel);
+        syncToggleInfoState(infoButton, infoPanel, shouldOpen);
+        if (shouldOpen) {
+          scheduleToggleInfoAutoHide(infoButton, infoPanel);
+        } else {
+          clearToggleInfoTimer(infoButton);
+        }
+      });
+
+      row.insertBefore(infoButton, switchEl);
+      if (insideCard) {
+        row.parentNode.insertBefore(infoPanel, row.nextSibling);
+      } else if (infoGroup) {
+        infoGroup.appendChild(infoPanel);
+      }
+    });
+
+    refreshToggleInfoText();
+  }
+
+  function refreshToggleInfoText() {
+    document.querySelectorAll('.toggle-info-panel-text').forEach((line) => {
+      const key = line.dataset.i18n;
+      if (key) line.textContent = t(key);
+    });
+    document.querySelectorAll('.toggle-info-btn').forEach((button) => {
+      const isOpen = button.getAttribute('aria-expanded') === 'true';
+      const titleKey = isOpen ? 'hideToggleInfo' : 'showToggleInfo';
+      button.title = t(titleKey);
+      button.setAttribute('aria-label', t(titleKey));
+    });
+  }
+
   const STATIC_TEXT_TARGETS = [
     ['[data-infotab="about"]', 'about'],
     ['[data-infotab="stats"]', 'stats'],
@@ -549,7 +739,10 @@
       const el = document.querySelector(selector);
       if (!el) return;
       if (selector === '.popup-footer') {
-        el.innerHTML = `${t(key)} <span>IMAD</span>`;
+        el.textContent = t(key) + ' ';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = 'IMAD';
+        el.appendChild(nameSpan);
       } else {
         el.textContent = t(key);
       }
@@ -630,6 +823,8 @@
       el.title = t(key);
       el.setAttribute('aria-label', t(key));
     });
+
+    refreshToggleInfoText();
   }
 
   function setActiveTab(tabName) {
@@ -704,14 +899,14 @@
 
   function getLevelFromXP(value) {
     const xp = Math.min(MAX_LEVEL_XP, Math.max(0, Number(value) || 0));
-    if (xp >= 460) return 10;
-    if (xp >= 360) return 9;
-    if (xp >= 280) return 8;
-    if (xp >= 210) return 7;
-    if (xp >= 150) return 6;
-    if (xp >= 100) return 5;
-    if (xp >= 60)  return 4;
-    if (xp >= 30)  return 3;
+    if (xp >= 270) return 10;
+    if (xp >= 220) return 9;
+    if (xp >= 175) return 8;
+    if (xp >= 135) return 7;
+    if (xp >= 100) return 6;
+    if (xp >= 70)  return 5;
+    if (xp >= 45)  return 4;
+    if (xp >= 25)  return 3;
     if (xp >= 10)  return 2;
     return 1;
   }
@@ -720,12 +915,12 @@
     const totalXP = Math.min(MAX_LEVEL_XP, Math.max(0, Number(value) || 0));
     const level = getLevelFromXP(totalXP);
     const levelStarts = {
-      1: 0,    2: 10,   3: 30,   4: 60,   5: 100,
-      6: 150,  7: 210,  8: 280,  9: 360,  10: 460
+      1: 0,    2: 10,   3: 25,   4: 45,   5: 70,
+      6: 100,  7: 135,  8: 175,  9: 220,  10: 270
     };
     const levelEnds = {
-      1: 10,   2: 30,   3: 60,   4: 100,  5: 150,
-      6: 210,  7: 280,  8: 360,  9: 460,  10: 460
+      1: 10,   2: 25,   3: 45,   4: 70,   5: 100,
+      6: 135,  7: 175,  8: 220,  9: 270,  10: 270
     };
     const start = levelStarts[level] || 0;
     const end = levelEnds[level] || MAX_LEVEL_XP;
@@ -750,6 +945,7 @@
     if (xp < MILESTONES.speech.xp && data.speechEnabled) patch.speechEnabled = false;
     if (xp < MILESTONES.ball.xp && data.ballEnabled) patch.ballEnabled = false;
     if (xp < MILESTONES.spider.xp && data.spiderEnabled) patch.spiderEnabled = false;
+    if (xp < MILESTONES.rainbowSkin.xp && data.catSkin === 'rainbow') patch.catSkin = 'white';
     if (xp < MILESTONES.size.xp && Number(data.sizeMultiplier) !== 1.0) patch.sizeMultiplier = 1.0;
     if (xp < MILESTONES.companion.xp && data.companionEnabled) patch.companionEnabled = false;
     if (xp < MILESTONES.uiMischief.xp && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
@@ -861,7 +1057,7 @@
       return;
     }
 
-    const snapshot = await QuestEngine.getSnapshot(API.storage.local);
+    const snapshot = await QuestEngine.getSnapshot(getQuestStorageArea());
     renderQuestPanel(snapshot);
   }
 
@@ -904,21 +1100,21 @@
 
     if (pct < 10) {
       xpHint.textContent = t('unlockSpeechBall');
-    } else if (pct < 30) {
+    } else if (pct < 25) {
       xpHint.textContent = t('unlockSpiders');
-    } else if (pct < 60) {
+    } else if (pct < 45) {
       xpHint.textContent = t('unlockSize');
-    } else if (pct < 100) {
+    } else if (pct < 70) {
       xpHint.textContent = t('unlockCompanion');
-    } else if (pct < 150) {
+    } else if (pct < 100) {
       xpHint.textContent = t('unlockMischief');
-    } else if (pct < 210) {
+    } else if (pct < 135) {
       xpHint.textContent = t('unlockPortals');
-    } else if (pct < 280) {
+    } else if (pct < 175) {
       xpHint.textContent = t('unlockHyper');
-    } else if (pct < 360) {
+    } else if (pct < 220) {
       xpHint.textContent = t('level9Hint');
-    } else if (pct < 460) {
+    } else if (pct < 270) {
       xpHint.textContent = t('level10Hint');
     } else {
       xpHint.textContent = t('maxLevel');
@@ -935,7 +1131,13 @@
       } else {
         textSpan.textContent = t('requires', { level: formatLevelRequirement(milestone) });
         bannerEl.classList.remove('unlocked');
-        iconSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>'; // Lock
+        iconSvg.innerHTML = '';
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '3'); rect.setAttribute('y', '11'); rect.setAttribute('width', '18'); rect.setAttribute('height', '11'); rect.setAttribute('rx', '2'); rect.setAttribute('ry', '2');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M7 11V7a5 5 0 0 1 10 0v4');
+        iconSvg.appendChild(rect);
+        iconSvg.appendChild(path); // Lock
       }
     }
 
@@ -1080,7 +1282,26 @@
       node.classList.toggle('unlocked', unlocked);
     });
 
+    const currentSkinBox = document.querySelector('.color-box.active');
+    const currentSkin = currentSkinBox ? currentSkinBox.dataset.skin : 'white';
+    updateSkinSwatches(currentSkin);
+
     prevXP = pct;
+  }
+
+
+  function updateSkinSwatches(activeSkin) {
+    const rainbowUnlocked = isMilestoneUnlocked('rainbowSkin');
+    document.querySelectorAll('.color-box').forEach((box) => {
+      const skin = box.dataset.skin;
+      const locked = skin === 'rainbow' && !rainbowUnlocked;
+      box.classList.toggle('skin-locked', locked);
+      box.classList.toggle('active', skin === activeSkin && !locked);
+      box.setAttribute('aria-disabled', String(locked));
+      if (skin === 'rainbow') {
+        box.title = rainbowUnlocked ? 'Rainbow' : 'Rainbow - Level 3';
+      }
+    });
   }
 
   async function refresh() {
@@ -1129,13 +1350,9 @@
       btn.classList.toggle('active', btn.dataset.energy === data.catEnergyLevel);
     });
 
-    document.querySelectorAll('.color-box').forEach((box) => {
-      if (box.dataset.skin === data.catSkin) box.classList.add('active');
-      else box.classList.remove('active');
-    });
-
     // Apply level / XP UI
     applyXpUI(data.catXP || 0, false);
+    updateSkinSwatches(data.catSkin);
     await refreshQuests();
     await refreshStats();
   }
@@ -1321,10 +1538,16 @@
   });
 
   document.querySelectorAll('.color-box').forEach(box => {
-    box.addEventListener('click', async (e) => {
-      document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      const skin = e.target.dataset.skin;
+    box.addEventListener('click', async () => {
+      const skin = box.dataset.skin;
+      if (skin === 'rainbow' && !isMilestoneUnlocked('rainbowSkin')) {
+        box.classList.remove('lock-shake');
+        void box.offsetWidth;
+        box.classList.add('lock-shake');
+        setTimeout(() => box.classList.remove('lock-shake'), 260);
+        return;
+      }
+      updateSkinSwatches(skin);
       await setLocal({ catSkin: skin });
       await sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: skin } });
     });
@@ -1549,7 +1772,17 @@
   if (API.storage.onChanged) {
     API.storage.onChanged.addListener((changes) => {
       if (changes.catXP) {
-        applyXpUI(changes.catXP.newValue || 0, true);
+        const nextXP = Math.min(MAX_LEVEL_XP, Math.max(0, Number(changes.catXP.newValue) || 0));
+        applyXpUI(nextXP, true);
+        if (nextXP < MILESTONES.rainbowSkin.xp) {
+          getLocal({ catSkin: 'white' }).then((data) => {
+            if (data.catSkin === 'rainbow') {
+              setLocal({ catSkin: 'white' });
+              sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: 'white' } });
+              updateSkinSwatches('white');
+            }
+          }).catch(() => {});
+        }
       }
       if (changes.coins && coinCount) {
         const newVal = changes.coins.newValue || 0;
@@ -1852,12 +2085,28 @@
     });
   });
 
-  // Sync when storage changes
+  // Sync popup UI when content scripts update progress, quests, or stats.
   if (API.storage && API.storage.onChanged) {
-    API.storage.onChanged.addListener((changes) => {
-      if (changes.coins || changes.shopOwned || changes.shopActiveBoosts || changes.dailyStreak || changes.lastStreakDate) {
+    let refreshScheduled = false;
+    const schedulePopupRefresh = () => {
+      if (refreshScheduled) return;
+      refreshScheduled = true;
+      setTimeout(() => {
+        refreshScheduled = false;
+        refresh().catch(() => {});
         refreshShop().catch(() => {});
-      }
+      }, 80);
+    };
+
+    API.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName && areaName !== 'local') return;
+      if (!changes) return;
+      const keys = Object.keys(changes);
+      const affectsProgress = keys.some((key) => [
+        'catXP', 'coins', 'dailyQuestState', 'dailyQuestStats',
+        'dailyStreak', 'lastStreakDate', 'shopOwned', 'shopActiveBoosts', 'activeBall'
+      ].includes(key));
+      if (affectsProgress) schedulePopupRefresh();
     });
   }
 

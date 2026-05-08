@@ -3,6 +3,7 @@
 
   global.PixelCatCoins = function(ctx) {
     let coinDropTimer = 20 + Math.random() * 20;
+    let coinTimerPausedForObject = false;
     const activeCoinDrops = [];
     const activeCoinPopups = new Set();
 
@@ -23,6 +24,10 @@
         return 35 + Math.random() * 45;
       }
       return 60 + Math.random() * 60;
+    }
+
+    function isVideoPlayingForCoinDrops() {
+      return typeof ctx.isVideoPlaying === 'function' ? ctx.isVideoPlaying() : true;
     }
 
     function getPetCoinReward() {
@@ -109,6 +114,7 @@
     }
 
     function spawnCoinDrop() {
+      if (!isVideoPlayingForCoinDrops()) return false;
       if (activeCoinDrops.length >= 1) return false;
       if (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup()) return false;
       if (typeof ctx.claimActivePickup === 'function' && !ctx.claimActivePickup('coin')) return false;
@@ -195,12 +201,27 @@
     }
 
     function updateCoinDrops(dt) {
-      coinDropTimer -= dt;
-      if (coinDropTimer <= 0 && ctx.catEnabled && !ctx.isCompanion) {
-        if (spawnCoinDrop()) {
+      const canSpawnCoinNow = ctx.catEnabled && !ctx.isCompanion && isVideoPlayingForCoinDrops();
+
+      // Coins are a watch-time reward: pause the drop timer while the YouTube
+      // video is paused, ended, buffering, hidden, or not available. Existing
+      // coins keep animating, but no new coin appears until playback resumes.
+      const coinSpawnBlocked = activeCoinDrops.length > 0 || (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup());
+      if (coinSpawnBlocked) {
+        coinTimerPausedForObject = true;
+      } else if (canSpawnCoinNow) {
+        if (coinTimerPausedForObject) {
           coinDropTimer = nextCoinDropDelay();
-        } else {
-          coinDropTimer = 3 + Math.random() * 5;
+          coinTimerPausedForObject = false;
+        }
+        coinDropTimer -= dt;
+        if (coinDropTimer <= 0) {
+          if (spawnCoinDrop()) {
+            coinDropTimer = nextCoinDropDelay();
+            coinTimerPausedForObject = true;
+          } else {
+            coinDropTimer = nextCoinDropDelay();
+          }
         }
       }
 
@@ -237,15 +258,31 @@
         }
 
         c.lifetime -= dt;
-        c.el.style.setProperty('--coin-row', `-${c.row * 16 * size}px`);
-        c.el.style.transform = `translate3d(${Math.round(c.x)}px, ${Math.round(c.y)}px, 0)`;
+        const coinRow = `-${c.row * 16 * size}px`;
+        if (c.cachedRow !== coinRow) {
+          c.cachedRow = coinRow;
+          c.el.style.setProperty('--coin-row', coinRow);
+        }
+        const coinTransform = `translate3d(${Math.round(c.x)}px, ${Math.round(c.y)}px, 0)`;
+        if (c.cachedTransform !== coinTransform) {
+          c.cachedTransform = coinTransform;
+          c.el.style.transform = coinTransform;
+        }
 
         if (c.shadow) {
           const distToGround = Math.max(0, floorY - c.y);
           const shadowScale = Math.max(0.2, 1 - (distToGround / 200));
           const shadowAlpha = Math.max(0, 0.3 * shadowScale);
-          c.shadow.style.background = `rgba(0,0,0,${shadowAlpha})`;
-          c.shadow.style.transform = `translate3d(${Math.round(c.x + 2)}px, ${Math.round(floorY + 14)}px, 0) scale(${shadowScale})`;
+          const shadowBackground = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
+          const shadowTransform = `translate3d(${Math.round(c.x + 2)}px, ${Math.round(floorY + 14)}px, 0) scale(${shadowScale.toFixed(3)})`;
+          if (c.cachedShadowBackground !== shadowBackground) {
+            c.cachedShadowBackground = shadowBackground;
+            c.shadow.style.background = shadowBackground;
+          }
+          if (c.cachedShadowTransform !== shadowTransform) {
+            c.cachedShadowTransform = shadowTransform;
+            c.shadow.style.transform = shadowTransform;
+          }
         }
 
         const distX = Math.abs(ctx.feetX - (c.x + 8));

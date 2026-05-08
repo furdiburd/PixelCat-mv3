@@ -7,6 +7,11 @@
       `url("${ctx.u('assets/fishes/fish2.png')}")`,
       `url("${ctx.u('assets/fishes/fish3.png')}")`
     ];
+    let fishTimerPausedForObject = false;
+
+    function nextFishSpawnDelay() {
+      return 45 + Math.random() * 120 + (Math.random() < 0.2 ? 60 : 0);
+    }
 
     function spawnFishTreat(customX, customY) {
       if (ctx.activeFishes.length >= 1) return false;
@@ -99,13 +104,27 @@
         return;
       }
 
-      ctx.fishSpawnTimer -= dt;
-      if (ctx.autoFishSpawnEnabled && ctx.fishSpawnTimer <= 0) {
-        if (spawnFishTreat()) {
-          ctx.fishSpawnTimer = 45 + Math.random() * 120 + (Math.random() < 0.2 ? 60 : 0);
+      const spawnBlocked = ctx.activeFishes.length > 0 || (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup());
+      if (ctx.autoFishSpawnEnabled) {
+        if (spawnBlocked) {
+          fishTimerPausedForObject = true;
         } else {
-          ctx.fishSpawnTimer = 3 + Math.random() * 5;
+          if (fishTimerPausedForObject) {
+            ctx.fishSpawnTimer = nextFishSpawnDelay();
+            fishTimerPausedForObject = false;
+          }
+          ctx.fishSpawnTimer -= dt;
+          if (ctx.fishSpawnTimer <= 0) {
+            if (spawnFishTreat()) {
+              ctx.fishSpawnTimer = nextFishSpawnDelay();
+              fishTimerPausedForObject = true;
+            } else {
+              ctx.fishSpawnTimer = nextFishSpawnDelay();
+            }
+          }
         }
+      } else {
+        fishTimerPausedForObject = false;
       }
 
       const floorY = ctx.vh;

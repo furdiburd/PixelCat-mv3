@@ -49,30 +49,30 @@
       targets: [2, 4, 6],
       description: (t) => `Cat catches ${t} ball${t === 1 ? '' : 's'}.`
     },
-    //  Unlocked at XP 30 (spider) 
+    //  Unlocked at XP 25 (spider) 
     {
       type: 'spiders_caught',
       icon: 'shield',
       title: 'Catch Spiders',
-      minXP: 30,
+      minXP: 25,
       targets: [1, 2, 3],
       description: (t) => `Catch ${t} spider${t === 1 ? '' : 's'}.`
     },
-    //  Unlocked at XP 100 (companion) 
+    //  Unlocked at XP 70 (companion) 
     {
       type: 'pet_sessions',
       icon: 'care',
       title: 'Double Affection',
-      minXP: 100,
+      minXP: 70,
       targets: [4, 5],
       description: (t) => `Complete ${t} pet sessions in one day.`
     },
-    //  Unlocked at XP 150 (mischief/fish) 
+    //  Unlocked at XP 100 (mischief/fish) 
     {
       type: 'fish_served',
       icon: 'treat',
       title: 'Fish Feast',
-      minXP: 150,
+      minXP: 100,
       targets: [4, 5],
       description: (t) => `Feed ${t} fish treats in one day.`
     },
@@ -80,7 +80,7 @@
       type: 'watch_seconds',
       icon: 'playback',
       title: 'Long Session',
-      minXP: 150,
+      minXP: 100,
       targets: [300, 600],
       description: (t) => `Stay active for ${formatDuration(t)}.`
     },

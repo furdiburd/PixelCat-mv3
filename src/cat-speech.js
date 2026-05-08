@@ -41,14 +41,14 @@ window.PixelCatSpeech = function(config) {
   // 
   
   const SPEECH_CONFIG = {
-    IDLE_DELAY_MIN: 30000,        // 30 seconds
-    IDLE_DELAY_MAX: 60000,        // 60 seconds  
-    INTERACTIVE_DELAY: 14000,     // 14 seconds
-    INTERACTIVE_VARIANCE: 12000,  // 12 seconds
-    COOLDOWN_INTERACTIVE: 6500,   // 6.5 seconds
-    COOLDOWN_NORMAL: 3500,        // 3.5 seconds
-    RETRY_DELAY_MIN: 5000,        // 5 seconds
-    RETRY_DELAY_MAX: 6000         // 6 seconds
+    IDLE_DELAY_MIN: 30000,        // idle chatter: 30 seconds
+    IDLE_DELAY_MAX: 60000,        // up to 60 seconds
+    INTERACTIVE_DELAY: 9000,      // shorter visible time for voting bubbles
+    INTERACTIVE_VARIANCE: 18000,  // long random gap after interaction
+    COOLDOWN_INTERACTIVE: 18000,  // prevent repeated interactive prompts
+    COOLDOWN_NORMAL: 11000,       // prevent rapid speech replacement
+    RETRY_DELAY_MIN: 12000,       // retry gently when not in a good state
+    RETRY_DELAY_MAX: 16000        // avoid spam while moving/dragging
   };
   
   const POSITIONING = {
@@ -60,7 +60,7 @@ window.PixelCatSpeech = function(config) {
   };
   
   const AFK_CONFIG = {
-    WALL_SPEAK_COOLDOWN: 2500 // 2.5 seconds between wall speeches
+    WALL_SPEAK_COOLDOWN: 9000 // keep wall/confused reactions rare
   };
 
   const MEMORY_KEY = 'pixelCatSpeechMemoryV1';
@@ -206,6 +206,25 @@ window.PixelCatSpeech = function(config) {
       'Tiny bribe accepted.', 'You like me, right?', 'Choose wisely, human.', 'Petition approved?',
       'Pay attention, nerd.', 'I require votes.', 'Love the loaf?', 'Be useful briefly.'
     ],
+    cursorSuspicious: [
+      'Cursor looks guilty.', 'Your mouse is sus.', 'I saw that cursor.', 'That pointer plots.',
+      'Suspicious cursor behavior.', 'Mouse court is open.', 'Why so close?', 'Personal space, cursor.',
+      'The cursor blinked.', 'Pointer smells weird.', 'Cursor tax unpaid.', 'I distrust that arrow.',
+      'Slowly back away.', 'Your mouse has secrets.', 'That arrow is haunted.', 'Cursor patrol activated.',
+      'Tiny warning issued.', 'I am watching you.', 'Do not sneak.', 'That was suspicious.'
+    ],
+    cursorThreat: [
+      'Hey, stop that.', 'Back off, pointer.', 'Too close, human.', 'No cursor boops.',
+      'Hands off pixels.', 'Respect my paws.', 'That is my face.', 'Stop chasing me.',
+      'I saw you coming.', 'Personal bubble breached.', 'No touchy, arrow.', 'You absolute gremlin.',
+      'Cursor crimes detected.', 'Approach denied.', 'Try manners first.', 'I will run.'
+    ],
+    cursorPanic: [
+      'Fast as #$@!, boy.', 'Nope nope nope.', 'Run mode online.', 'Too close, nerd.',
+      'Emergency zoomies!', 'Absolutely not today.', 'You missed, human.', 'Catch me maybe.',
+      'Tiny panic sprint.', 'I choose speed.', 'No paws caught.', 'You cannot boop.',
+      'Zooming like #$@!.', 'Pointer jumpscare!', 'I reject contact.', 'Bye, weird hand.'
+    ],
     // Context-aware categories
     walking: [
       'Walking.', 'Strolling.', 'On patrol.', 'Exploring.', 'Wandering.',
@@ -269,6 +288,18 @@ window.PixelCatSpeech = function(config) {
       'This got weird.', 'What a plot.', 'I distrust him.', 'She knows too much.',
       'Thumbnail lied again.', 'This better pay off.', 'Drama smells good.', 'I am nosy.',
       '#$@!, plot twist.', 'That was bold.', 'Rewind that nonsense.', 'I need popcorn.'
+    ],
+    videoPlay: [
+      'Cinema resumed.', 'Plot unpaused.', 'Back to business.', 'Finally, movement.',
+      'I was watching.', 'Good, continue.', 'Screen woke up.', 'The lore returns.',
+      'Play button obeyed.', 'Focus mode maybe.', 'Popcorn paws ready.', 'Continue the chaos.',
+      'Now we judge.', 'Video has pulse.', 'Tiny critic ready.', 'Let it cook.'
+    ],
+    videoPause: [
+      'Who froze cinema?', 'Why pause there?', 'Plot got kidnapped.', 'The screen stopped.',
+      'Excuse me?', 'I was invested.', 'Rude pause timing.', 'Suspense tax due.',
+      'Did YouTube blink?', 'Human, explain.', 'The lore is frozen.', 'Buffering my emotions.',
+      'Pause crimes detected.', 'Continue, coward.', 'My popcorn waits.', 'That was dramatic.'
     ],
     mischief: [
       'Hehe...', 'Mischief!', 'Chaos time!', 'Trouble!', 'Oops!',
@@ -544,6 +575,157 @@ window.PixelCatSpeech = function(config) {
     ]
   };
 
+
+  // Extra short context-aware lines added for more variety.
+  const EXTRA_SPEECH_PACK = {
+    random: [
+      'Cursor looks cursed.', 'Tab goblin reporting.', 'I smell nonsense.', 'Tiny vibe audit.', 'Page feels crunchy.',
+      'Who clicked weird?', 'Mouse patrol active.', 'I know things.', 'Screen gremlin awake.', 'Small chaos supervisor.'
+    ],
+    interactive: [
+      'Try petting me.', 'Say meow back.', 'Click with respect.', 'Attention rent due.', 'Small compliment accepted.',
+      'Interact nicely, human.', 'Pet license ready.', 'Boop request pending.', 'Choose affection today.', 'I require applause.'
+    ],
+    cursorSuspicious: [
+      'Cursor moved funny.', 'That mouse is plotting.', 'Arrow acting guilty.', 'Pointer has motives.', 'Why the slow creep?',
+      'Cursor is stalking.', 'Mouse vibe: illegal.', 'Do not hover weird.', 'That arrow judged me.', 'Pointer entering danger zone.'
+    ],
+    cursorThreat: [
+      'Do not chase.', 'Hey, too close.', 'Arrow, behave yourself.', 'Stop the creep.', 'My fur says no.',
+      'Back up slowly.', 'No boop raid.', 'Threat level cursor.', 'Respect the whiskers.', 'You startled royalty.'
+    ],
+    cursorPanic: [
+      'Zoomies save me.', 'Abort boop mission.', 'Run, tiny legs.', 'Mouse jumpscare detected.', 'I am gone.',
+      'Too fast, psycho.', 'Emergency tail mode.', 'Nope train leaving.', 'You saw nothing.', 'Speed over dignity.'
+    ],
+    videoPlay: [
+      'The show lives.', 'Good, more chaos.', 'Plot machine resumed.', 'Screen drama back.', 'Finally, motion soup.',
+      'Continue the lore.', 'Unpause accepted.', 'Story engine on.', 'My critique resumes.', 'Okay, I am listening.'
+    ],
+    videoPause: [
+      'Why stop now?', 'Bad pause timing.', 'You froze my drama.', 'Story jail again.', 'Unpause the nonsense.',
+      'I was judging.', 'That cliffhanger hurts.', 'Do not freeze lore.', 'My attention crashed.', 'Pause button suspicious.'
+    ],
+    watching: [
+      'This needs snacks.', 'I am locked in.', 'Thumbnail court begins.', 'Interesting human ritual.', 'This smells scripted.',
+      'The drama thickens.', 'I have concerns.', 'Plot paws active.', 'Video goblin hours.', 'I am taking notes.'
+    ],
+    content: [
+      'Rabbit hole detected.', 'Your brain is snacking.', 'This tab has lore.', 'Knowledge smells dusty.', 'Curiosity got you.',
+      'Another weird lesson.', 'Screen pilgrimage begins.', 'This seems important-ish.', 'Focus goblin spotted.', 'YouTube chose violence.'
+    ],
+    memory: [
+      'I remember this vibe.', 'Same rabbit hole?', 'Comfort content again.', 'Old obsession returned.', 'History has receipts.',
+      'Pattern paws tingling.', 'Your habits are loud.', 'We have been here.', 'This feels very you.', 'Memory whiskers twitching.'
+    ],
+    newTopic: [
+      'New lore unlocked.', 'Fresh obsession smell.', 'Different chaos today.', 'New rabbit hole?', 'Topic switch detected.',
+      'Unexpected screen flavor.', 'New arc starting.', 'Brain took detour.', 'Fresh curiosity trail.', 'Different tab energy.'
+    ],
+    favoriteTopic: [
+      '{topic} again? classic.', 'More {topic} fuel.', '{topic} has you.', 'The {topic} arc continues.', '{topic} owns today.',
+      'Back to {topic}, huh?', 'Strong {topic} addiction.', '{topic} keeps winning.', 'Your {topic} era returns.', '{topic} comfort zone.'
+    ],
+    channelMemory: [
+      'This creator again.', 'Familiar upload smell.', 'Back to your dealer.', 'They got you hooked.', 'Known channel aura.',
+      'Regular customer detected.', 'Same channel cave.', 'Creator trap worked.', 'We know this place.', 'The channel returns.'
+    ],
+    happy: [
+      'Whiskers feel shiny.', 'Good little universe.', 'I like today.', 'Tiny joy explosion.', 'Purrs are loading.',
+      'This is acceptable.', 'Soft victory achieved.', 'Mood upgraded slightly.', 'Happy tail noise.', 'Nice pixels, human.'
+    ],
+    angry: [
+      'I object strongly.', 'Do not test me.', 'Tiny fury awake.', 'My patience left.', 'That was illegal.',
+      'Absolutely unacceptable.', 'Paws filing complaint.', 'Anger loaf activated.', 'You poked destiny.', 'Whiskers declare war.'
+    ],
+    confused: [
+      'What did we witness?', 'Brain tab crashed.', 'Logic took vacation.', 'I need subtitles.', 'That was weird math.',
+      'Screen said nonsense.', 'Who wrote this?', 'Explain the pixels.', 'I missed context.', 'Nothing makes sense.'
+    ],
+    hungry: [
+      'Snack protocol now.', 'Fish would help.', 'Belly has opinions.', 'Dinner is late.', 'Treats or chaos.',
+      'Feed the legend.', 'Food court convenes.', 'Crunchies required immediately.', 'My stomach filed complaint.', 'Tuna thoughts rising.'
+    ],
+    sleepy: [
+      'Nap.exe running.', 'Dream mode warming.', 'Eyes losing battle.', 'Snooze goblin here.', 'Blanket requested now.',
+      'I am fading.', 'Soft shutdown soon.', 'Wake me never.', 'Sleep treaty signed.', 'Tiny battery dying.'
+    ],
+    walking: [
+      'Serious paw commute.', 'Destination: maybe snacks.', 'Tiny march begins.', 'Walking with suspicion.', 'Floor inspection continues.',
+      'Paws doing paperwork.', 'Official stroll business.', 'Route under review.', 'Left paw approved.', 'Right paw disagrees.'
+    ],
+    running: [
+      'Velocity goblin mode.', 'Feet chose violence.', 'I am speed soup.', 'Running from taxes.', 'Turbo paws screaming.',
+      'Catch me, browser.', 'Nyoom with purpose.', 'Fast little criminal.', 'Screen blur activated.', 'Urgent paw business.'
+    ],
+    jumping: [
+      'Paws leaving reality.', 'Ceiling inspection time.', 'Tiny rocket moment.', 'Altitude achieved briefly.', 'Floor rejected me.',
+      'Launch looked intentional.', 'Upward crime detected.', 'Air paws engaged.', 'Gravity got humbled.', 'I trust no floor.'
+    ],
+    climbing: [
+      'Wall privileges revoked.', 'Vertical commute begins.', 'Claws found purchase.', 'Upward nonsense approved.', 'Wall is sidewalk.',
+      'Ceiling quest active.', 'Tiny gecko mode.', 'Side wall conquered.', 'Altitude addiction confirmed.', 'No floor needed.'
+    ],
+    grooming: [
+      'Fur maintenance break.', 'Paw polish moment.', 'Dust lost again.', 'Beauty takes effort.', 'I clean my chaos.',
+      'Whisker alignment check.', 'Tiny spa session.', 'Fluff calibration active.', 'Cleaning crime evidence.', 'Freshness restored.'
+    ],
+    mischief: [
+      'Chaos passed inspection.', 'Totally not guilty.', 'I improved it.', 'Tiny sabotage maybe.', 'Oops with confidence.',
+      'Rules felt optional.', 'Page needed drama.', 'Cute crime committed.', 'Evidence deleted itself.', 'Mischief quota met.'
+    ],
+    coin: [
+      'Shiny target acquired.', 'Money goblin mode.', 'Coin looked edible.', 'Tiny profit sprint.', 'Currency in danger.',
+      'Loot path calculated.', 'Shiny must surrender.', 'Coins fear paws.', 'Profit smells close.', 'Wealth has spawned.'
+    ],
+    fishing: [
+      'Fish negotiations failed.', 'Lunch is escaping.', 'Fin criminal spotted.', 'Dinner has speed.', 'Tuna trial begins.',
+      'Snack chase active.', 'Fish owes answers.', 'Aquatic coward detected.', 'Paws crave seafood.', 'No mercy, fish.'
+    ],
+    eating: [
+      'Snack vanished mysteriously.', 'Belly victory secured.', 'Five paw meal.', 'That hit nicely.', 'Crunch approved.',
+      'Delicious tiny crime.', 'Food problem solved.', 'More would help.', 'Chef deserves purrs.', 'Lunch got deleted.'
+    ],
+    ball: [
+      'Orb enemy spotted.', 'Round thing guilty.', 'Bonk science begins.', 'Ball has attitude.', 'Chase circle now.',
+      'Sports brain activated.', 'Paws versus orb.', 'Bounce trial open.', 'Tiny goalie mode.', 'Sphere must answer.'
+    ],
+    spider: [
+      'Leg criminal spotted.', 'Eight problems detected.', 'Bug needs eviction.', 'Web gremlin located.', 'Spider court begins.',
+      'Crawl less weird.', 'Tiny boss smell.', 'Paws ready to bap.', 'No webs allowed.', 'Bug drama intensifies.'
+    ],
+    bigSpider: [
+      'That bug evolved.', 'Boss health bar?', 'Huge nope detected.', 'Bring backup snacks.', 'Spider got upgrades.',
+      'This fight is personal.', 'Too many legs deluxe.', 'Giant crawl problem.', 'Bap harder now.', 'Web boss arrived.'
+    ],
+    webbed: [
+      'Sticky betrayal happened.', 'Web jail again.', 'Unfair bug tactics.', 'Movement privileges gone.', 'Glue prison sucks.',
+      'Someone call scissors.', 'I demand freedom.', 'This is humiliating.', 'Spider cheated legally.', 'Paws stuck pending.'
+    ],
+    topicGaming: [
+      'Loot first always.', 'Boss looks unpaid.', 'Skill issue maybe.', 'Quest brain active.', 'NPC acting guilty.'
+    ],
+    topicMusic: [
+      'Beat got whiskers.', 'Tiny dance protocol.', 'Bass touched my soul.', 'Purrs in rhythm.', 'This track cooks.'
+    ],
+    topicFood: [
+      'Food pixels hurt.', 'Share that recipe.', 'Kitchen wizard detected.', 'Snack jealousy rising.', 'That looks criminal.'
+    ],
+    topicAnime: [
+      'Training arc smell.', 'Plot armor detected.', 'Hair physics illegal.', 'Villain speech loading.', 'Friendship beam soon.'
+    ],
+    topicTech: [
+      'Code smells spicy.', 'Bug nest detected.', 'Nerd magic happening.', 'Keyboard ritual begins.', 'Update anxiety rising.'
+    ]
+  };
+
+  Object.keys(EXTRA_SPEECH_PACK).forEach((category) => {
+    if (!Array.isArray(SPEECH_LIBRARY[category])) {
+      SPEECH_LIBRARY[category] = [];
+    }
+    SPEECH_LIBRARY[category].push(...EXTRA_SPEECH_PACK[category]);
+  });
+
   const LOCALIZED_TOPIC_LABELS = {
     fr: {
       music: 'la musique', gaming: 'les jeux', coding: 'le code', tech: 'la tech', science: 'la science',
@@ -570,11 +752,16 @@ window.PixelCatSpeech = function(config) {
       sleepy: ['Zzz...', 'Dodo.', 'Sieste.', 'Fatigué.', 'Bâillement.', 'Au lit.', 'Besoin de repos.', 'Ne pas déranger.', 'Rêves en chargement.', 'Batterie très basse.'],
       random: ['Miaou.', 'Boop.', 'Pixels.', 'Salut.', 'Mrrp ?', 'Je surveille.', 'Vie de pixel.', 'Je vis ici.', 'Pattes en ligne.', 'Cette page est à moi.'],
       interactive: ['Une caresse ?', 'Poisson ?', 'On joue ?', 'Attention ?', 'Remarque-moi !', 'Tu m’aimes ?', 'Gratte la tête ?', 'Bouton de gentillesse ?', 'Avis demandé.', 'Clique pour ronrons.'],
+      cursorSuspicious: ['Curseur suspect.', 'Ta souris complote.', 'Pourquoi si près ?', 'Je te vois.', 'Recule doucement.', 'Flèche louche.', 'Espace personnel.', 'Curseur surveillé.', 'Pas de sneak.', 'Je reste prudent.'],
+      cursorThreat: ['Hé, stop.', 'Recule, curseur.', 'Trop proche.', 'Pas de boop.', 'Respecte les pattes.', 'Approche refusée.', 'Je vais courir.', 'Espace violé.', 'Essaie mieux.', 'Main bizarre.'],
+      cursorPanic: ['Non non non.', 'Mode fuite !', 'Trop proche !', 'Zoomies urgence.', 'Tu m’as raté.', 'Vitesse féline.', 'Pas de contact.', 'Bye, humain.', 'Panique minuscule.', 'Cours maintenant.'],
       walking: ['Je marche.', 'Balade.', 'En patrouille.', 'J’explore.', 'Je rôde.', 'Petits pas.', 'Tour de l’écran.', 'Mission officielle.', 'Route inconnue.', 'Inspection du sol.'],
       running: ['Zoom !', 'Vite !', 'Je cours !', 'Trop rapide !', 'Zou !', 'Sprint important.', 'Pattes au maximum.', 'Mode turbo.', 'Course urgente.', 'Pas de freins.'],
       jumping: ['Youpi !', 'Saut !', 'Boing !', 'En haut !', 'Je vole !', 'Parkour !', 'Décollage.', 'Temps en l’air.', 'Gravité optionnelle.', 'Atterrissage prévu.'],
       grooming: ['Toilette.', 'Je me nettoie.', 'Bain express.', 'Hygiène !', 'Tout propre.', 'Spa de pixels.', 'Routine beauté.', 'Ne pas interrompre.', 'Pattes fraîches.', 'Je suis impeccable.'],
       watching: ['Je regarde...', 'Intéressant.', 'Hmm...', 'Observation.', 'J’étudie.', 'Bon contenu.', 'Choix curieux.', 'Je prends des notes.', 'Vidéo validée.', 'Concentration féline.'],
+      videoPlay: ['Cinéma repris.', 'Le plot revient.', 'Enfin du mouvement.', 'Je regardais.', 'Continue.', 'Écran réveillé.', 'Popcorn prêt.', 'On juge maintenant.', 'Vidéo vivante.', 'Retour au chaos.'],
+      videoPause: ['Pourquoi pause ?', 'Cinéma gelé.', 'J’étais investi.', 'Pause rude.', 'Explique, humain.', 'Lore bloqué.', 'Émotions en buffer.', 'Continue donc.', 'Popcorn attend.', 'Drame suspendu.'],
       mischief: ['Petite bêtise.', 'Oups.', 'Je n’ai rien fait.', 'Plan brillant.', 'Chaos léger.', 'Bouton suspect.', 'Page à tester.', 'Mission malice.', 'Très légal.', 'Ça bouge tout seul.'],
       fishing: ['Poisson repéré.', 'Chasse au poisson.', 'Viens ici.', 'Cible humide.', 'Snack qui nage.', 'Mission thon.', 'Pattes prêtes.', 'Je l’aurai.', 'Menu du jour.', 'Bulle de faim.'],
       ball: ['Balle !', 'Lance-la !', 'Je l’attrape.', 'Joli rebond.', 'Sport de chat.', 'Encore une fois.', 'La balle est mienne.', 'Mode jeu.', 'Objectif rond.', 'Passe parfaite.'],
@@ -620,11 +807,16 @@ window.PixelCatSpeech = function(config) {
       sleepy: ['ززز...', 'نوم.', 'قيلولة.', 'متعب.', 'تثاؤب.', 'إلى السرير.', 'أحتاج راحة.', 'الرجاء عدم الإزعاج.', 'الأحلام تحمل.', 'البطارية منخفضة جداً.'],
       random: ['مياو.', 'بوب.', 'بكسلات.', 'مرحباً.', 'مرر؟', 'أنا أراقب.', 'حياة بكسل.', 'أنا أعيش هنا.', 'الكفوف متصلة.', 'هذه الصفحة لي.'],
       interactive: ['مداعبة؟', 'سمك؟', 'نلعب؟', 'انتباه؟', 'لاحظني!', 'تحبني؟', 'حك الرأس؟', 'زر اللطف؟', 'رأيك مطلوب.', 'اضغط للخرخرة.'],
+      cursorSuspicious: ['المؤشر مشبوه.', 'الفأرة تخطط.', 'لماذا قريب؟', 'أنا أراك.', 'تراجع بهدوء.', 'سهم غريب.', 'مساحتي الشخصية.', 'المؤشر مراقب.', 'لا تتسلل.', 'سأبقى حذراً.'],
+      cursorThreat: ['مهلاً، توقف.', 'تراجع يا مؤشر.', 'قريب جداً.', 'لا تلمسني.', 'احترم الكفوف.', 'الاقتراب مرفوض.', 'سأركض.', 'مساحتي انكسرت.', 'حاول بلطف.', 'يد غريبة.'],
+      cursorPanic: ['لا لا لا.', 'وضع الهروب!', 'قريب جداً!', 'زووم طارئ.', 'لم تمسكني.', 'سرعة قططية.', 'لا تلامس.', 'وداعاً يا إنسان.', 'ذعر صغير.', 'اركض الآن.'],
       walking: ['أمشي.', 'نزهة.', 'في دورية.', 'أستكشف.', 'أتجول.', 'خطوات صغيرة.', 'جولة الشاشة.', 'مهمة رسمية.', 'وجهة مجهولة.', 'تفتيش الأرض.'],
       running: ['زووم!', 'سريع!', 'أركض!', 'سريع جداً!', 'انطلاق!', 'ركض مهم.', 'الكفوف بأقصى سرعة.', 'وضع توربو.', 'مهمة عاجلة.', 'لا توجد فرامل.'],
       jumping: ['ويي!', 'قفزة!', 'بوينغ!', 'إلى الأعلى!', 'أنا أطير!', 'باركور!', 'إقلاع.', 'وقت في الهواء.', 'الجاذبية اختيارية.', 'هبوط مخطط.'],
       grooming: ['تنظيف.', 'أهتم بفرائي.', 'حمام سريع.', 'نظافة!', 'نظيف تماماً.', 'سبا بكسل.', 'روتين جمال.', 'لا تقاطعني.', 'كفوف منعشة.', 'أنا مرتب.'],
       watching: ['أشاهد...', 'مثير للاهتمام.', 'همم...', 'مراقبة.', 'أدرس.', 'محتوى جيد.', 'اختيار غريب.', 'أسجل ملاحظات.', 'فيديو مقبول.', 'تركيز قططي.'],
+      videoPlay: ['عاد السينما.', 'القصة رجعت.', 'أخيراً حركة.', 'كنت أشاهد.', 'تابع.', 'الشاشة استيقظت.', 'الفشار جاهز.', 'سنحكم الآن.', 'الفيديو حي.', 'عودة الفوضى.'],
+      videoPause: ['لماذا توقفت؟', 'السينما تجمدت.', 'كنت مهتماً.', 'توقيت مزعج.', 'اشرح يا إنسان.', 'القصة عالقة.', 'مشاعري تحمل.', 'تابع رجاءً.', 'الفشار ينتظر.', 'دراما معلقة.'],
       mischief: ['عبث صغير.', 'أوبس.', 'لم أفعل شيئاً.', 'خطة ذكية.', 'فوضى خفيفة.', 'زر مشبوه.', 'صفحة للاختبار.', 'مهمة شقاوة.', 'قانوني جداً.', 'تحرك وحده.'],
       fishing: ['رأيت سمكة.', 'صيد السمك.', 'تعالي هنا.', 'هدف مائي.', 'وجبة تسبح.', 'مهمة التونة.', 'الكفوف جاهزة.', 'سأمسكها.', 'قائمة اليوم.', 'فقاعة جوع.'],
       ball: ['كرة!', 'ارمها!', 'سألتقطها.', 'ارتداد جميل.', 'رياضة القط.', 'مرة أخرى.', 'الكرة لي.', 'وضع اللعب.', 'هدف دائري.', 'تمريرة مثالية.'],
@@ -1469,7 +1661,14 @@ window.PixelCatSpeech = function(config) {
     speechLikeBtn.className = 'bubble-btn like';
     speechLikeBtn.setAttribute('aria-label', 'Like');
     speechLikeBtn.setAttribute('title', 'Like');
-    speechLikeBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3m0 11V10l5-8a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 7a4 4 0 0 1-4 4H7z"/></svg>';
+    speechLikeBtn.innerHTML = '';
+    const likeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    likeSvg.setAttribute('viewBox', '0 0 24 24');
+    likeSvg.setAttribute('aria-hidden', 'true');
+    const likePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    likePath.setAttribute('d', 'M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3m0 11V10l5-8a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 7a4 4 0 0 1-4 4H7z');
+    likeSvg.appendChild(likePath);
+    speechLikeBtn.appendChild(likeSvg);
     speechLikeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       handleSpeechVote(true);
@@ -1480,7 +1679,14 @@ window.PixelCatSpeech = function(config) {
     speechDislikeBtn.className = 'bubble-btn dislike';
     speechDislikeBtn.setAttribute('aria-label', 'Dislike');
     speechDislikeBtn.setAttribute('title', 'Dislike');
-    speechDislikeBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3m0-11v12l-5 8a3 3 0 0 1-3-3v-4H4a2 2 0 0 1-2-2l1-7a4 4 0 0 1 4-4h10z"/></svg>';
+    speechDislikeBtn.innerHTML = '';
+    const dislikeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    dislikeSvg.setAttribute('viewBox', '0 0 24 24');
+    dislikeSvg.setAttribute('aria-hidden', 'true');
+    const dislikePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    dislikePath.setAttribute('d', 'M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3m0-11v12l-5 8a3 3 0 0 1-3-3v-4H4a2 2 0 0 1-2-2l1-7a4 4 0 0 1 4-4h10z');
+    dislikeSvg.appendChild(dislikePath);
+    speechDislikeBtn.appendChild(dislikeSvg);
     speechDislikeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       handleSpeechVote(false);
@@ -1620,22 +1826,26 @@ window.PixelCatSpeech = function(config) {
     const clampedY = chosenClampedY;
     speechBubble.dataset.anchor = chosen.anchor;
 
-    // Smooth frame-synced positioning
-    requestAnimationFrame(() => {
-        if (!speechBubble || !speechBubble.isConnected) return;
-        const pixelX = Math.round(clampedX);
-        const pixelY = Math.round(clampedY);
-        speechBubble.style.transform = `translate(${pixelX}px, ${pixelY}px)`;
+    // Direct write: positionSpeechBubble is already called from the main animation
+    // frame, so scheduling another rAF creates extra work and visible lag.
+    const pixelX = Math.round(clampedX);
+    const pixelY = Math.round(clampedY);
+    const nextTransform = `translate(${pixelX}px, ${pixelY}px)`;
+    if (speechBubble.style.transform !== nextTransform) {
+      speechBubble.style.transform = nextTransform;
+    }
 
-        const arrowMin = POSITIONING.ARROW_MIN_OFFSET * sizeScale;
-        if (chosen.anchor === 'top' || chosen.anchor === 'bottom') {
-            const arrowX = Math.max(arrowMin, Math.min(speechSizeW - arrowMin, (feetX - clampedX)));
-            speechBubble.style.setProperty('--arrow-offset', `${Math.round(arrowX)}px`);
-        } else {
-            const arrowY = Math.max(arrowMin, Math.min(speechSizeH - arrowMin, (catMid - clampedY)));
-            speechBubble.style.setProperty('--arrow-offset', `${Math.round(arrowY)}px`);
-        }
-    });  }
+    const arrowMin = POSITIONING.ARROW_MIN_OFFSET * sizeScale;
+    if (chosen.anchor === 'top' || chosen.anchor === 'bottom') {
+      const arrowX = Math.max(arrowMin, Math.min(speechSizeW - arrowMin, (feetX - clampedX)));
+      const arrowValue = `${Math.round(arrowX)}px`;
+      if (speechBubble.style.getPropertyValue('--arrow-offset') !== arrowValue) speechBubble.style.setProperty('--arrow-offset', arrowValue);
+    } else {
+      const arrowY = Math.max(arrowMin, Math.min(speechSizeH - arrowMin, (catMid - clampedY)));
+      const arrowValue = `${Math.round(arrowY)}px`;
+      if (speechBubble.style.getPropertyValue('--arrow-offset') !== arrowValue) speechBubble.style.setProperty('--arrow-offset', arrowValue);
+    }
+  }
 
   // 
   //  SPEECH DISPLAY & INTERACTION
@@ -1661,7 +1871,7 @@ window.PixelCatSpeech = function(config) {
     positionSpeechBubble(true);
 
     if (speechHideTimer) removeTimeout(speechHideTimer);
-    const hideDelay = speechInteractive ? SPEECH_CONFIG.INTERACTIVE_DELAY : 7000;
+    const hideDelay = speechInteractive ? SPEECH_CONFIG.INTERACTIVE_DELAY : 5200;
     speechHideTimer = addTimeout(() => hideSpeechBubble(), hideDelay);
 
     speechCooldownUntil = Date.now() + (speechInteractive ? SPEECH_CONFIG.COOLDOWN_INTERACTIVE : SPEECH_CONFIG.COOLDOWN_NORMAL);
@@ -1773,7 +1983,7 @@ window.PixelCatSpeech = function(config) {
       return;
     }
 
-    const interactive = Math.random() < 0.2;
+    const interactive = Math.random() < 0.1;
     
     // Use context-aware speech based on what the cat is doing
     let text;
@@ -1790,6 +2000,8 @@ window.PixelCatSpeech = function(config) {
   function speakFromCategory(category, options) {
     const now = Date.now();
     const force = options && options.force;
+    const allowReplace = !!(options && options.allowReplace);
+    if (speechVisible && !allowReplace) return;
     if (!force && now < speechCooldownUntil) return;
 
     const text = getSmartRandomPhrase(category);
@@ -1800,16 +2012,16 @@ window.PixelCatSpeech = function(config) {
     if (!getSpeechEnabled()) return;
     const now = Date.now();
     if (now - lastWallSpeakTs < AFK_CONFIG.WALL_SPEAK_COOLDOWN) return;
-    if (Math.random() < 0.35) {
+    if (Math.random() < 0.18) {
       lastWallSpeakTs = now;
-      speakFromCategory('confused', { force: true });
+      speakFromCategory('confused');
     }
   }
 
   function maybeSpeakAngry() {
-    if (!getSpeechEnabled()) return;
-    if (Math.random() < 0.3) {
-      speakFromCategory('angry', { force: true });
+    if (!getSpeechEnabled() || speechVisible) return;
+    if (Math.random() < 0.16) {
+      speakFromCategory('angry');
     }
   }
 

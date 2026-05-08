@@ -117,6 +117,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           cancelAnimationFrame(_scrollRaf);
           _scrollRaf = 0;
         }
+        if (skinAnimation) { try { skinAnimation.cancel(); } catch (e) {} skinAnimation = null; }
         if (catEl) catEl.remove();
         if (speechModule) speechModule.cleanup();
         managedIntervals.forEach(clearInterval);
@@ -181,7 +182,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         applySizeMultiplier(settings.sizeMultiplier);
       }
       if (settings.catSkin !== undefined) {
-        applySkin(settings.catSkin);
+        applySkin(resolveCatSkin(settings.catSkin));
       }
       if (settings.ballEnabled !== undefined) {
         ballEnabled = settings.ballEnabled;
@@ -198,7 +199,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           cleanupPortals();
         }
         if (portalEnabled) {
-          portalSpawnTimer = 60 + Math.random() * 120;
+          portalSpawnTimer = 90 + Math.random() * 90;
         }
       }
       if (settings.catEnergyLevel !== undefined) {
@@ -215,10 +216,6 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (settings.shopActiveBoosts !== undefined) {
         updateActiveShopBoosts(settings.shopActiveBoosts);
       }
-      if (settings.shopEffect !== undefined) {
-        ownedShopItems.add(settings.shopEffect);
-        activeShopBoosts.add(settings.shopEffect);
-      }
     },
     clearSpeechMemory: function() {
       if (typeof clearSpeechMemory === 'function') {
@@ -230,11 +227,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   function applyEnergyLevel() {
     let mult = 1.0;
     if (catEnergyLevel === 'sleepy') mult = 0.6;
-    if (catEnergyLevel === 'hyper') mult = 1.6;
-    
+    // Hyper should feel energetic, not uncontrollable. Keep it only a little faster
+    // than active mode so YouTube pages stay smooth and the cat does not zoom off-screen.
+    if (catEnergyLevel === 'hyper') mult = 1.22;
+
     SPEED_WALK = BASE_SPEED_WALK * mult;
     SPEED_RUN = BASE_SPEED_RUN * mult;
-    catEnergy = catEnergyLevel === 'sleepy' ? 0.2 : (catEnergyLevel === 'hyper' ? 1.0 : 0.6);
+    catEnergy = catEnergyLevel === 'sleepy' ? 0.2 : (catEnergyLevel === 'hyper' ? 0.85 : 0.6);
   }
 
   const missingPixelCatModules = ['PixelCatStorage', 'PixelCatCoins', 'PixelCatFish', 'PixelCatBalls', 'PixelCatPortals']
@@ -376,6 +375,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   const storageModule = window.PixelCatStorage({
     API,
+    FairPlay: globalThis.PixelCatFairPlay || null,
     QuestEngine,
     get isCompanion() { return isCompanion; },
     addTimeout: (fn, ms) => addTimeout(fn, ms),
@@ -585,6 +585,19 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     if (activePickupKind === kind) activePickupKind = null;
   }
 
+  function isYouTubeVideoPlaying() {
+    const videoEl = document.querySelector('video');
+    return !!(
+      videoEl &&
+      !videoEl.paused &&
+      !videoEl.ended &&
+      videoEl.readyState >= 2 &&
+      videoEl.currentTime > 0 &&
+      !document.hidden &&
+      isTabVisible
+    );
+  }
+
   const coinModule = window.PixelCatCoins({
     u,
     GRAVITY,
@@ -594,6 +607,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     hasActivePickup,
     claimActivePickup,
     releaseActivePickup,
+    isVideoPlaying: isYouTubeVideoPlaying,
     setAnimLocked,
     go,
     addTimeout,
@@ -719,6 +733,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   let curAnim = null, curFrame = 0, animAccum = 0;
   let lastDirVal = null;
+  let skinAnimation = null;
 
   let isDragging = false, dragOffX = 0, dragOffY = 0;
   let lastCatDragX = 0, lastCatDragY = 0, lastCatDragTs = 0;
@@ -742,7 +757,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   
   //  FISH SUBSYSTEM 
   const activeFishes = PixelCatRuntime.fishes;
-  let fishSpawnTimer = 5; // Start spawning quickly since only one type can be active
+  let fishSpawnTimer = 18 + Math.random() * 24; // First fish waits a little; next countdown starts after current spawn disappears
   let targetFish = null;
   let stuckCheckTimer = 0;
   let lastFishChaseX = 0;
@@ -778,6 +793,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   let pathfindCooldown = 0;  // seconds remaining before next pathfind jump
   let chaseStuckTimer = 0;  // tracks how long chase has been stuck
   let lastChaseDistToTarget = 9999;
+  let chaseDropThroughUntil = 0; // lets chase targets below a card be reached cleanly
+  let coinStuckCheckTimer = 0;
+  let lastCoinChaseX = 0;
+  let ballStuckCheckTimer = 0;
+  let lastBallChaseX = 0;
 
   //  LOYAL FOLLOWER MODE 
   let isLoyalMode = false;
@@ -910,7 +930,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   function applyPos() {
     applyTransform();
-    positionSpeechBubble(false);
+    // Avoid doing speech layout work on every animation frame when no bubble is shown.
+    if (speechModule && speechModule.speechVisible) positionSpeechBubble(false);
   }
 
   function isHorizontalMovementState() {
@@ -1079,7 +1100,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   const activeSpiders = PixelCatRuntime.spiders;
   const activeWebs = PixelCatRuntime.webs;
-  let spiderSpawnTimer = 45 + Math.random() * 30; // 45-75 seconds initial delay - more varied
+  function nextSpiderSpawnDelay() {
+    return 120 + Math.random() * 240;
+  }
+
+  let spiderSpawnTimer = 60 + Math.random() * 60; // First spider waits longer; next countdown starts after current spawn disappears
+  let spiderTimerPausedForObject = false;
   let targetSpider = null;
   let draggedSpider = null;
   let spiderDragOffsetX = 0;
@@ -1200,8 +1226,17 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     proj:   { r: 7, fr: 6, fps: 12 }
   };
 
+  function releaseSpider(spider) {
+    if (!spider || spider.pickupReleased) return;
+    spider.pickupReleased = true;
+    releaseActivePickup('spider');
+  }
+
   function spawnSpider() {
-    if (!document.body || PixelCatRuntime.instances.indexOf(api) !== 0) return; // Only main cat
+    if (!document.body || PixelCatRuntime.instances.indexOf(api) !== 0) return false; // Only main cat
+    if (activeSpiders.length >= 1) return false;
+    if (hasActivePickup()) return false;
+    if (!claimActivePickup('spider')) return false;
 
     const isBigSpider = rareEventsEnabled && Math.random() < 0.05; // Rare 1-in-20 boss spider.
     const sEl = document.createElement('div');
@@ -1332,6 +1367,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }, { passive: false });
     
     activeSpiders.push(spider);
+    return true;
   }
 
   function spawnWebProjectile(sx, sy, tx, ty, options) {
@@ -1377,6 +1413,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     // Cleanup if spiders disabled
     if (!spiderEnabled && (activeSpiders.length > 0 || activeWebs.length > 0)) {
       for (let i = 0; i < activeSpiders.length; i++) {
+        releaseSpider(activeSpiders[i]);
         activeSpiders[i].el.remove();
         if (activeSpiders[i].lineEl) activeSpiders[i].lineEl.remove();
       }
@@ -1394,6 +1431,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     for (let i = activeSpiders.length - 1; i >= 0; i--) {
       const s = activeSpiders[i];
       if (s.dead && s.curFrame === SPIDER_ANIMS.death.fr - 1) {
+         releaseSpider(s);
          s.el.remove();
          if (s.lineEl) s.lineEl.remove();
          activeSpiders.splice(i, 1);
@@ -1727,7 +1765,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   //  BALL SUBSYSTEM
   // 
   const activeBalls = PixelCatRuntime.balls;
-  let ballSpawnTimer = 5; // Start spawning quickly since only one type can be active
+  let ballSpawnTimer = 28 + Math.random() * 35; // First ball waits a little; next countdown starts after current spawn disappears
   let targetBall = null;
   let draggedBall = null;
   let ballDragOffsetX = 0;
@@ -1812,9 +1850,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   //  PORTAL SUBSYSTEM
   // 
-  // portalEnabled is loaded from storage via updateSettings({ portalEnabled }) â€” starts off
+  // portalEnabled is loaded from storage via updateSettings({ portalEnabled }) — starts off
   // Spawn timer: very long & randomized so portals feel like a rare, magical surprise
+  function nextPortalSpawnDelay() {
+    return 180 + Math.random() * 300;
+  }
+
   let portalSpawnTimer = 90 + Math.random() * 90; // First portal: 90-180s after enabling
+  let portalTimerPausedForObject = false;
   let portalEnabled = false; // Loaded from storage (Level 7 skill unlock required)
   let isInPortal = false;
   let portalCooldown = 0;
@@ -1822,6 +1865,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   const portalModule = window.PixelCatPortals({
     u,
     addTimeout,
+    hasActivePickup,
+    claimActivePickup,
+    releaseActivePickup,
     get vw() { return _vw; },
     get vh() { return _vh; },
     get sizeMultiplier() { return sizeMultiplier; },
@@ -1896,7 +1942,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     'ytd-reel-shelf-renderer',
     'ytm-shorts-lockup-view-model',
     // NOTE: video player controls (.ytp-chrome-bottom, .ytp-progress-bar-container) intentionally
-    // EXCLUDED from platforms â€” they hide/show dynamically and cause the cat to float mid-air.
+    // EXCLUDED from platforms — they hide/show dynamically and cause the cat to float mid-air.
     // They remain in _attackSels so the cat can still interact with them.
   ];
   const _attackSels = [
@@ -2064,12 +2110,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   scheduleEnvScan(document.readyState === 'complete' ? 600 : 1200);
   observeContentSettling();
-  // Scan every 4s instead of 3s  env changes slowly
+  // Background rescans are intentionally calm. Mutation and navigation listeners
+  // handle most layout changes, so a slower backup scan reduces YouTube CPU usage.
   addInterval(() => {
     if (!catEnabled || !isTabVisible || document.hidden) return;
-    if (isScrolling) return;
+    if (isScrolling || envPending || mutationScanTimeout) return;
     scheduleEnvScan(0);
-  }, 4000);
+  }, 8000);
   // NOTE: scroll-triggered scans are now handled by the isScrolling scroll listener above
 
   // 
@@ -2275,8 +2322,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   function computeFloor(catX) {
     const base = _vh;
-    //  When cat is intentionally dropping during chasefish, skip platforms
+    // When the cat intentionally drops toward a target below a card, skip
+    // temporary video-card platforms so it does not land back on the same card.
     if (state === 'chasefish' && velY > 0 && !onGround) {
+      return base;
+    }
+    if ((state === 'coinchase' || state === 'ball_play') && velY > 0 && !onGround && safeNow() < chaseDropThroughUntil) {
       return base;
     }
     let best = base;
@@ -2359,6 +2410,45 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       }
     }
     return bestPlat;
+  }
+
+  function startChaseDropThrough(edgeDir, speedMultiplier = 1.45) {
+    const dir = edgeDir < 0 ? -1 : 1;
+    chaseDropThroughUntil = safeNow() + 1150;
+    velX = dir * SPEED_RUN * speedMultiplier;
+    velY = Math.max(velY, 90);
+    onGround = false;
+    isJumping = true;
+    setDir(velX < 0);
+    setAnim('jump', true);
+  }
+
+  function moveToDropEdgeForLowerTarget(tx, ty, horizontalWindow = 90) {
+    if (!onGround || isJumping) return false;
+    if (ty - feetY <= 40) return false;
+
+    const catPlat = getCurrentPlatform();
+    if (!catPlat || catPlat.top >= _vh - 30) return false;
+
+    const dx = tx - feetX;
+    const distToLeft = Math.max(0, feetX - catPlat.left);
+    const distToRight = Math.max(0, catPlat.right - feetX);
+
+    let edgeDir;
+    if (tx < catPlat.left - 20) edgeDir = -1;
+    else if (tx > catPlat.right + 20) edgeDir = 1;
+    else if (Math.abs(dx) > horizontalWindow) edgeDir = dx > 0 ? 1 : -1;
+    else edgeDir = distToLeft <= distToRight ? -1 : 1;
+
+    const edgeDist = edgeDir < 0 ? distToLeft : distToRight;
+    velX = edgeDir * SPEED_RUN * 1.2;
+    setDir(velX < 0);
+    setAnim('run');
+
+    if (edgeDist < 46) {
+      startChaseDropThrough(edgeDir);
+    }
+    return true;
   }
 
   // 
@@ -2554,12 +2644,15 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   function triggerUiClick(el) {
     if (!el || !el.isConnected) return;
     try {
-      el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true }));
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-      if (typeof el.click === 'function') el.click();
+      // Visual-only mischief. Never dispatch synthetic clicks or change YouTube actions.
+      el.classList.remove('pixelcat-fake-tap');
+      void el.offsetWidth;
+      el.classList.add('pixelcat-fake-tap');
+      addTimeout(() => {
+        if (el && el.isConnected) el.classList.remove('pixelcat-fake-tap');
+      }, 360);
     } catch (_) {
-      // Some YouTube controls may ignore synthetic events; ignore safely.
+      // Ignore controls that cannot be animated safely.
     }
   }
 
@@ -2715,8 +2808,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     animLockTimer = 0;  // clear any animation lock
     stuckCheckTimer = 0;  // reset stuck detection
     lastFishChaseX = feetX;  // reset position tracking
+    coinStuckCheckTimer = 0;
+    lastCoinChaseX = feetX;
+    ballStuckCheckTimer = 0;
+    lastBallChaseX = feetX;
     chaseStuckTimer = 0;  // reset pathfinding stuck tracker
     lastChaseDistToTarget = 9999;
+    chaseDropThroughUntil = 0;
 
     catEl.style.zIndex  = '9999999';
     catEl.style.opacity = '1';
@@ -4037,6 +4135,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           const distToBall = Math.sqrt(bdx * bdx + bdy * bdy);
           const ballReachX = 60 + (sizeMultiplier - 1) * 28;
           const ballReachY = 80 + (sizeMultiplier - 1) * 34;
+
+          // If the ball is below the current video card, get off the card first
+          // instead of running left/right forever while vertically aligned.
+          if (moveToDropEdgeForLowerTarget(targetBall.x, targetBall.y, 120)) {
+            ballStuckCheckTimer = 0;
+            stateTimer = Math.max(stateTimer, 2500);
+            break;
+          }
           
           // PROFESSIONAL VOLLEYBALL MODE: cats take sides and coordinate
           if (isVolleyballMode) {
@@ -4088,12 +4194,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
                   
                   if (useAcrobatic && onGround) {
                     // Acrobatic jump hit - more powerful and flashy
+                    setDir(targetBall.x < feetX); // face the ball before the hit animation
                     velY = JUMP_V * 0.85;
                     isJumping = true;
                     setAnimLocked('jump', 450);
                     addTimeout(() => {
                       // FIX: Confirm ball is still actually close before applying velocity
                       if (targetBall && !targetBall.exiting && Math.abs(targetBall.x - feetX) < ballReachX + 30 && Math.abs(targetBall.y - feetY) < ballReachY + 40) {
+                        setDir(targetBall.x < feetX); // keep the swipe facing the live ball position
                         // Aim toward other cat's position with arc
                         const hitDir = mySide === 'left' ? 1 : -1;
                         const powerMultiplier = 1.2 + Math.random() * 0.3;
@@ -4106,6 +4214,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
                     // Regular paw hit  only fire if ball is truly within paw range
                     // FIX: Check dist at fire time (updateState runs at 10Hz; ball moves fast)
                     if (Math.abs(targetBall.x - feetX) < ballReachX + 25 && Math.abs(targetBall.y - feetY) < ballReachY) {
+                      setDir(targetBall.x < feetX); // paw swipe faces the ball, not the opposite side
                       setAnimLocked('paw', 650);
                       const hitDir = mySide === 'left' ? 1 : -1;
                       
@@ -4192,19 +4301,22 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
               
               // Acrobatic moves (20% chance)
               if (Math.random() < 0.2 && onGround && animLockTimer <= 0) {
+                setDir(bdx < 0); // face the ball before jumping at it
                 velY = JUMP_V * 0.7;
                 isJumping = true;
                 setAnimLocked('jump', 400);
                 addTimeout(() => {
                   if (targetBall && !targetBall.exiting && Math.abs(targetBall.x - feetX) < ballReachX) {
-                    hitBall(targetBall, (bdx > 0 ? 1 : -1) * (400 + Math.random() * 400), -300 - Math.random() * 250);
+                    const liveBdx = targetBall.x - feetX;
+                    setDir(liveBdx < 0); // use current ball position, not stale pre-jump direction
+                    hitBall(targetBall, (liveBdx > 0 ? 1 : -1) * (400 + Math.random() * 400), -300 - Math.random() * 250);
                     spawnDust(feetX, feetY);
                   }
                 }, 200);
               } else if (animLockTimer <= 0) {
+                setDir(bdx < 0);  // face ball during paw swipe; true means face left
                 setAnimLocked('paw', 600);
-                velX = 0;  // FIX: stop sliding immediately  don't wait for next logic tick
-                setDir(bdx > 0);  // FIX: face ball during paw swipe, eliminates 1-frame visual glitch
+                velX = 0;  // stop sliding immediately  don't wait for next logic tick
                 hitBall(targetBall, (bdx > 0 ? 1 : -1) * (350 + Math.random() * 400), -250 - Math.random() * 300);
                 spawnDust(feetX, feetY);
                 earnXP(0.25);  // XP: playing ball earns XP.
@@ -4220,6 +4332,29 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             }
           }
           
+          ballStuckCheckTimer += dt * 1000;
+          if (ballStuckCheckTimer > 1200) {
+            const moved = Math.abs(feetX - lastBallChaseX);
+            if (moved < 5 && onGround && !isJumping && targetBall && !targetBall.exiting) {
+              if (targetBall.y - feetY > 35) {
+                const plat = getCurrentPlatform();
+                if (plat) {
+                  const leftDist = feetX - plat.left;
+                  const rightDist = plat.right - feetX;
+                  startChaseDropThrough(leftDist <= rightDist ? -1 : 1);
+                }
+              } else if (Math.abs(targetBall.x - feetX) > 25) {
+                velY = JUMP_V * 0.35;
+                velX = (targetBall.x > feetX ? 1 : -1) * SPEED_RUN;
+                onGround = false;
+                isJumping = true;
+                setAnim('jump', true);
+              }
+            }
+            lastBallChaseX = feetX;
+            ballStuckCheckTimer = 0;
+          }
+
           if (stateTimer <= 0) go('sit');
           break;
         }
@@ -4417,11 +4552,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         const pdx = targetX - feetX;
         if (onGround && Math.abs(pdx) < 20) {
           velX = 0;
-          setDir(targetX < pvw / 2); // face INWARD
+          setDir(targetX > pvw / 2); // face inward from the wall
           setAnim(chosenIdle);
           if (Math.random() < 0.05) {
              setDir(!facingLeft);
-             addTimeout(() => { if (state === 'peek_a_boo') setDir(targetX < pvw / 2); }, 400);
+             addTimeout(() => { if (state === 'peek_a_boo') setDir(targetX > pvw / 2); }, 400);
           }
         } else if (onGround && Math.abs(velX) < 10) {
            velX = SPEED_RUN * 1.2 * (pdx > 0 ? 1 : -1);
@@ -4879,6 +5014,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             break;
          }
          
+         if (moveToDropEdgeForLowerTarget(targetSpider.x, targetSpider.y, 110)) {
+            break;
+         }
+
          if (onGround && !isJumping) {
             if (dy < -150) {
                // Spider is too high on the ceiling/web, stare up
@@ -4919,40 +5058,61 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           go('sit');
           break;
         }
-        
-        const coinDx = coinChaseTarget.x - feetX;
-        const coinDy = coinChaseTarget.y - feetY;
-        const coinIsBelow = coinDy > 40;
-        const catPlat = onGround ? getCurrentPlatform() : null;
-        const catIsOnPlatform = catPlat !== null && catPlat.top < _vh - 30;
 
-        if (catIsOnPlatform && coinIsBelow && Math.abs(coinDx) < 60) {
-          const distToLeft = feetX - catPlat.left;
-          const distToRight = catPlat.right - feetX;
-          const nearestEdgeDist = Math.min(distToLeft, distToRight);
-          const edgeDir = distToLeft < distToRight ? -1 : 1;
-          
-          velX = edgeDir * SPEED_RUN * 1.2;
-          setDir(velX < 0);
-          setAnim('run');
-          
-          if (nearestEdgeDist < 40 && onGround && !isJumping) {
-            velX = edgeDir * SPEED_RUN * 1.5;
-            velY = 50;
-            onGround = false;
-            isJumping = true;
-            setAnim('jump', true);
-          }
-        } else {
-          setDir(coinDx < 0);
-          if (Math.abs(coinDx) > 30) {
-            velX = (coinDx > 0 ? 1 : -1) * SPEED_RUN * 1.2;
-            setAnim('run');
-          } else {
-            velX *= 0.7;
-            setAnim('walk');
-          }
+        const coinSize = 16 * sizeMultiplier;
+        const coinTargetX = coinChaseTarget.x + coinSize / 2;
+        const coinTargetY = coinChaseTarget.y + coinSize / 2;
+        const coinDx = coinTargetX - feetX;
+        const coinDy = coinTargetY - feetY;
+
+        // If the coin is under the current video card, leave the card first.
+        // This prevents the cat from pacing in place above a vertically aligned coin.
+        if (moveToDropEdgeForLowerTarget(coinTargetX, coinTargetY, 110)) {
+          stateTimer = 20000;
+          break;
         }
+
+        setDir(coinDx < 0);
+        if (Math.abs(coinDx) > 30) {
+          velX = (coinDx > 0 ? 1 : -1) * SPEED_RUN * 1.2;
+          setAnim('run');
+        } else if (coinDy < -45 && onGround && !isJumping) {
+          velX = 0;
+          velY = JUMP_V * 0.55;
+          onGround = false;
+          isJumping = true;
+          setAnim('jump', true);
+        } else {
+          velX *= 0.7;
+          setAnim('walk');
+        }
+
+        coinStuckCheckTimer += dt * 1000;
+        if (coinStuckCheckTimer > 1000) {
+          const moved = Math.abs(feetX - lastCoinChaseX);
+          if (moved < 5 && onGround && !isJumping) {
+            if (coinDy > 35) {
+              const plat = getCurrentPlatform();
+              if (plat) {
+                const leftDist = feetX - plat.left;
+                const rightDist = plat.right - feetX;
+                startChaseDropThrough(leftDist <= rightDist ? -1 : 1);
+              }
+            } else {
+              const route = planRouteToTarget(coinTargetX, coinTargetY);
+              if (!executeRoute(route) && Math.abs(coinDx) > 20) {
+                velY = JUMP_V * 0.35;
+                velX = (coinDx > 0 ? 1 : -1) * SPEED_RUN;
+                onGround = false;
+                isJumping = true;
+                setAnim('jump', true);
+              }
+            }
+          }
+          lastCoinChaseX = feetX;
+          coinStuckCheckTimer = 0;
+        }
+
         stateTimer = 20000;
         break;
       }
@@ -5152,7 +5312,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (attackPhase === 'climb') {
         //  REALISTIC CONTINUOUS WALL GRAVITY  (right wall mirror)
         const wallElapsed = Math.max(0, (10000 - stateTimer) / 1000);
-        const wallGravity = 15 + wallElapsed * 4;
+        const wallGravity = 8 + wallElapsed * 2;
         velY += wallGravity * dt;
         velY = Math.max(velY, -SPEED_RUN * 1.1);
         
@@ -5562,10 +5722,65 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     e.preventDefault();
   }, { passive: false });
 
+  let cursorReactionLastX = cursorX;
+  let cursorReactionLastY = cursorY;
+  let cursorReactionLastTs = safeNow();
+  let cursorApproachScore = 0;
+  let lastCursorReactionAt = 0;
+
+  function maybeReactToSuspiciousCursor(now, prevX, prevY, pointerSpeed) {
+    if (isCompanion || !catEnabled || !isTabVisible || document.hidden) return;
+    if (isDragging || state === 'dragged' || state === 'hidden' || state === 'deepsleep') return;
+    if (isPurring || speechModule?.speechVisible) return;
+    if (_criticalStates.has(state) && state !== 'sit' && state !== 'headtilt' && state !== 'pawplay') return;
+
+    const dx = cursorX - feetX;
+    const dy = cursorY - feetY;
+    const dist = Math.hypot(dx, dy);
+    const prevDist = Math.hypot(prevX - feetX, prevY - feetY);
+    const isApproaching = dist < prevDist - 7;
+    const isFastApproach = isApproaching && pointerSpeed > 620;
+    const tooSoon = now - lastCursorReactionAt < 18000;
+
+    if (dist < 150 && isApproaching) {
+      cursorApproachScore = Math.min(6, cursorApproachScore + (isFastApproach ? 2 : 1));
+    } else if (dist > 180 || !isApproaching) {
+      cursorApproachScore = Math.max(0, cursorApproachScore - 0.5);
+    }
+
+    if (tooSoon || !speechModule || typeof speechModule.speakFromCategory !== 'function') return;
+
+    if (dist < 42 && pointerSpeed > 360) {
+      lastCursorReactionAt = now;
+      speechModule.speakFromCategory('cursorPanic');
+      if (onGround && state !== 'spook') go('spook');
+      return;
+    }
+
+    if (cursorApproachScore >= 4 && dist < 105) {
+      lastCursorReactionAt = now;
+      const category = dist < 75 || isFastApproach ? 'cursorThreat' : 'cursorSuspicious';
+      speechModule.speakFromCategory(category);
+      if (dist < 76 && onGround && Math.random() < 0.45) go('spook');
+      else if ((state === 'sit' || state === 'stare') && Math.random() < 0.45) go('headtilt');
+      cursorApproachScore = 0;
+    }
+  }
+
   addManagedEventListener(document, 'mousemove', e => {
     cursorX = e.clientX; cursorY = e.clientY;
     PixelCatRuntime.cursorX = cursorX;
     PixelCatRuntime.cursorY = cursorY;
+
+    const cursorReactionNow = safeNow();
+    const cursorReactionDt = Math.max(16, cursorReactionNow - cursorReactionLastTs);
+    if (cursorReactionDt >= 120) {
+      const cursorReactionSpeed = Math.hypot(cursorX - cursorReactionLastX, cursorY - cursorReactionLastY) / cursorReactionDt * 1000;
+      maybeReactToSuspiciousCursor(cursorReactionNow, cursorReactionLastX, cursorReactionLastY, cursorReactionSpeed);
+      cursorReactionLastX = cursorX;
+      cursorReactionLastY = cursorY;
+      cursorReactionLastTs = cursorReactionNow;
+    }
 
     // Companion cat should also read global cursor position
     if (isCompanion && !isDragging) {
@@ -5792,10 +6007,21 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     setAnim('jump', true);
     state = 'jump'; stateTimer = 3000;
   }
+  function releaseDraggedEntities() {
+    if (isCompanion) return;
+    releaseDraggedFish();
+    releaseDraggedBall();
+    releaseDraggedSpider();
+  }
+
   addManagedEventListener(document, 'mouseup', dropCat);
   addManagedEventListener(document, 'touchend', dropCat);
-  addManagedEventListener(document, 'mouseup', () => { if (!isCompanion) { releaseDraggedFish(); releaseDraggedBall(); releaseDraggedSpider(); } });
-  addManagedEventListener(document, 'touchend', () => { if (!isCompanion) { releaseDraggedFish(); releaseDraggedBall(); releaseDraggedSpider(); } });
+  addManagedEventListener(document, 'touchcancel', dropCat);
+  addManagedEventListener(window, 'blur', dropCat);
+  addManagedEventListener(document, 'mouseup', releaseDraggedEntities);
+  addManagedEventListener(document, 'touchend', releaseDraggedEntities);
+  addManagedEventListener(document, 'touchcancel', releaseDraggedEntities);
+  addManagedEventListener(window, 'blur', releaseDraggedEntities);
 
   addManagedEventListener(catEl, 'dblclick', e => {
     e.stopPropagation();
@@ -5834,28 +6060,29 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   // Check scroll reaction periodically
   addInterval(() => {
-    if (scrollAccum > 900 && !isScrolling && !mutationScanTimeout && !isDragging && state !== 'dragged' && state !== 'stunned') {
-      // Fast scroll  reaction
+    if (scrollAccum > 1100 && !isScrolling && !mutationScanTimeout && !isDragging && state !== 'dragged' && state !== 'stunned') {
+      // Fast scroll reaction, kept subtle to avoid interrupting browsing.
       if (state === 'wall_left' || state === 'wall_right' || state === 'ninja_climb') {
          go('spook');
          velY = 100; // Drop down slightly
          velX = 0;
          onGround = false;
-      } else if (Math.random() < 0.4) {
-        setAnimLocked('scared', 800);
-        state = 'stunned'; stateTimer = 800;
+      } else if (Math.random() < 0.22) {
+        setAnimLocked('scared', 650);
+        state = 'stunned'; stateTimer = 650;
         velX = 0;
       }
     }
     scrollAccum = 0;
-  }, 500);
+  }, 700);
 
-  // Random behavior nudge
+  // Random behavior nudge. Slower cadence prevents the cat from feeling restless
+  // or constantly interrupting itself on busy YouTube pages.
   addInterval(() => {
     if (isDragging || state === 'hidden' || state === 'dragged' || state === 'stunned') return;
-    if (isLoyalMode || isDeepSleep || isPurring) return;
-    if (Math.random() < 0.18) go(null, [state]);
-  }, 5000);
+    if (isLoyalMode || isDeepSleep || isPurring || speechModule?.speechVisible) return;
+    if (Math.random() < 0.1) go(null, [state]);
+  }, 8000);
 
   if (!isCompanion) {
     addInterval(() => {
@@ -5866,8 +6093,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
     addInterval(() => {
       if (!catEnabled || !isTabVisible || document.hidden) return;
-      const videoEl = document.querySelector('video');
-      if (!videoEl || videoEl.paused || videoEl.ended || videoEl.readyState < 2) return;
+      if (!isYouTubeVideoPlaying()) return;
       recordQuestEvent('watch_seconds', 15);
     }, 15000);
   }
@@ -5876,27 +6102,27 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   addInterval(() => {
     if (!isAggressiveMode || !uiMischiefEnabled || !catEnabled) return;
     if (isDragging || state === 'dragged' || state === 'chasefish' || state === 'eatfish' || state === 'deepsleep') return;
-    if (Math.random() < (uiMischiefRate / 100)) go('ui_mischief');
-  }, 12000);
+    if (Math.random() < ((uiMischiefRate / 100) * 0.55)) go('ui_mischief');
+  }, 20000);
 
   //  CURSOR PROXIMITY REACTION 
   // If cursor hovers very close for a while, cat might react
   let cursorNearTimer = 0;
   addInterval(() => {
-    if (isDragging || state === 'dragged') return;
+    if (isDragging || state === 'dragged' || speechModule?.speechVisible) return;
     const cdist = Math.hypot(cursorX - feetX, cursorY - feetY);
-    if (cdist < 80) {
-      cursorNearTimer += 500;
-      if (cursorNearTimer > 2000 && state === 'sit') {
-        // Cat notices and looks at cursor
-        if (Math.random() < 0.3) go('headtilt');
-        else if (Math.random() < 0.3) go('pawplay');
+    if (cdist < 72) {
+      cursorNearTimer += 700;
+      if (cursorNearTimer > 3600 && state === 'sit') {
+        // Cat notices the cursor, but keep this rare so it never feels spammy.
+        if (Math.random() < 0.22) go('headtilt');
+        else if (Math.random() < 0.18) go('pawplay');
         cursorNearTimer = 0;
       }
     } else {
       cursorNearTimer = 0;
     }
-  }, 500);
+  }, 700);
 
   // 
   //  VIDEO EVENT LISTENERS
@@ -5904,17 +6130,31 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   let attachedVideoEl = null;
   let detachVideoPlayListener = null;
   let detachVideoPauseListener = null;
+  let lastVideoReactionSpeechAt = 0;
+
+  function maybeSpeakVideoReaction(category) {
+    if (isCompanion || !speechModule || typeof speechModule.speakFromCategory !== 'function') return;
+    if (!catEnabled || !isTabVisible || document.hidden || speechModule.speechVisible) return;
+    const now = safeNow();
+    if (now - lastVideoReactionSpeechAt < 30000) return;
+    if (Math.random() < 0.25) {
+      lastVideoReactionSpeechAt = now;
+      speechModule.speakFromCategory(category);
+    }
+  }
 
   function handleVideoPlay() {
     if (typeof updateWatchMemory === 'function') updateWatchMemory(false);
-    if ((state === 'sit' || state === 'groom' || state === 'nap') && Math.random() < 0.3) {
+    maybeSpeakVideoReaction('videoPlay');
+    if ((state === 'sit' || state === 'groom' || state === 'nap') && Math.random() < 0.18) {
       go('watchvideo');
     }
   }
 
   function handleVideoPause() {
+    maybeSpeakVideoReaction('videoPause');
     // Cat looks around when video pauses
-    if (state === 'watchvideo' && Math.random() < 0.5) {
+    if (state === 'watchvideo' && Math.random() < 0.32) {
       go('headtilt');
     }
   }
@@ -5941,12 +6181,16 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     detachVideoPauseListener = addManagedEventListener(videoEl, 'pause', handleVideoPause);
   }
 
+  let lastUiMouseoverPounceAt = 0;
   function handleUiMouseover(e) {
     if (!isAggressiveMode || !uiMischiefEnabled || !catEnabled) return;
     if (state === 'chasefish' || state === 'dragged' || state === 'deepsleep' || isPurring) return;
+    const now = safeNow();
+    if (now - lastUiMouseoverPounceAt < 14000) return;
 
     const thumb = e.target.closest('ytd-thumbnail, ytd-rich-grid-media, ytd-compact-video-renderer');
-    if (thumb && Math.random() < 0.08) {
+    if (thumb && Math.random() < 0.035) {
+      lastUiMouseoverPounceAt = now;
       attackEl = thumb;
       go('pounce');
     }
@@ -6065,7 +6309,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
          // Jump Scare Mechanic
          // If I am idle, and the other cat is falling FAST nearby, I get scared
          if (isIdleTickState() && isClose && other.isJumping && other.velY > 200 && Math.random() < 0.2) {
-             facingLeft = dx > 0; // face the falling cat
+             facingLeft = dx < 0; // face the falling cat
              applyTransform();
              setAnimLocked('scared', 1000);
              state = 'stunned'; stateTimer = 1000;
@@ -6075,14 +6319,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
          if (isIdleTickState() && isClose && other.state !== 'jump' && other.state !== 'stunned' && Math.random() < 0.025) {
              // 10% Mutual scare
              if (Math.random() < 0.1 && other.state !== 'scared') {
-                 facingLeft = dx > 0;
+                 facingLeft = dx < 0;
                  applyTransform();
                  setAnimLocked('scared', 800);
                  state = 'stunned'; stateTimer = 800;
                  other.go('spook'); // FIX: 'scared' is not a valid state  use 'spook'
              // 25% Paw Fight / Play
              } else if (Math.random() < 0.25) {
-                 facingLeft = dx > 0;
+                 facingLeft = dx < 0;
                  applyTransform();
                  setAnimLocked('paw', 1500);
                  // 50% chance the other cat swipes back!
@@ -6092,12 +6336,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
                  }
              // 40% Face Off (stare at each other)
              } else if (Math.random() < 0.4) {
-                 facingLeft = dx > 0;
+                 facingLeft = dx < 0;
                  applyTransform();
                  go('headtilt');
              // 25% Mutual Nuzzle/Sleep
              } else if (Math.random() < 0.5) {
-                facingLeft = dx > 0;
+                facingLeft = dx < 0;
                 applyTransform();
                 go('sit');
              }
@@ -6110,29 +6354,36 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
          }
       }
     }
-    // Only update fish if there are any or timer is close to spawning (Main Cat Only solves drop-doubling!)
+    // Main cat owns auto-spawns so companion mode never doubles objects.
     if (!isCompanion) {
-      if (activeFishes.length > 0 || fishSpawnTimer < 1) {
-        updateFishes(dt);
-      } else {
-        fishSpawnTimer -= dt;
-      }
-      // Update ball
-      if (ballEnabled) {
-        updateBalls(dt);
-      }
+      updateFishes(dt);
+      updateBalls(dt);
       
-      // Update portals
-      if (portalEnabled) {
+      // Update portals. The next countdown starts only after the current pair is fully gone.
+      if (portalEnabled || portalModule.activePortals.length > 0) {
         updatePortals(dt);
         
-        // Spawn new portal pairs rarely â€” feels like a magical surprise, not a routine event.
-        // After first pair, wait 3-8 minutes before spawning another.
-        portalSpawnTimer -= dt;
-        if (portalSpawnTimer <= 0 && portalModule.activePortals.length < 2) {
-          spawnPortalPair();
-          // 3-8 minute gap: 180-480 seconds. Weighted toward longer gaps for rarity.
-          portalSpawnTimer = 180 + Math.random() * 300;
+        if (portalEnabled) {
+          const portalSpawnBlocked = portalModule.activePortals.length > 0 || hasActivePickup();
+          if (portalSpawnBlocked) {
+            portalTimerPausedForObject = true;
+          } else {
+            if (portalTimerPausedForObject) {
+              portalSpawnTimer = nextPortalSpawnDelay();
+              portalTimerPausedForObject = false;
+            }
+            portalSpawnTimer -= dt;
+            if (portalSpawnTimer <= 0) {
+              if (spawnPortalPair()) {
+                portalSpawnTimer = nextPortalSpawnDelay();
+                portalTimerPausedForObject = true;
+              } else {
+                portalSpawnTimer = nextPortalSpawnDelay();
+              }
+            }
+          }
+        } else {
+          portalTimerPausedForObject = false;
         }
         
         // Check portal collision and teleport
@@ -6176,15 +6427,28 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       }
       
       if (spiderEnabled || activeSpiders.length > 0 || activeWebs.length > 0) {
-        if (!spiderEnabled || activeSpiders.length > 0 || activeWebs.length > 0 || spiderSpawnTimer < 1) {
-          updateSpiders(dt);
-          if (spiderEnabled && spiderSpawnTimer < 1 && activeSpiders.length < 2) { // Max 2 spiders at once
-             spawnSpider();
-             // More varied spawn timing: 2-6 minutes
-             spiderSpawnTimer = 120 + Math.random() * 240;
+        updateSpiders(dt);
+        if (spiderEnabled) {
+          const spiderSpawnBlocked = activeSpiders.length > 0 || activeWebs.length > 0 || hasActivePickup();
+          if (spiderSpawnBlocked) {
+            spiderTimerPausedForObject = true;
+          } else {
+            if (spiderTimerPausedForObject) {
+              spiderSpawnTimer = nextSpiderSpawnDelay();
+              spiderTimerPausedForObject = false;
+            }
+            spiderSpawnTimer -= dt;
+            if (spiderSpawnTimer <= 0) {
+              if (spawnSpider()) {
+                spiderSpawnTimer = nextSpiderSpawnDelay();
+                spiderTimerPausedForObject = true;
+              } else {
+                spiderSpawnTimer = nextSpiderSpawnDelay();
+              }
+            }
           }
         } else {
-          spiderSpawnTimer -= dt;
+          spiderTimerPausedForObject = false;
         }
       }
       // Coin drops (main cat only)
@@ -6208,9 +6472,56 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   }
   rafId = requestAnimationFrame(loop);
 
+  function normalizeSkin(skin) {
+    return ['white', 'orange', 'rainbow'].includes(skin) ? skin : 'white';
+  }
+
+  function getAlternateSkin(skin) {
+    const normalized = normalizeSkin(skin);
+    if (normalized === 'orange') return 'white';
+    if (normalized === 'rainbow') return 'orange';
+    return 'orange';
+  }
+
+  function resolveCatSkin(mainSkin) {
+    const normalized = normalizeSkin(mainSkin);
+    return isCompanion ? getAlternateSkin(normalized) : normalized;
+  }
+
+  function stopSkinAnimation() {
+    if (!skinAnimation) return;
+    try { skinAnimation.cancel(); } catch (e) {}
+    skinAnimation = null;
+  }
+
   function applySkin(skin) {
-    if (skin === 'orange') catEl.style.filter = 'sepia(1) saturate(8) hue-rotate(-35deg) brightness(0.95) contrast(1.1)';
-    else catEl.style.filter = 'none';
+    const resolvedSkin = normalizeSkin(skin);
+    catSkinStr = resolvedSkin;
+    stopSkinAnimation();
+    if (resolvedSkin === 'orange') {
+      catEl.style.filter = 'sepia(1) saturate(8) hue-rotate(-35deg) brightness(0.95) contrast(1.1)';
+      return;
+    }
+    if (resolvedSkin === 'rainbow') {
+      const rainbowBase = 'sepia(1) saturate(7) hue-rotate(0deg) brightness(1.08) contrast(1.08)';
+      catEl.style.filter = rainbowBase;
+      if (typeof catEl.animate === 'function') {
+        skinAnimation = catEl.animate([
+          { filter: 'sepia(1) saturate(7) hue-rotate(0deg) brightness(1.08) contrast(1.08)' },
+          { filter: 'sepia(1) saturate(7) hue-rotate(72deg) brightness(1.08) contrast(1.08)' },
+          { filter: 'sepia(1) saturate(7) hue-rotate(144deg) brightness(1.08) contrast(1.08)' },
+          { filter: 'sepia(1) saturate(7) hue-rotate(216deg) brightness(1.08) contrast(1.08)' },
+          { filter: 'sepia(1) saturate(7) hue-rotate(288deg) brightness(1.08) contrast(1.08)' },
+          { filter: 'sepia(1) saturate(7) hue-rotate(360deg) brightness(1.08) contrast(1.08)' }
+        ], {
+          duration: 3600,
+          iterations: Infinity,
+          easing: 'linear'
+        });
+      }
+      return;
+    }
+    catEl.style.filter = 'none';
   }
 
 
@@ -6224,7 +6535,7 @@ function getLocal(keys) {
   return new Promise((resolve) => API.storage.local.get(keys, resolve));
 }
 
-getLocal({
+const RUNTIME_SETTINGS_DEFAULTS = {
   catEnabled: true,
   companionEnabled: false,
   catSkin: 'white',
@@ -6234,10 +6545,11 @@ getLocal({
   aggressiveMode: true,
   uiMischiefEnabled: false,
   speechEnabled: false,
-  memoryEnabled: true,
+  memoryEnabled: false,
   rareEventsEnabled: true,
   autoFishSpawnEnabled: false,
   lowPowerMode: false,
+  hideInFullscreen: false,
   sizeMultiplier: 1.0,
   uiMischiefRate: 11,
   catEnergyLevel: 'active',
@@ -6246,17 +6558,21 @@ getLocal({
   uiLanguage: 'en',
   catXP: 0,
   shopOwned: [],
-  shopActiveBoosts: null
-}).then((data) => {
-  const xp = Math.min(460, Math.max(0, Number(data.catXP) || 0));
+  shopActiveBoosts: null,
+  activeBall: 'ball_baseball'
+};
+
+getLocal(RUNTIME_SETTINGS_DEFAULTS).then((data) => {
+  const xp = Math.min(270, Math.max(0, Number(data.catXP) || 0));
   if (xp < 10)  data.speechEnabled = false;
   if (xp < 10)  data.ballEnabled = false;
-  if (xp < 30)  data.spiderEnabled = false;
-  if (xp < 60)  data.sizeMultiplier = 1.0;
-  if (xp < 100) data.companionEnabled = false;
-  if (xp < 150) data.uiMischiefEnabled = false;
-  if (xp < 280 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
-  if (xp < 210) data.portalEnabled = false;
+  if (xp < 25)  data.spiderEnabled = false;
+  if (xp < 25 && data.catSkin === 'rainbow') data.catSkin = 'white';
+  if (xp < 45)  data.sizeMultiplier = 1.0;
+  if (xp < 70) data.companionEnabled = false;
+  if (xp < 100) data.uiMischiefEnabled = false;
+  if (xp < 175 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
+  if (xp < 135) data.portalEnabled = false;
 
   PixelCatRuntime.instances.slice().forEach((cat) => {
     if (cat && typeof cat.destroy === 'function') {
@@ -6279,7 +6595,7 @@ getLocal({
     spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin);
   }
   if (data.companionEnabled && !companionExists) {
-    spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'white' ? 'orange' : 'white');
+    spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
   }
   
   // Apply all settings immediately after spawning
@@ -6297,15 +6613,16 @@ function clampRuntimeNumber(value, min, max, fallback) {
 }
 
 function sanitizeLevelLockedSettings(data) {
-  const xp = Math.min(460, Math.max(0, Number(data.catXP) || 0));
+  const xp = Math.min(270, Math.max(0, Number(data.catXP) || 0));
   if (xp < 10)  data.speechEnabled = false;
   if (xp < 10)  data.ballEnabled = false;
-  if (xp < 30)  data.spiderEnabled = false;
-  if (xp < 60)  data.sizeMultiplier = 1.0;
-  if (xp < 100) data.companionEnabled = false;
-  if (xp < 150) data.uiMischiefEnabled = false;
-  if (xp < 210) data.portalEnabled = false;
-  if (xp < 280 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
+  if (xp < 25)  data.spiderEnabled = false;
+  if (xp < 25 && data.catSkin === 'rainbow') data.catSkin = 'white';
+  if (xp < 45)  data.sizeMultiplier = 1.0;
+  if (xp < 70) data.companionEnabled = false;
+  if (xp < 100) data.uiMischiefEnabled = false;
+  if (xp < 135) data.portalEnabled = false;
+  if (xp < 175 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
   return data;
 }
 
@@ -6334,9 +6651,8 @@ function sanitizeRuntimeSettings(settings) {
   if ('uiMischiefRate' in settings) clean.uiMischiefRate = Math.round(clampRuntimeNumber(settings.uiMischiefRate, 0, 100, 11));
   if (['sleepy', 'active', 'hyper'].includes(settings.catEnergyLevel)) clean.catEnergyLevel = settings.catEnergyLevel;
   if (['en', 'fr', 'ar'].includes(settings.uiLanguage)) clean.uiLanguage = settings.uiLanguage;
-  if (['white', 'orange'].includes(settings.catSkin)) clean.catSkin = settings.catSkin;
+  if (['white', 'orange', 'rainbow'].includes(settings.catSkin)) clean.catSkin = settings.catSkin;
   if (typeof settings.activeBall === 'string' && /^ball_[a-z0-9_]{1,40}$/.test(settings.activeBall)) clean.activeBall = settings.activeBall;
-  if (typeof settings.shopEffect === 'string' && /^[a-z0-9_]{1,40}$/.test(settings.shopEffect)) clean.shopEffect = settings.shopEffect;
   if (Array.isArray(settings.shopOwned)) {
     clean.shopOwned = settings.shopOwned
       .filter((id) => typeof id === 'string' && /^[a-z0-9_]{1,40}$/.test(id))
@@ -6364,7 +6680,7 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (mainEl) mainEl.remove();
       sendResponse({ success: true, action: 'destroyed' });
     } else {
-      getLocal({ catSkin: 'white', speechEnabled: false, sizeMultiplier: 1.0, catXP: 0, shopOwned: [], shopActiveBoosts: null, uiLanguage: 'en' }).then(data => {
+      getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
         spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin || 'white');
         const spawned = PixelCatRuntime.instances.find(c => !c.isCompanion);
@@ -6381,9 +6697,9 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (companionEl) companionEl.remove();
       sendResponse({ success: true, action: 'destroyed' });
     } else {
-      getLocal({ catSkin: 'white', speechEnabled: false, sizeMultiplier: 1.0, catXP: 0, shopOwned: [], shopActiveBoosts: null, uiLanguage: 'en' }).then(data => {
+      getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'white' ? 'orange' : 'white');
+        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
         const spawned = PixelCatRuntime.instances.find(c => c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true, action: 'spawned' });
@@ -6393,7 +6709,7 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.action === 'startCat') {
     const existing = PixelCatRuntime.instances.find(c => !c.isCompanion);
     if (!existing) {
-      getLocal({ catSkin: 'white', speechEnabled: false, sizeMultiplier: 1.0, catXP: 0, shopOwned: [], shopActiveBoosts: null, uiLanguage: 'en' }).then(data => {
+      getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
         spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin || 'white');
         const spawned = PixelCatRuntime.instances.find(c => !c.isCompanion);
@@ -6412,9 +6728,9 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.action === 'startCompanion') {
     const existing = PixelCatRuntime.instances.find(c => c.isCompanion);
     if (!existing) {
-      getLocal({ catSkin: 'white', speechEnabled: false, sizeMultiplier: 1.0, catXP: 0, shopOwned: [], shopActiveBoosts: null, uiLanguage: 'en' }).then(data => {
+      getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'white' ? 'orange' : 'white');
+        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
         const spawned = PixelCatRuntime.instances.find(c => c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true });

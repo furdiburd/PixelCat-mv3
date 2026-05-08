@@ -7,17 +7,17 @@
     let xpWriteTimer = 0;
     let pendingXPDelta = 0;
 
-    const MAX_LEVEL_XP = 460;
+    const MAX_LEVEL_XP = 270;
     const LEVEL_UNLOCKS = [
       { xp: 10, level: 2, skills: ['Speech bubbles', 'Ball play'] },
-      { xp: 30, level: 3, skills: ['Spider events'] },
-      { xp: 60, level: 4, skills: ['Cat size control'] },
-      { xp: 100, level: 5, skills: ['Companion mode'] },
-      { xp: 150, level: 6, skills: ['Page mischief'] },
-      { xp: 210, level: 7, skills: ['Portals'] },
-      { xp: 280, level: 8, skills: ['Hyper energy'] },
-      { xp: 360, level: 9, skills: ['Final level badge'] },
-      { xp: 460, level: 10, skills: ['Max level'] }
+      { xp: 25, level: 3, skills: ['Spider events'] },
+      { xp: 45, level: 4, skills: ['Cat size control'] },
+      { xp: 70, level: 5, skills: ['Companion mode'] },
+      { xp: 100, level: 6, skills: ['Page mischief'] },
+      { xp: 135, level: 7, skills: ['Portals'] },
+      { xp: 175, level: 8, skills: ['Hyper energy'] },
+      { xp: 220, level: 9, skills: ['Final level badge'] },
+      { xp: 270, level: 10, skills: ['Max level'] }
     ];
 
     function notifyLevelUnlocks(previousXP, nextXP) {
@@ -37,7 +37,15 @@
     }
 
 
+    function getFairPlay() {
+      return ctx.FairPlay || (typeof globalThis !== 'undefined' ? globalThis.PixelCatFairPlay : null);
+    }
+
     function getLocal(keys) {
+      const fairPlay = getFairPlay();
+      if (fairPlay && typeof fairPlay.hasProtectedKey === 'function' && fairPlay.hasProtectedKey(keys)) {
+        return fairPlay.ensure(ctx.API.storage.local, keys);
+      }
       if (typeof ctx.API.storage.local.get === 'function' && ctx.API.storage.local.get.length <= 1) {
         return ctx.API.storage.local.get(keys);
       }
@@ -45,6 +53,10 @@
     }
 
     function setLocal(data) {
+      const fairPlay = getFairPlay();
+      if (fairPlay && typeof fairPlay.hasProtectedKey === 'function' && fairPlay.hasProtectedKey(data)) {
+        return fairPlay.commit(ctx.API.storage.local, data);
+      }
       if (typeof ctx.API.storage.local.set === 'function' && ctx.API.storage.local.set.length <= 1) {
         return ctx.API.storage.local.set(data);
       }
@@ -54,6 +66,11 @@
     function mutateStoredNumber(key, delta, options) {
       const amount = Number(delta) || 0;
       if (!amount) return storageWriteQueue;
+
+      const fairPlay = getFairPlay();
+      if (fairPlay && typeof fairPlay.hasProtectedKey === 'function' && fairPlay.hasProtectedKey(key)) {
+        return fairPlay.mutateNumber(ctx.API.storage.local, key, amount, options);
+      }
 
       storageWriteQueue = storageWriteQueue.catch(() => {}).then(async () => {
         const defaultValue = options && options.defaultValue !== undefined ? options.defaultValue : 0;
@@ -119,10 +136,21 @@
       mutateStoredNumber('coins', clampedAmount, { defaultValue: 0, min: 0 });
     }
 
+    function getQuestStorageArea() {
+      const fairPlay = getFairPlay();
+      if (!fairPlay || typeof fairPlay.ensure !== 'function' || typeof fairPlay.commit !== 'function') {
+        return ctx.API.storage.local;
+      }
+      return {
+        get: (defaults) => fairPlay.ensure(ctx.API.storage.local, defaults),
+        set: (values) => fairPlay.commit(ctx.API.storage.local, values)
+      };
+    }
+
     function recordQuestEvent(type, amount) {
       if (ctx.isCompanion || !ctx.QuestEngine) return;
 
-      ctx.QuestEngine.recordEvent(ctx.API.storage.local, type, amount).then((snapshot) => {
+      ctx.QuestEngine.recordEvent(getQuestStorageArea(), type, amount).then((snapshot) => {
         if (snapshot.questsJustCompleted > 0) {
           awardCoins(snapshot.questsJustCompleted * 8);
           earnXP(snapshot.questsJustCompleted * 1.0); // XP: +1 per quest completed

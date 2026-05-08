@@ -59,7 +59,17 @@
       return portal;
     }
 
+    function releasePortalPickup(pairId) {
+      if (typeof ctx.releaseActivePickup !== 'function') return;
+      const stillActive = activePortals.some((portal) => portal && portal.pairId === pairId);
+      if (!stillActive) ctx.releaseActivePickup('portal');
+    }
+
     function spawnPortalPair() {
+      if (activePortals.length > 0) return false;
+      if (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup()) return false;
+      if (typeof ctx.claimActivePickup === 'function' && !ctx.claimActivePickup('portal')) return false;
+
       const margin = 100;
       
       // Correct formula for all placements: center = edge ± (HALF_PORTAL - SPRITE_PAD)
@@ -107,6 +117,7 @@
       ctx.addTimeout(() => {
         closePortalPair(portal1, portal2);
       }, lifetime);
+      return true;
     }
 
     function closePortalPair(portal1, portal2) {
@@ -145,8 +156,10 @@
               portal.isActive = true;
             } else if (portal.state === 'closing') {
               // Remove portal after closing animation
+              const closingPairId = portal.pairId;
               portal.el.remove();
               activePortals.splice(i, 1);
+              releasePortalPickup(closingPairId);
               continue;
             } else {
               // Loop idle animation
@@ -241,12 +254,14 @@
     }
 
     function cleanup() {
+      const hadPortals = activePortals.length > 0;
       for (let i = activePortals.length - 1; i >= 0; i--) {
         if (activePortals[i].el && activePortals[i].el.isConnected) {
           activePortals[i].el.remove();
         }
       }
       activePortals = [];
+      if (hadPortals && typeof ctx.releaseActivePickup === 'function') ctx.releaseActivePickup('portal');
     }
 
     return {

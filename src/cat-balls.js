@@ -12,6 +12,11 @@
       ball_bowling:    { img: ctx.u('assets/balls/bowling.png'),    bounciness: 0.22, gravMult: 2.2,  spinRate: 180,  groundFriction: 0.75, airDrag: 0.999 }
     };
     const defaultBallPhysics = ballPhysics.ball_baseball;
+    let ballTimerPausedForObject = false;
+
+    function nextBallSpawnDelay() {
+      return 90 + Math.random() * 180 + (Math.random() < 0.15 ? 60 : 0);
+    }
 
     function spawnBall(customX, customY) {
       if (ctx.activeBalls.length >= 1) return false;
@@ -133,15 +138,26 @@
           });
           ctx.activeBalls.length = 0;
         }
+        ballTimerPausedForObject = false;
         return;
       }
 
-      ctx.ballSpawnTimer -= dt;
-      if (ctx.ballSpawnTimer <= 0 && ctx.activeBalls.length < 1) {
-        if (spawnBall()) {
-          ctx.ballSpawnTimer = 90 + Math.random() * 180 + (Math.random() < 0.15 ? 60 : 0);
-        } else {
-          ctx.ballSpawnTimer = 3 + Math.random() * 5;
+      const spawnBlocked = ctx.activeBalls.length > 0 || (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup());
+      if (spawnBlocked) {
+        ballTimerPausedForObject = true;
+      } else {
+        if (ballTimerPausedForObject) {
+          ctx.ballSpawnTimer = nextBallSpawnDelay();
+          ballTimerPausedForObject = false;
+        }
+        ctx.ballSpawnTimer -= dt;
+        if (ctx.ballSpawnTimer <= 0) {
+          if (spawnBall()) {
+            ctx.ballSpawnTimer = nextBallSpawnDelay();
+            ballTimerPausedForObject = true;
+          } else {
+            ctx.ballSpawnTimer = nextBallSpawnDelay();
+          }
         }
       }
 

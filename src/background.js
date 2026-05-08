@@ -31,8 +31,7 @@ const ALLOWED_SETTINGS = {
   catSkin: 'string',
   activeBall: 'string',
   shopOwned: 'array',
-  shopActiveBoosts: 'array',
-  shopEffect: 'string'
+  shopActiveBoosts: 'array'
 };
 
 function isExtensionSender(sender) {
@@ -66,9 +65,8 @@ function sanitizeSettings(settings) {
     if (expected === 'string') {
       if (key === 'catEnergyLevel' && ['sleepy', 'active', 'hyper'].includes(value)) clean[key] = value;
       else if (key === 'uiLanguage' && ['en', 'fr', 'ar'].includes(value)) clean[key] = value;
-      else if (key === 'catSkin' && ['white', 'orange'].includes(value)) clean[key] = value;
+      else if (key === 'catSkin' && ['white', 'orange', 'rainbow'].includes(value)) clean[key] = value;
       else if (key === 'activeBall' && /^ball_[a-z0-9_]{1,40}$/.test(value)) clean[key] = value;
-      else if (key === 'shopEffect' && /^[a-z0-9_]{1,40}$/.test(value)) clean[key] = value;
       return;
     }
     if (expected === 'array') {

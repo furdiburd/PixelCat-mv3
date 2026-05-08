@@ -2,7 +2,7 @@
   'use strict';
 
   const API = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
-  const MAX_XP = 320;
+  const MAX_XP = 270;
   const MAX_COINS = 999999;
   const INSTALL_KEY = 'pcInstallId';
   const SEAL_KEY = 'pcProgressSeal';
