@@ -5,7 +5,6 @@
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Firefox-supported-orange?style=for-the-badge&logo=firefox-browser&logoColor=white"/>
   <img src="https://img.shields.io/badge/Chrome%20-Supported-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Version-2.5-informational?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge"/>
 </p>
 <p align="center">
