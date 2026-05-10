@@ -10,6 +10,7 @@
     aggressiveMode: true,
     speedMultiplier: 1.0,
     catSkin: 'white',
+    foxSkin: 'orange',
     uiMischiefEnabled: false,
     speechEnabled: false,
     memoryEnabled: false,
@@ -38,7 +39,7 @@
     en: {
       coins: 'Coins', xpHint: 'Feed fish or play ball to earn XP',
       dailyBonusReady: 'Daily Bonus Ready!', tapToClaim: 'Tap to claim your coins', claim: 'Claim',
-      level4needed: 'Level 4 needed', companion: 'Companion', loyalMode: 'Loyal Mode', catSkin: 'Cat Skin',
+      level4needed: 'Level 4 needed', companion: 'Companion', loyalMode: 'Loyal Mode', catSkin: 'Pet Skin',
       quests: 'Quests', achievements: 'Achievements', dailyQuests: 'Daily Quests',
       energyLevel: 'Energy Level', affectsSpeed: 'Affects movement speed',
       sleepy: 'Sleepy', active: 'Active', autoSpawn: 'Auto Spawn', aggressiveMode: 'Aggressive Mode',
@@ -76,7 +77,7 @@
       "level4needed": "Livello 4 richiesto",
       "companion": "Compagno",
       "loyalMode": "Modalità fedele",
-      "catSkin": "Skin gatto",
+      "catSkin": "Skin pet",
       "quests": "Missioni",
       "achievements": "Obiettivi",
       "dailyQuests": "Missioni giornaliere",
@@ -112,7 +113,7 @@
     ar: {
       coins: 'عملات', xpHint: 'أطعم القطة أو العب لكسب نقاط الخبرة',
       dailyBonusReady: 'المكافأة اليومية جاهزة!', tapToClaim: 'اضغط للمطالبة بعملاتك', claim: 'اطلب',
-      level4needed: 'المستوى 4 مطلوب', companion: 'رفيق', loyalMode: 'الوضع الوفي', catSkin: 'مظهر القطة',
+      level4needed: 'المستوى 4 مطلوب', companion: 'رفيق', loyalMode: 'الوضع الوفي', catSkin: 'مظهر الحيوان',
       quests: 'مهام', achievements: 'إنجازات', dailyQuests: 'المهام اليومية',
       energyLevel: 'مستوى الطاقة', affectsSpeed: 'يؤثر على سرعة الحركة',
       sleepy: 'نعسان', active: 'نشيط', autoSpawn: 'إنتاج تلقائي', aggressiveMode: 'الوضع العدواني',
@@ -167,7 +168,7 @@
       boostTreatDesc: 'Double fish coins', boostMagnet: 'Coin Magnet', boostMagnetDesc: 'Pulls nearby coins to the cat',
       boostLucky: 'Lucky Charm', boostLuckyDesc: 'More frequent drops',
       questPet: 'Pet Session', questFish: 'Give Fish', questWatch: 'Watch Together', questCoins: 'Collect Coins',
-      questFetch: 'Play Fetch', questSpiders: 'Catch Spiders', questDoubleAffection: 'Double Affection',
+      questFetch: 'Play Fetch', questSpiders: 'Catch Spiders', questGoogleVisit: 'Google Visit', questGoogleSearch: 'Search Buddy', questGooglePatrol: 'Google Patrol', questDoubleAffection: 'Double Affection',
       questFishFeast: 'Fish Feast', questLongSession: 'Long Session',
       showToggleInfo: 'Show setting info', hideToggleInfo: 'Hide setting info',
       infoCompanion: 'Adds a second cat when unlocked.',
@@ -178,7 +179,8 @@
       infoFullscreen: 'Hides PixelCat during fullscreen videos.',
       infoLowPower: 'Less animation, smoother mode.',
       infoMischief: 'Allows small playful page interactions.',
-      infoRareEvents: 'Enables occasional surprise events.',
+      infoRareEvents: 'Enables surprise events like bubble traps.',
+      ecoBlockedInfo: 'Turn off Eco Mode first',
       confirm: 'Confirm', cancel: 'Cancel', openInfo: 'Open info'
     },
     fr: {
@@ -222,7 +224,7 @@
       boostTreatDesc: 'Pièces poisson x2', boostMagnet: 'Aimant à pièces', boostMagnetDesc: 'Attire les pièces',
       boostLucky: 'Porte-bonheur', boostLuckyDesc: 'Butins fréquents',
       questPet: 'Session câlin', questFish: 'Donner du poisson', questWatch: 'Regarder ensemble', questCoins: 'Collecter des pièces',
-      questFetch: 'Jouer à rapporter', questSpiders: 'Attraper des araignées', questDoubleAffection: 'Double affection',
+      questFetch: 'Jouer à rapporter', questSpiders: 'Attraper des araignées', questGoogleVisit: 'Visite Google', questGoogleSearch: 'Recherche avec le pet', questGooglePatrol: 'Patrouille Google', questDoubleAffection: 'Double affection',
       questFishFeast: 'Festin de poisson', questLongSession: 'Longue session',
       showToggleInfo: 'Voir l’info', hideToggleInfo: 'Masquer l’info',
       infoCompanion: 'Ajoute un deuxième chat une fois débloqué.',
@@ -233,7 +235,8 @@
       infoFullscreen: 'Cache PixelCat en plein écran.',
       infoLowPower: 'Moins d’animations, plus fluide.',
       infoMischief: 'Autorise de petites interactions avec la page.',
-      infoRareEvents: 'Active des surprises occasionnelles.',
+      infoRareEvents: 'Active les surprises comme les bulles.',
+      ecoBlockedInfo: 'Turn off Eco Mode first',
       confirm: 'Confirmer', cancel: 'Annuler', openInfo: 'Ouvrir les infos'
     },
     it: {
@@ -342,6 +345,9 @@
       "questCoins": "Raccogli monete",
       "questFetch": "Gioca al riporto",
       "questSpiders": "Cattura ragni",
+      "questGoogleVisit": "Visita Google",
+      "questGoogleSearch": "Cerca insieme",
+      "questGooglePatrol": "Pattuglia Google",
       "questDoubleAffection": "Doppio affetto",
       "questFishFeast": "Banchetto di pesce",
       "questLongSession": "Sessione lunga",
@@ -355,7 +361,8 @@
       "infoFullscreen": "Nasconde PixelCat durante i video a schermo intero.",
       "infoLowPower": "Meno animazione, modalità più fluida.",
       "infoMischief": "Permette piccole interazioni giocose con la pagina.",
-      "infoRareEvents": "Attiva eventi sorpresa occasionali.",
+      "infoRareEvents": "Attiva sorprese come bolle trappola.",
+      "ecoBlockedInfo": "Turn off Eco Mode first",
       "confirm": "Conferma",
       "cancel": "Annulla",
       "openInfo": "Apri info"
@@ -401,7 +408,7 @@
       boostTreatDesc: 'عملات السمك x2', boostMagnet: 'مغناطيس العملات', boostMagnetDesc: 'يجذب العملات',
       boostLucky: 'تميمة الحظ', boostLuckyDesc: 'إسقاطات أكثر',
       questPet: 'جلسة مداعبة', questFish: 'قدّم السمك', questWatch: 'شاهدوا معاً', questCoins: 'اجمع العملات',
-      questFetch: 'العب جلب الكرة', questSpiders: 'اصطد العناكب', questDoubleAffection: 'عاطفة مضاعفة',
+      questFetch: 'العب جلب الكرة', questSpiders: 'اصطد العناكب', questGoogleVisit: 'زيارة Google', questGoogleSearch: 'بحث مع الرفيق', questGooglePatrol: 'دورية Google', questDoubleAffection: 'عاطفة مضاعفة',
       questFishFeast: 'وليمة سمك', questLongSession: 'جلسة طويلة',
       showToggleInfo: 'إظهار المعلومات', hideToggleInfo: 'إخفاء المعلومات',
       infoCompanion: 'يضيف قطاً ثانياً بعد فتحه.',
@@ -412,7 +419,8 @@
       infoFullscreen: 'يخفي PixelCat في وضع ملء الشاشة.',
       infoLowPower: 'حركات أقل، أداء أفضل.',
       infoMischief: 'يسمح بتفاعلات صغيرة مع الصفحة.',
-      infoRareEvents: 'يفعّل مفاجآت نادرة أحياناً.',
+      infoRareEvents: 'يفعّل مفاجآت مثل فقاعات الفخ.',
+      ecoBlockedInfo: 'Turn off Eco Mode first',
       confirm: 'تأكيد', cancel: 'إلغاء', openInfo: 'فتح المعلومات'
     }
   };
@@ -590,6 +598,48 @@
     { toggleId: 'uiMischiefToggle', key: 'infoMischief' },
     { toggleId: 'rareEventsToggle', key: 'infoRareEvents' }
   ];
+
+  const ECO_BLOCKED_TOGGLE_IDS = new Set([
+    'companionToggle',
+    'aggroToggle',
+    'speechToggle',
+    'memoryToggle',
+    'uiMischiefToggle',
+    'rareEventsToggle'
+  ]);
+  const ECO_BLOCKED_BUTTON_IDS = ['fishSpawnBtn', 'ballSpawnBtn', 'spiderSpawnBtn', 'portalSpawnBtn', 'hyperBtn'];
+  const ECO_BLOCKED_STEPPER_IDS = ['sizeMinus', 'sizePlus', 'mischiefMinus', 'mischiefPlus'];
+  const ECO_FORCE_OFF_PATCH = {
+    companionEnabled: false,
+    aggressiveMode: false,
+    uiMischiefEnabled: false,
+    speechEnabled: false,
+    memoryEnabled: false,
+    rareEventsEnabled: false,
+    autoFishSpawnEnabled: false,
+    ballEnabled: false,
+    spiderEnabled: false,
+    portalEnabled: false,
+    catEnergyLevel: 'sleepy'
+  };
+  const ECO_RESTORE_KEY = 'ecoModePreviousState';
+  const ECO_RESTORE_DEFAULTS = Object.freeze({
+    [ECO_RESTORE_KEY]: null,
+    companionEnabled: false,
+    aggressiveMode: true,
+    uiMischiefEnabled: false,
+    speechEnabled: false,
+    memoryEnabled: false,
+    rareEventsEnabled: true,
+    autoFishSpawnEnabled: false,
+    ballEnabled: false,
+    spiderEnabled: false,
+    portalEnabled: false,
+    catEnergyLevel: 'active',
+    activePet: 'pet_cat',
+    catXP: 0
+  });
+  let latestLowPowerMode = false;
 
   setupToggleInfoButtons();
 
@@ -850,10 +900,19 @@
     refreshToggleInfoText();
   }
 
+  function getToggleInfoText(line) {
+    const key = line && line.dataset ? line.dataset.i18n : '';
+    const panel = line ? line.closest('.toggle-info-panel') : null;
+    const toggleId = panel ? panel.dataset.infoPanelFor : '';
+    if (latestLowPowerMode && ECO_BLOCKED_TOGGLE_IDS.has(toggleId)) {
+      return t('ecoBlockedInfo');
+    }
+    return key ? t(key) : '';
+  }
+
   function refreshToggleInfoText() {
     document.querySelectorAll('.toggle-info-panel-text').forEach((line) => {
-      const key = line.dataset.i18n;
-      if (key) line.textContent = t(key);
+      line.textContent = getToggleInfoText(line);
     });
     document.querySelectorAll('.toggle-info-btn').forEach((button) => {
       const isOpen = button.getAttribute('aria-expanded') === 'true';
@@ -861,6 +920,155 @@
       button.title = t(titleKey);
       button.setAttribute('aria-label', t(titleKey));
     });
+  }
+
+
+  function getEcoPatch(data) {
+    if (!data || !data.lowPowerMode) return {};
+    const patch = {};
+    Object.keys(ECO_FORCE_OFF_PATCH).forEach((key) => {
+      if (data[key] !== ECO_FORCE_OFF_PATCH[key]) patch[key] = ECO_FORCE_OFF_PATCH[key];
+    });
+    return patch;
+  }
+
+  function setEcoDisabledState(el, blocked, label) {
+    if (!el) return;
+    if (blocked) {
+      if (!el.dataset.ecoPreviousDisabled) {
+        el.dataset.ecoPreviousDisabled = el.disabled ? '1' : '0';
+      }
+      el.disabled = true;
+    } else if (el.dataset.ecoPreviousDisabled) {
+      el.disabled = el.dataset.ecoPreviousDisabled === '1';
+      delete el.dataset.ecoPreviousDisabled;
+    }
+    el.classList.toggle('eco-disabled', !!blocked);
+    el.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+    if (blocked) el.title = label || t('ecoBlockedInfo');
+    else if (el.title === t('ecoBlockedInfo')) el.removeAttribute('title');
+  }
+
+  function applyEcoModeUI(enabled) {
+    latestLowPowerMode = !!enabled;
+    document.body.classList.toggle('eco-mode-on', !!enabled);
+    const ecoText = t('ecoBlockedInfo');
+
+    ECO_BLOCKED_TOGGLE_IDS.forEach((id) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const row = input.closest('.control-row') || input.closest('.locked-card');
+      const switchEl = input.closest('.switch');
+      if (enabled) input.checked = false;
+      setEcoDisabledState(input, !!enabled, ecoText);
+      if (switchEl) switchEl.classList.toggle('eco-disabled', !!enabled);
+      if (row) {
+        row.classList.toggle('eco-disabled', !!enabled);
+        row.title = enabled ? ecoText : '';
+      }
+    });
+
+    ECO_BLOCKED_BUTTON_IDS.forEach((id) => {
+      const button = document.getElementById(id);
+      if (!button) return;
+      if (enabled) {
+        button.classList.remove('active');
+        setEcoDisabledState(button, true, ecoText);
+      } else {
+        setEcoDisabledState(button, false, ecoText);
+      }
+    });
+
+    ECO_BLOCKED_STEPPER_IDS.forEach((id) => {
+      const button = document.getElementById(id);
+      if (!button) return;
+      if (enabled) setEcoDisabledState(button, true, ecoText);
+      else setEcoDisabledState(button, false, ecoText);
+    });
+
+    const energyButtons = document.querySelectorAll('#energyGroup .group-btn');
+    if (enabled) {
+      energyButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.energy === 'sleepy'));
+    }
+
+    refreshToggleInfoText();
+  }
+
+  function sanitizeEcoRestoreSnapshot(snapshot, data) {
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
+    const out = {};
+    Object.keys(ECO_FORCE_OFF_PATCH).forEach((key) => {
+      const fallback = (data && key in data) ? data[key] : defaultSettings[key];
+      if (key === 'catEnergyLevel') {
+        out[key] = ['sleepy', 'active', 'hyper'].includes(snapshot[key]) ? snapshot[key] : (fallback || 'active');
+      } else {
+        out[key] = typeof snapshot[key] === 'boolean' ? snapshot[key] : !!fallback;
+      }
+    });
+
+    const xp = Math.min(270, Math.max(0, Number(data && data.catXP) || 0));
+    const activePet = (data && data.activePet) || 'pet_cat';
+    if (xp < 10) {
+      out.speechEnabled = false;
+      out.ballEnabled = false;
+    }
+    if (xp < 25) out.spiderEnabled = false;
+    if (xp < 70) out.companionEnabled = false;
+    if (xp < 100 || activePet === 'pet_fox') out.uiMischiefEnabled = false;
+    if (activePet === 'pet_fox') out.aggressiveMode = false;
+    if (xp < 135) out.portalEnabled = false;
+    if (xp < 175 && out.catEnergyLevel === 'hyper') out.catEnergyLevel = 'active';
+    return out;
+  }
+
+  function createEcoRestoreSnapshot(data) {
+    const snapshot = {};
+    Object.keys(ECO_FORCE_OFF_PATCH).forEach((key) => {
+      snapshot[key] = (data && key in data) ? data[key] : defaultSettings[key];
+    });
+    return sanitizeEcoRestoreSnapshot(snapshot, data) || snapshot;
+  }
+
+  async function enableEcoMode(data) {
+    const current = data || await getLocal(ECO_RESTORE_DEFAULTS);
+    const existingSnapshot = current[ECO_RESTORE_KEY];
+    const snapshot = existingSnapshot && typeof existingSnapshot === 'object'
+      ? sanitizeEcoRestoreSnapshot(existingSnapshot, current)
+      : createEcoRestoreSnapshot(current);
+    const patch = Object.assign({ lowPowerMode: true, [ECO_RESTORE_KEY]: snapshot }, ECO_FORCE_OFF_PATCH);
+    await setLocal(patch);
+    await sendMessageToTabs({ action: 'stopCompanion' });
+    await sendMessageToTabs({ action: 'updateSettings', settings: Object.assign({ lowPowerMode: true }, ECO_FORCE_OFF_PATCH) });
+    return patch;
+  }
+
+  async function disableEcoMode(data) {
+    const current = data || await getLocal(ECO_RESTORE_DEFAULTS);
+    const restore = sanitizeEcoRestoreSnapshot(current[ECO_RESTORE_KEY], current) || {};
+    const patch = Object.assign({ lowPowerMode: false }, restore);
+    await setLocal(patch);
+    await removeLocal(ECO_RESTORE_KEY);
+    if (patch.companionEnabled) {
+      await sendMessageToTabs({ action: 'startCompanion' });
+    } else {
+      await sendMessageToTabs({ action: 'stopCompanion' });
+    }
+    await sendMessageToTabs({ action: 'updateSettings', settings: patch });
+    return patch;
+  }
+
+  async function enforceEcoModeIfNeeded(data) {
+    if (!data || !data.lowPowerMode) return {};
+    if (!data[ECO_RESTORE_KEY]) {
+      data[ECO_RESTORE_KEY] = createEcoRestoreSnapshot(data);
+    }
+    const patch = getEcoPatch(data);
+    if (!Object.keys(patch).length && data[ECO_RESTORE_KEY]) return {};
+    Object.assign(data, patch);
+    await setLocal(Object.assign({ [ECO_RESTORE_KEY]: data[ECO_RESTORE_KEY] }, patch));
+    await sendMessageToTabs({ action: 'stopCompanion' });
+    await sendMessageToTabs({ action: 'updateSettings', settings: Object.assign({ lowPowerMode: true }, patch) });
+    return patch;
   }
 
   const STATIC_TEXT_TARGETS = [
@@ -1055,22 +1263,14 @@
     const mischiefRateUnlocked = latestXP >= MILESTONES.mischiefRate.xp;
 
     if (companionToggle) {
-      companionToggle.disabled = foxActive || !companionUnlocked;
-      if (foxActive || !companionUnlocked) companionToggle.checked = false;
+      companionToggle.disabled = !companionUnlocked;
+      if (!companionUnlocked) companionToggle.checked = false;
     }
-    if (companionSwitchWrap) companionSwitchWrap.classList.toggle('control-locked', foxActive || !companionUnlocked);
-    if (companionRow) companionRow.classList.toggle('control-locked', foxActive || !companionUnlocked);
+    if (companionSwitchWrap) companionSwitchWrap.classList.toggle('control-locked', !companionUnlocked);
+    if (companionRow) companionRow.classList.toggle('control-locked', !companionUnlocked);
 
-    if (skinSelect) skinSelect.classList.toggle('control-locked', foxActive);
-    if (skinRow) skinRow.classList.toggle('control-locked', foxActive);
-    document.querySelectorAll('.color-box').forEach((box) => {
-      if (foxActive) {
-        box.classList.add('skin-locked');
-        box.classList.remove('active');
-        box.setAttribute('aria-disabled', 'true');
-        box.title = 'Cat-only while fox is active';
-      }
-    });
+    if (skinSelect) skinSelect.classList.remove('control-locked');
+    if (skinRow) skinRow.classList.remove('control-locked');
 
     if (aggroToggle) {
       aggroToggle.disabled = foxActive;
@@ -1156,6 +1356,21 @@
     return t('level', { level: milestone.level });
   }
 
+  function getSkinStorageKey(activePet) {
+    return activePet === 'pet_fox' ? 'foxSkin' : 'catSkin';
+  }
+
+  function getDefaultSkinForPet(activePet) {
+    return activePet === 'pet_fox' ? 'orange' : 'white';
+  }
+
+  function getActiveSkinFromData(data, activePet) {
+    const key = getSkinStorageKey(activePet);
+    const fallback = getDefaultSkinForPet(activePet);
+    const value = data && data[key];
+    return ['white', 'orange', 'rainbow'].includes(value) ? value : fallback;
+  }
+
   function getLockedSettingsPatch(data) {
     const xp = Math.min(MAX_LEVEL_XP, Math.max(0, Number(data.catXP) || 0));
     const patch = {};
@@ -1165,8 +1380,9 @@
     if (xp < MILESTONES.ball.xp && data.ballEnabled) patch.ballEnabled = false;
     if (xp < MILESTONES.spider.xp && data.spiderEnabled) patch.spiderEnabled = false;
     if (xp < MILESTONES.rainbowSkin.xp && data.catSkin === 'rainbow') patch.catSkin = 'white';
+    if (xp < MILESTONES.rainbowSkin.xp && data.foxSkin === 'rainbow') patch.foxSkin = 'orange';
     if (xp < MILESTONES.size.xp && Number(data.sizeMultiplier) !== 1.0) patch.sizeMultiplier = 1.0;
-    if ((xp < MILESTONES.companion.xp || foxActive) && data.companionEnabled) patch.companionEnabled = false;
+    if (xp < MILESTONES.companion.xp && data.companionEnabled) patch.companionEnabled = false;
     if ((xp < MILESTONES.uiMischief.xp || foxActive) && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
     if (foxActive && data.aggressiveMode) patch.aggressiveMode = false;
     if (xp < MILESTONES.hyper.xp && data.catEnergyLevel === 'hyper') patch.catEnergyLevel = 'active';
@@ -1176,9 +1392,8 @@
 
   async function forceCatOnlySettingsOffForFox(activePet) {
     if (activePet !== 'pet_fox') return;
-    const patch = { companionEnabled: false, aggressiveMode: false, uiMischiefEnabled: false };
+    const patch = { aggressiveMode: false, uiMischiefEnabled: false };
     await setLocal(patch);
-    await sendMessageToTabs({ action: 'stopCompanion' });
     await sendMessageToTabs({ action: 'updateSettings', settings: patch });
   }
 
@@ -1188,7 +1403,10 @@
     watch_seconds: 'questWatch',
     coins_collected: 'questCoins',
     ball_catches: 'questFetch',
-    spiders_caught: 'questSpiders'
+    spiders_caught: 'questSpiders',
+    google_visits: 'questGoogleVisit',
+    google_searches: 'questGoogleSearch',
+    google_active_seconds: 'questGooglePatrol'
   };
 
   function getQuestTitle(quest) {
@@ -1248,7 +1466,7 @@
       title.className = 'quest-card-title';
       title.textContent = getQuestTitle(quest);
       let displayLabel = quest.progressLabel;
-      if (quest.type === 'watch_seconds') {
+      if (quest.type === 'watch_seconds' || quest.type === 'google_active_seconds') {
         const duration = document.createElement('span');
         duration.className = 'quest-title-meta';
         duration.textContent = ` (${formatDurationI18n(quest.target)})`;
@@ -1536,17 +1754,14 @@
 
 
   function updateSkinSwatches(activeSkin, activePet = 'pet_cat') {
-    const foxActive = activePet === 'pet_fox';
     const rainbowUnlocked = isMilestoneUnlocked('rainbowSkin');
     document.querySelectorAll('.color-box').forEach((box) => {
       const skin = box.dataset.skin;
-      const locked = foxActive || (skin === 'rainbow' && !rainbowUnlocked);
+      const locked = skin === 'rainbow' && !rainbowUnlocked;
       box.classList.toggle('skin-locked', locked);
-      box.classList.toggle('active', !foxActive && skin === activeSkin && !locked);
+      box.classList.toggle('active', skin === activeSkin && !locked);
       box.setAttribute('aria-disabled', String(locked));
-      if (foxActive) {
-        box.title = 'Cat-only while fox is active';
-      } else if (skin === 'rainbow') {
+      if (skin === 'rainbow') {
         box.title = rainbowUnlocked ? 'Rainbow' : 'Rainbow - Level 3';
       } else {
         box.title = skin.charAt(0).toUpperCase() + skin.slice(1);
@@ -1556,6 +1771,8 @@
 
   async function refresh() {
     const data = await getLocal(defaultSettings);
+    latestLowPowerMode = !!data.lowPowerMode;
+    await enforceEcoModeIfNeeded(data);
     const lockedPatch = getLockedSettingsPatch(data);
     if (Object.keys(lockedPatch).length) {
       Object.assign(data, lockedPatch);
@@ -1567,7 +1784,7 @@
     }
     latestActivePet = data.activePet || 'pet_cat';
     updateMainToggleUI(data.catEnabled);
-    companionToggle.checked = latestActivePet === 'pet_fox' ? false : data.companionEnabled;
+    companionToggle.checked = data.companionEnabled;
     loyalToggle.checked = data.loyalMode;
     aggroToggle.checked = data.activePet === 'pet_fox' ? false : data.aggressiveMode;
     if (data.spiderEnabled) spiderSpawnBtn.classList.add('active');
@@ -1581,11 +1798,9 @@
     speedVal.textContent = parseFloat(data.speedMultiplier).toFixed(1) + 'x';
     sizeVal.textContent = parseFloat(data.sizeMultiplier).toFixed(1) + 'x';
     mischiefRateVal.textContent = `${parseInt(data.uiMischiefRate, 10)}%`;
-    if (latestActivePet === 'pet_fox' && (data.companionEnabled || data.aggressiveMode || data.uiMischiefEnabled)) {
-      data.companionEnabled = false;
+    if (latestActivePet === 'pet_fox' && (data.aggressiveMode || data.uiMischiefEnabled)) {
       data.aggressiveMode = false;
       data.uiMischiefEnabled = false;
-      companionToggle.checked = false;
       uiMischiefToggle.checked = false;
       await forceCatOnlySettingsOffForFox(latestActivePet);
     }
@@ -1612,9 +1827,19 @@
     // Apply level / XP UI
     applyXpUI(data.catXP || 0, false);
     applyPetSpecificLocks(latestActivePet);
-    updateSkinSwatches(data.catSkin, latestActivePet);
+    updateSkinSwatches(getActiveSkinFromData(data, latestActivePet), latestActivePet);
+    applyEcoModeUI(!!data.lowPowerMode);
     await refreshQuests();
     await refreshStats();
+  }
+
+  async function blockResourceControlIfEco(event) {
+    const data = await getLocal({ lowPowerMode: latestLowPowerMode });
+    if (!data.lowPowerMode) return false;
+    latestLowPowerMode = true;
+    if (event && event.target && 'checked' in event.target) event.target.checked = false;
+    applyEcoModeUI(true);
+    return true;
   }
 
   toggle.addEventListener('change', async (e) => {
@@ -1631,12 +1856,8 @@
   });
 
   companionToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
-    if (active.activePet === 'pet_fox') {
-      e.target.checked = false;
-      await forceCatOnlySettingsOffForFox('pet_fox');
-      return;
-    }
     if (!isMilestoneUnlocked('companion')) {
       e.target.checked = false;
       return;
@@ -1647,6 +1868,7 @@
   });
 
   aggroToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
     if (active.activePet === 'pet_fox') {
       e.target.checked = false;
@@ -1660,6 +1882,7 @@
   });
 
   uiMischiefToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
     if (active.activePet === 'pet_fox') {
       e.target.checked = false;
@@ -1677,6 +1900,7 @@
   });
 
   speechToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     if (!isMilestoneUnlocked('speech')) {
       e.target.checked = false;
       return;
@@ -1687,12 +1911,14 @@
   });
 
   memoryToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const next = e.target.checked;
     await setLocal({ memoryEnabled: next });
     await sendMessageToTabs({ action: 'updateSettings', settings: { memoryEnabled: next } });
   });
 
   rareEventsToggle.addEventListener('change', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const next = e.target.checked;
     await setLocal({ rareEventsEnabled: next });
     await sendMessageToTabs({ action: 'updateSettings', settings: { rareEventsEnabled: next } });
@@ -1702,7 +1928,8 @@
   // When more than one is on, each type spawns on its own natural random timer
   // in content.js — giving organic, unpredictable variety without coordination.
 
-  spiderSpawnBtn.addEventListener('click', async () => {
+  spiderSpawnBtn.addEventListener('click', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     if (!isMilestoneUnlocked('spider')) return;
     const next = !spiderSpawnBtn.classList.contains('active');
     spiderSpawnBtn.classList.toggle('active', next);
@@ -1710,14 +1937,16 @@
     await sendMessageToTabs({ action: 'updateSettings', settings: { spiderEnabled: next } });
   });
 
-  fishSpawnBtn.addEventListener('click', async () => {
+  fishSpawnBtn.addEventListener('click', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     const next = !fishSpawnBtn.classList.contains('active');
     fishSpawnBtn.classList.toggle('active', next);
     await setLocal({ autoFishSpawnEnabled: next });
     await sendMessageToTabs({ action: 'updateSettings', settings: { autoFishSpawnEnabled: next } });
   });
 
-  ballSpawnBtn.addEventListener('click', async () => {
+  ballSpawnBtn.addEventListener('click', async (e) => {
+    if (await blockResourceControlIfEco(e)) return;
     if (!isMilestoneUnlocked('ball')) return;
     const next = !ballSpawnBtn.classList.contains('active');
     ballSpawnBtn.classList.toggle('active', next);
@@ -1726,7 +1955,8 @@
   });
 
   if (portalSpawnBtn) {
-    portalSpawnBtn.addEventListener('click', async () => {
+    portalSpawnBtn.addEventListener('click', async (e) => {
+      if (await blockResourceControlIfEco(e)) return;
       if (!isMilestoneUnlocked('portal')) return;
       const next = !portalSpawnBtn.classList.contains('active');
       portalSpawnBtn.classList.toggle('active', next);
@@ -1737,6 +1967,7 @@
 
   document.querySelectorAll('#energyGroup .group-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if (btn.dataset.energy === 'hyper' && await blockResourceControlIfEco()) return;
       if (btn.dataset.energy === 'hyper' && !isMilestoneUnlocked('hyper')) return;
       document.querySelectorAll('#energyGroup .group-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -1748,8 +1979,10 @@
 
   lowPowerToggle.addEventListener('change', async (e) => {
     const next = e.target.checked;
-    await setLocal({ lowPowerMode: next });
-    await sendMessageToTabs({ action: 'updateSettings', settings: { lowPowerMode: next } });
+    const current = await getLocal(ECO_RESTORE_DEFAULTS);
+    const patch = next ? await enableEcoMode(current) : await disableEcoMode(current);
+    latestLowPowerMode = !!patch.lowPowerMode;
+    await refresh();
   });
 
   if (hideInFullscreenToggle) {
@@ -1827,15 +2060,7 @@
 
   document.querySelectorAll('.color-box').forEach(box => {
     box.addEventListener('click', async () => {
-      const active = await getLocal({ activePet: 'pet_cat' });
-      if (active.activePet === 'pet_fox') {
-        box.classList.remove('lock-shake');
-        void box.offsetWidth;
-        box.classList.add('lock-shake');
-        setTimeout(() => box.classList.remove('lock-shake'), 260);
-        updateSkinSwatches('white', 'pet_fox');
-        return;
-      }
+      const active = await getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange' });
       const skin = box.dataset.skin;
       if (skin === 'rainbow' && !isMilestoneUnlocked('rainbowSkin')) {
         box.classList.remove('lock-shake');
@@ -1845,9 +2070,10 @@
         return;
       }
       latestActivePet = active.activePet || 'pet_cat';
+      const key = getSkinStorageKey(latestActivePet);
       updateSkinSwatches(skin, latestActivePet);
-      await setLocal({ catSkin: skin });
-      await sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: skin } });
+      await setLocal({ [key]: skin });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { [key]: skin } });
     });
   });
 
@@ -2073,19 +2299,24 @@
         const nextXP = Math.min(MAX_LEVEL_XP, Math.max(0, Number(changes.catXP.newValue) || 0));
         applyXpUI(nextXP, true);
         if (nextXP < MILESTONES.rainbowSkin.xp) {
-          getLocal({ catSkin: 'white' }).then((data) => {
-            if (data.catSkin === 'rainbow') {
-              setLocal({ catSkin: 'white' });
-              sendMessageToTabs({ action: 'updateSettings', settings: { catSkin: 'white' } });
-              updateSkinSwatches('white', latestActivePet);
-            }
+          getLocal({ catSkin: 'white', foxSkin: 'orange' }).then((data) => {
+            const patch = {};
+            if (data.catSkin === 'rainbow') patch.catSkin = 'white';
+            if (data.foxSkin === 'rainbow') patch.foxSkin = 'orange';
+            if (!Object.keys(patch).length) return;
+            setLocal(patch);
+            sendMessageToTabs({ action: 'updateSettings', settings: patch });
+            getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange' }).then((fresh) => {
+              const activePet = fresh.activePet || latestActivePet || 'pet_cat';
+              updateSkinSwatches(getActiveSkinFromData(Object.assign({}, data, patch, fresh), activePet), activePet);
+            }).catch(() => updateSkinSwatches(patch.foxSkin || patch.catSkin || getDefaultSkinForPet(latestActivePet), latestActivePet));
           }).catch(() => {});
         }
       }
       if (changes.activePet) {
         latestActivePet = changes.activePet.newValue || 'pet_cat';
         applyPetSpecificLocks(latestActivePet);
-        getLocal({ catSkin: 'white' }).then((data) => updateSkinSwatches(data.catSkin || 'white', latestActivePet)).catch(() => {});
+        getLocal({ catSkin: 'white', foxSkin: 'orange' }).then((data) => updateSkinSwatches(getActiveSkinFromData(data, latestActivePet), latestActivePet)).catch(() => {});
       }
       if (changes.coins && coinCount) {
         const newVal = changes.coins.newValue || 0;
@@ -2240,7 +2471,7 @@
           }
 
           if (item.type === 'pet') {
-            const foxPatch = item.id === 'pet_fox' ? { companionEnabled: false, aggressiveMode: false, uiMischiefEnabled: false } : {};
+            const foxPatch = item.id === 'pet_fox' ? { aggressiveMode: false, uiMischiefEnabled: false } : {};
             if (nowOwned) {
               return {
                 values: { activePet: item.id, ...foxPatch },
@@ -2278,7 +2509,7 @@
         if (!result) return;
         if (result.settings) {
           sendMessageToTabs({ action: 'updateSettings', settings: result.settings }).catch(() => {});
-          if (result.settings.activePet === 'pet_fox' || result.settings.companionEnabled === false) {
+          if (result.settings.companionEnabled === false) {
             sendMessageToTabs({ action: 'stopCompanion' }).catch(() => {});
           }
         }
@@ -2287,6 +2518,15 @@
         setTimeout(() => card.classList.remove('just-bought'), 500);
         await refreshShop();
         if (item.type === 'pet') {
+          latestActivePet = item.id;
+          applyPetSpecificLocks(latestActivePet);
+          const fresh = await getLocal(defaultSettings);
+          applyXpUI(fresh.catXP || 0, false);
+          updateSkinSwatches(getActiveSkinFromData(fresh, latestActivePet), latestActivePet);
+          if (fresh.companionEnabled) {
+            await sendMessageToTabs({ action: 'stopCompanion' }).catch(() => {});
+            await sendMessageToTabs({ action: 'startCompanion' }).catch(() => {});
+          }
           await refreshQuests().catch(() => {});
         }
       });
@@ -2305,7 +2545,10 @@
       const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
       const isConsecutive = data.lastStreakDate === yKey;
       const newStreak = isConsecutive ? (data.dailyStreak || 0) + 1 : 1;
-      const rewardIdx = Math.min((data.dailyStreak || 0), STREAK_REWARDS.length - 1);
+      // Use newStreak - 1 as the reward index: day-1 = STREAK_REWARDS[0],
+      // day-2 = STREAK_REWARDS[1], etc. This ensures a broken streak always
+      // pays the tier-1 rate instead of the old (potentially high) streak tier.
+      const rewardIdx = Math.min(newStreak - 1, STREAK_REWARDS.length - 1);
       const reward = STREAK_REWARDS[rewardIdx];
       const newCoins = (data.coins || 0) + reward;
 

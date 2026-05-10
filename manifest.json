@@ -1,24 +1,27 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "PixelCat",
-  "version": "2.5.1",
-  "description": "Adds a playful pixel cat companion to YouTube with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
+  "version": "2.5.6",
+  "description": "Adds a playful pixel pet companion to YouTube and Google with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
+
   "permissions": [
-    "storage",
-    "*://www.youtube.com/*",
-    "*://youtube.com/*"
+    "storage"
   ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
   "background": {
-    "scripts": [
-      "src/background.js"
-    ],
-    "persistent": false
+    "service_worker": "src/background.js"
   },
+
   "icons": {
     "48": "assets/icons/icon48.png",
     "96": "assets/icons/icon96.png"
   },
-  "browser_action": {
+
+  "action": {
     "default_popup": "ui/popup.html",
     "default_icon": {
       "16": "assets/icons/icon16.png",
@@ -27,11 +30,16 @@
       "96": "assets/icons/icon96.png"
     }
   },
+
   "content_scripts": [
     {
       "matches": [
         "*://www.youtube.com/*",
-        "*://youtube.com/*"
+        "*://youtube.com/*",
+        "*://www.google.com/*",
+        "*://google.com/*",
+        "*://www.google.co.ma/*",
+        "*://google.co.ma/*"
       ],
       "css": [
         "ui/styles.css"
@@ -50,21 +58,23 @@
       "run_at": "document_end"
     }
   ],
+
   "web_accessible_resources": [
-    "assets/icons/*.png",
-    "assets/animations/*.png",
-    "assets/fishes/*.png",
-    "assets/balls/*.png"
-  ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "pixel-cat@example.com",
-      "strict_min_version": "142.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
+    {
+      "resources": [
+        "assets/icons/*.png",
+        "assets/animations/*.png",
+        "assets/fishes/*.png",
+        "assets/balls/*.png"
+      ],
+      "matches": [
+        "*://www.youtube.com/*",
+        "*://youtube.com/*",
+        "*://www.google.com/*",
+        "*://google.com/*",
+        "*://www.google.co.ma/*",
+        "*://google.co.ma/*"
+      ]
     }
-  }
+  ]
 }

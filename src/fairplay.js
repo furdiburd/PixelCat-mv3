@@ -17,7 +17,7 @@
   const BOOST_IDS = new Set(['toy_feather', 'treat_gold', 'coin_magnet', 'lucky_charm']);
   const PET_IDS = new Set(['pet_cat', 'pet_fox']);
   const SHOP_IDS = new Set([...BALL_IDS, ...BOOST_IDS, ...PET_IDS]);
-  const QUEST_TYPES = new Set(['pet_sessions', 'fish_served', 'watch_seconds', 'coins_collected', 'ball_catches', 'spiders_caught']);
+  const QUEST_TYPES = new Set(['pet_sessions', 'fish_served', 'watch_seconds', 'coins_collected', 'ball_catches', 'spiders_caught', 'google_visits', 'google_searches', 'google_active_seconds']);
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   const PROTECTED_DEFAULTS = Object.freeze({
@@ -101,6 +101,9 @@
       lifetimeFish: clampInteger(rawStats.lifetimeFish, 0, 100000, 0),
       lifetimeCoins: clampInteger(rawStats.lifetimeCoins, 0, 1000000, 0),
       lifetimeBallCatches: clampInteger(rawStats.lifetimeBallCatches, 0, 100000, 0),
+      lifetimeGoogleVisits: clampInteger(rawStats.lifetimeGoogleVisits, 0, 100000, 0),
+      lifetimeGoogleSearches: clampInteger(rawStats.lifetimeGoogleSearches, 0, 100000, 0),
+      lifetimeGoogleSeconds: clampInteger(rawStats.lifetimeGoogleSeconds, 0, 10000000, 0),
       perfectDays: clampInteger(rawStats.perfectDays, 0, 10000, 0),
       lastPerfectDate: typeof rawStats.lastPerfectDate === 'string' && DATE_RE.test(rawStats.lastPerfectDate) ? rawStats.lastPerfectDate : ''
     };
@@ -216,8 +219,37 @@
     return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 14)}`;
   }
 
+  function createSealPayload(state) {
+    return state;
+  }
+
+  function createLegacySealPayload(state) {
+    // v2.5 saves were sealed before the pet system existed.
+    // In v2.5.1+, normalizeState adds activePet: 'pet_cat'.
+    // Accept the old payload so users updating from v2.5 keep their progress.
+    if (!state || typeof state !== 'object' || Array.isArray(state)) return state;
+    if (state.activePet !== 'pet_cat') return state;
+    const legacyState = Object.assign({}, state);
+    delete legacyState.activePet;
+    return legacyState;
+  }
+
+  function createSealFromPayload(payload, installId) {
+    return `${SEAL_VERSION}.${hashText(`${BUILD_TAG}|${installId}|${stableStringify(payload)}`)}`;
+  }
+
   function createSeal(state, installId) {
-    return `${SEAL_VERSION}.${hashText(`${BUILD_TAG}|${installId}|${stableStringify(state)}`)}`;
+    // Canonical v2.5.1+ seal: keep activePet in the payload.
+    return createSealFromPayload(createSealPayload(state), installId);
+  }
+
+  function createLegacySeal(state, installId) {
+    return createSealFromPayload(createLegacySealPayload(state), installId);
+  }
+
+  function isValidSealForState(rawSeal, state, installId) {
+    if (typeof rawSeal !== 'string' || !rawSeal) return false;
+    return rawSeal === createSeal(state, installId) || rawSeal === createLegacySeal(state, installId);
   }
 
   function isSameValue(a, b) {
@@ -250,9 +282,21 @@
   function getValidBackup(rawBackup, installId) {
     if (!rawBackup || typeof rawBackup !== 'object' || rawBackup.version !== SEAL_VERSION) return null;
     const state = normalizeState(rawBackup.state || {});
-    const seal = createSeal(state, installId);
-    if (rawBackup.seal !== seal) return null;
+    if (!isValidSealForState(rawBackup.seal, state, installId)) return null;
     return state;
+  }
+
+  function hasMeaningfulProgress(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+    if (Number(raw.catXP) > 0 || Number(raw.coins) > 0 || Number(raw.dailyStreak) > 0) return true;
+    if (Array.isArray(raw.shopOwned) && raw.shopOwned.length > 0) return true;
+    if (Array.isArray(raw.shopActiveBoosts) && raw.shopActiveBoosts.length > 0) return true;
+    if (typeof raw.activeBall === 'string' && raw.activeBall && raw.activeBall !== 'ball_baseball') return true;
+    if (typeof raw.activePet === 'string' && raw.activePet && raw.activePet !== 'pet_cat') return true;
+    if (typeof raw.lastStreakDate === 'string' && DATE_RE.test(raw.lastStreakDate)) return true;
+    if (raw.dailyQuestState && typeof raw.dailyQuestState === 'object') return true;
+    if (raw.dailyQuestStats && typeof raw.dailyQuestStats === 'object') return true;
+    return false;
   }
 
   async function ensure(storageArea, defaults) {
@@ -263,9 +307,18 @@
     let seal = createSeal(state, installId);
     const currentSeal = typeof raw[SEAL_KEY] === 'string' ? raw[SEAL_KEY] : '';
 
-    if (currentSeal && currentSeal !== seal) {
+    if (currentSeal && !isValidSealForState(currentSeal, state, installId)) {
       const backupState = getValidBackup(raw[BACKUP_KEY], installId);
-      state = backupState || normalizeState(PROTECTED_DEFAULTS);
+      if (backupState) {
+        state = backupState;
+      } else if (hasMeaningfulProgress(raw)) {
+        // Last-resort migration safety: if a future update changes the protected
+        // save shape or an older seal can no longer be validated, keep the sane
+        // normalized progress instead of resetting the user to a brand-new save.
+        state = normalizeState(raw);
+      } else {
+        state = normalizeState(PROTECTED_DEFAULTS);
+      }
       seal = createSeal(state, installId);
     }
 
@@ -326,7 +379,7 @@
   }
 
   async function reset(storageArea, values) {
-    const clean = Object.assign({}, values || {}, PROTECTED_DEFAULTS);
+    const clean = Object.assign({}, PROTECTED_DEFAULTS, values || {});
     return commit(storageArea, clean);
   }
 

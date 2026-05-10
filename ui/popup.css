@@ -2615,3 +2615,28 @@ body.rtl-ui {
   line-height: 1.4;
   text-align: center;
 }
+
+
+/* Eco Mode blocking state */
+body.eco-mode-on .eco-disabled,
+body.eco-mode-on .group-btn.eco-disabled,
+body.eco-mode-on .stepper-btn.eco-disabled,
+body.eco-mode-on .switch.eco-disabled {
+  opacity: 0.46;
+  cursor: not-allowed !important;
+  filter: grayscale(0.35);
+}
+
+body.eco-mode-on .group-btn.eco-disabled,
+body.eco-mode-on .stepper-btn.eco-disabled {
+  background: #18181b !important;
+  color: #71717a !important;
+}
+
+body.eco-mode-on .control-row.eco-disabled {
+  border-color: #3f3f46;
+}
+
+body.eco-mode-on .toggle-info-panel {
+  border-color: #52525b;
+}

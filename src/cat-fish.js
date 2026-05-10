@@ -44,6 +44,9 @@
         e.preventDefault();
         e.stopPropagation();
         f.isHeld = true;
+        f.manualSpawned = true;
+        f.userInteracted = true;
+        f.persistentChase = true;
         ctx.draggedFish = f;
         ctx.fishDragOffsetX = e.clientX - f.x;
         ctx.fishDragOffsetY = e.clientY - f.y;
@@ -66,6 +69,9 @@
         e.preventDefault();
         e.stopPropagation();
         f.isHeld = true;
+        f.manualSpawned = true;
+        f.userInteracted = true;
+        f.persistentChase = true;
         ctx.draggedFish = f;
         ctx.fishDragOffsetX = t.clientX - f.x;
         ctx.fishDragOffsetY = t.clientY - f.y;

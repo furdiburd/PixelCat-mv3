@@ -6,6 +6,8 @@
     let catXP = 0;
     let xpWriteTimer = 0;
     let pendingXPDelta = 0;
+    let xpLoaded = false;
+    let xpLoadPromise = null;
 
     const MAX_LEVEL_XP = 270;
     const LEVEL_UNLOCKS = [
@@ -103,12 +105,33 @@
 
     function loadXPAndShop() {
       if (ctx.isCompanion) return Promise.resolve();
-      return getLocal({ catXP: 0, shopOwned: [], shopActiveBoosts: null }).then((data) => {
+      if (xpLoadPromise) return xpLoadPromise;
+      xpLoadPromise = getLocal({ catXP: 0, shopOwned: [], shopActiveBoosts: null }).then((data) => {
         catXP = Math.min(MAX_LEVEL_XP, Math.max(0, data.catXP || 0));
+        xpLoaded = true;
         const owned = Array.isArray(data.shopOwned) ? data.shopOwned : [];
         updateOwnedShopItems(owned);
         updateActiveShopBoosts(Array.isArray(data.shopActiveBoosts) ? data.shopActiveBoosts : owned);
+      }).catch((error) => {
+        // Do NOT reset xpLoadPromise to null here. Resetting it would allow a
+        // concurrent call to start a second load which could overwrite the
+        // in-memory catXP value and lose any XP earned since the failed load.
+        // The promise stays rejected; callers that need a fresh load should
+        // explicitly reinitialise by calling loadXPAndShop() after a delay.
+        throw error;
       });
+      return xpLoadPromise;
+    }
+
+    function flushXP() {
+      if (xpWriteTimer) {
+        try { clearTimeout(xpWriteTimer); } catch (e) {}
+        xpWriteTimer = 0;
+      }
+      const pending = pendingXPDelta;
+      if (!pending) return storageWriteQueue;
+      pendingXPDelta = 0;
+      return mutateStoredNumber('catXP', pending, { defaultValue: 0, min: 0, max: MAX_LEVEL_XP });
     }
 
     function earnXP(amount) {
@@ -117,16 +140,18 @@
       if (!delta) return;
 
       const previousXP = catXP;
-      catXP = Math.min(MAX_LEVEL_XP, catXP + delta);
-      notifyLevelUnlocks(previousXP, catXP);
-      pendingXPDelta += delta;
+      const nextXP = Math.min(MAX_LEVEL_XP, catXP + delta);
+      // Only queue the amount that was actually gained — not the full requested
+      // delta — so flushXP never tries to write more XP than was earned.
+      const actualGain = nextXP - catXP;
+      catXP = nextXP;
+      if (xpLoaded) notifyLevelUnlocks(previousXP, catXP);
+      if (actualGain > 0) pendingXPDelta += actualGain;
       if (xpWriteTimer) return;
 
       xpWriteTimer = ctx.addTimeout(() => {
         xpWriteTimer = 0;
-        const pending = pendingXPDelta;
-        pendingXPDelta = 0;
-        mutateStoredNumber('catXP', pending, { defaultValue: 0, min: 0, max: MAX_LEVEL_XP });
+        flushXP();
       }, 2000);
     }
 
@@ -170,6 +195,7 @@
       updateActiveShopBoosts,
       hasShopBoost,
       loadXPAndShop,
+      flushXP,
       earnXP,
       awardCoins,
       recordQuestEvent

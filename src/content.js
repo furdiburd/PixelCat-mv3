@@ -9,10 +9,16 @@ if (!PixelCatRuntime) {
     balls: [],
     envRects: [],
     cursorX: 0,
-    cursorY: 0
+    cursorY: 0,
+    activePickupKind: null
   };
   Object.defineProperty(globalThis, '__PixelCatRuntime', { value: PixelCatRuntime, configurable: false });
 }
+if (!Array.isArray(PixelCatRuntime.fishes)) PixelCatRuntime.fishes = [];
+if (!Array.isArray(PixelCatRuntime.spiders)) PixelCatRuntime.spiders = [];
+if (!Array.isArray(PixelCatRuntime.webs)) PixelCatRuntime.webs = [];
+if (!Array.isArray(PixelCatRuntime.balls)) PixelCatRuntime.balls = [];
+if (!Object.prototype.hasOwnProperty.call(PixelCatRuntime, 'activePickupKind')) PixelCatRuntime.activePickupKind = null;
 
 
 function spawnPixelCat(catId, isCompanion, initialSkin) {
@@ -77,6 +83,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     u('assets/animations/dust.png'),
     u('assets/animations/spider.png'),
     u('assets/animations/coins_sheet.png'),
+    u('assets/animations/bubble.png'),
     u('assets/fishes/fish1.png'),
     u('assets/fishes/fish2.png'),
     u('assets/fishes/fish3.png'),
@@ -130,6 +137,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     get feetY() { return feetY; },
     get velY()  { return velY; },
     get state() { return state; },
+    get bubbleTrapActive() { return !!(bubbleTrap && bubbleTrap.active); },
+    get bubbleTrapPopping() { return !!(bubbleTrap && bubbleTrap.popping); },
+    get bubbleTrapTrapped() { return !!(bubbleTrap && bubbleTrap.trapped); },
+    get bubbleTrapX() { return bubbleTrap ? bubbleTrap.x : 0; },
+    get bubbleTrapY() { return bubbleTrap ? bubbleTrap.y : 0; },
+    get bubbleTrapWidth() { return bubbleTrap ? bubbleTrap.width : 0; },
+    get bubbleTrapHeight() { return bubbleTrap ? bubbleTrap.height : 0; },
+    popBubbleTrap: function() { if (typeof popBubbleTrap === 'function') popBubbleTrap(); },
     get sizeMultiplier() { return sizeMultiplier; },
     get isJumping() { return isJumping; },
     get targetFish() { return targetFish; },
@@ -146,6 +161,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     },
     destroy: function() {
         if (isDestroyed) return;
+        if (typeof flushXP === 'function') flushXP();
         isDestroyed = true;
         catEnabled = false;
         cleanupManagedEventListeners();
@@ -165,6 +181,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           _scrollRaf = 0;
         }
         if (skinAnimation) { try { skinAnimation.cancel(); } catch (e) {} skinAnimation = null; }
+        if (typeof cleanupBubbleTrap === 'function') cleanupBubbleTrap();
+        if (typeof removeExistingQuickMenus === 'function') removeExistingQuickMenus();
         if (catEl) catEl.remove();
         if (speechModule) speechModule.cleanup();
         managedIntervals.forEach(clearInterval);
@@ -204,7 +222,15 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         memoryEnabled = settings.memoryEnabled;
       }
       if (settings.rareEventsEnabled !== undefined) {
+        const wasRareEventsEnabled = rareEventsEnabled;
         rareEventsEnabled = settings.rareEventsEnabled;
+        if (!rareEventsEnabled && bubbleTrap && bubbleTrap.active) {
+          releaseFromBubbleTrap();
+        } else if (!wasRareEventsEnabled && rareEventsEnabled) {
+          // When the user enables Rare Events, do not make them wait several minutes.
+          bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_RETRY_DELAY_MIN, BUBBLE_RETRY_DELAY_MAX);
+          lastBubbleTrapEndedAt = 0;
+        }
       }
       if (settings.autoFishSpawnEnabled !== undefined) {
         autoFishSpawnEnabled = settings.autoFishSpawnEnabled;
@@ -232,7 +258,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         applyPet(settings.activePet);
       }
       if (settings.catSkin !== undefined) {
-        applySkin(resolveCatSkin(settings.catSkin));
+        catSkinStr = normalizeCatSkin(settings.catSkin);
+        if (activePet !== 'fox') applySkin(resolveCatSkin(catSkinStr));
+      }
+      if (settings.foxSkin !== undefined) {
+        foxSkinStr = normalizeFoxSkin(settings.foxSkin);
+        if (activePet === 'fox') applySkin(resolveFoxSkin(foxSkinStr));
       }
       if (settings.ballEnabled !== undefined) {
         ballEnabled = settings.ballEnabled;
@@ -265,6 +296,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       }
       if (settings.shopActiveBoosts !== undefined) {
         updateActiveShopBoosts(settings.shopActiveBoosts);
+      }
+      if (lowPowerMode) {
+        applyEcoRuntimeRestrictions();
       }
     },
     clearSpeechMemory: function() {
@@ -417,6 +451,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     updateActiveShopBoosts,
     hasShopBoost,
     loadXPAndShop,
+    flushXP,
     earnXP,
     awardCoins,
     recordQuestEvent
@@ -444,6 +479,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     markSpeechMeasure();
     applyTransform();
     positionSpeechBubble(true);
+    if (typeof refreshBubbleTrapScale === 'function') refreshBubbleTrapScale();
   }
 
   function getPetRenderScale() {
@@ -489,6 +525,20 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   function getPlatformAttachTolerance() {
     return Math.max(20, Math.min(34, 18 + sizeMultiplier * 5));
+  }
+
+  function getPlatformStandLift() {
+    return Math.max(2, Math.min(6, Math.round(2 + sizeMultiplier * 1.5)));
+  }
+
+  function getPlatformStandY(r) {
+    return r ? Math.round(r.top - getPlatformStandLift()) : _vh;
+  }
+
+  function isCalmGroundedStateName(name) {
+    return name === 'sit' || name === 'stare' || name === 'groom' ||
+      name === 'stretch' || name === 'pawplay' || name === 'headtilt' ||
+      name === 'nap' || name === 'deepsleep';
   }
 
   function clampCatInsideViewport() {
@@ -581,7 +631,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   const NON_MOVEMENT_ANIM_STATES = new Set([
     'sit', 'stare', 'headtilt', 'groom', 'stretch', 'pawplay', 'nap', 'deepsleep',
     'dragged', 'held', 'hidden', 'stunned', 'wall_left', 'wall_right',
-    'wall_left_sit', 'wall_right_sit', 'peek_a_boo'
+    'wall_left_sit', 'wall_right_sit', 'peek_a_boo', 'bubble_trap'
   ]);
 
 
@@ -589,7 +639,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   const BASE_SPEED_RUN  = 120;
   let SPEED_WALK = BASE_SPEED_WALK;
   let SPEED_RUN  = BASE_SPEED_RUN;
-  let catSkinStr = initialSkin || 'white';
+  let catSkinStr = 'white';
+  let foxSkinStr = 'orange';
   const GRAVITY    = 1100;
   const JUMP_V     = -500;
 
@@ -624,20 +675,31 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   loadXPAndShop();
 
 
-  let activePickupKind = null;
+  let bubbleTrapBlocksPickup = false;
+
+  function hasConnectedEntity(items, isActive) {
+    return (Array.isArray(items) ? items : []).some((item) => {
+      if (!item) return false;
+      if (item.el && !item.el.isConnected) return false;
+      return typeof isActive === 'function' ? isActive(item) : true;
+    });
+  }
 
   function hasActivePickup() {
-    return activePickupKind !== null;
+    return PixelCatRuntime.activePickupKind !== null ||
+      hasConnectedEntity(PixelCatRuntime.fishes, (fish) => !fish.removing) ||
+      hasConnectedEntity(PixelCatRuntime.balls, (ball) => !ball.exiting && !ball.removing) ||
+      hasConnectedEntity(PixelCatRuntime.spiders, (spider) => !spider.dead);
   }
 
   function claimActivePickup(kind) {
-    if (activePickupKind !== null) return false;
-    activePickupKind = kind;
+    if (hasActivePickup()) return false;
+    PixelCatRuntime.activePickupKind = kind || 'item';
     return true;
   }
 
   function releaseActivePickup(kind) {
-    if (activePickupKind === kind) activePickupKind = null;
+    if (!kind || PixelCatRuntime.activePickupKind === kind) PixelCatRuntime.activePickupKind = null;
   }
 
   function isYouTubeVideoPlaying() {
@@ -722,6 +784,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     get activePet() { return activePetStr; },
     get activePetKind() { return activePet; },
     get isTabVisible() { return isTabVisible; },
+    get bubbleTrapActive() { return !!(bubbleTrap && bubbleTrap.active); },
+    get bubbleTrapWidth() { return bubbleTrap ? bubbleTrap.width : 0; },
+    get bubbleTrapHeight() { return bubbleTrap ? bubbleTrap.height : 0; },
     get _vw() { return _vw; },
     get _vh() { return _vh; },
     get IDLE_STATES() { return IDLE_STATES; },
@@ -790,6 +855,398 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   catEl.classList.add(activePetDef.className);
   catEl.style.visibility = 'hidden';
   document.body.appendChild(catEl);
+
+  //
+  //  BUBBLE TRAP RARE EVENT
+  //
+  const BUBBLE_FRAME_W = 24;
+  const BUBBLE_FRAME_H = 28;
+  const BUBBLE_FRAME_COUNT = 20;
+  const BUBBLE_TRAP_HOLD_FRAME = 13; // Use frame 14 (1-based) once the pet is trapped.
+  const BUBBLE_GROW_LAST_FRAME = BUBBLE_TRAP_HOLD_FRAME;
+  const BUBBLE_POP_FIRST_FRAME = 14;
+  const BUBBLE_FPS = 18;
+  // DVD-style trap bubble motion: faster, visible, and never ceiling-sticky.
+  const BUBBLE_DVD_MIN_X_SPEED = 36;
+  const BUBBLE_DVD_MAX_X_SPEED = 74;
+  const BUBBLE_DVD_MIN_Y_SPEED = 31;
+  const BUBBLE_DVD_MAX_Y_SPEED = 66;
+  // Keep soap bubbles rare, but visible enough that users can actually see them.
+  // Old timing was 5-12 minutes of perfectly idle time, so it often looked broken.
+  const BUBBLE_FIRST_DELAY_MIN = 24;
+  const BUBBLE_FIRST_DELAY_MAX = 52;
+  const BUBBLE_RETRY_DELAY_MIN = 18;
+  const BUBBLE_RETRY_DELAY_MAX = 34;
+  const BUBBLE_REPEAT_DELAY_MIN = 150;
+  const BUBBLE_REPEAT_DELAY_MAX = 300;
+  const BUBBLE_END_COOLDOWN_MS = 90000;
+  const randomBubbleTrapDelay = (min, max) => min + Math.random() * (max - min);
+  let bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_FIRST_DELAY_MIN, BUBBLE_FIRST_DELAY_MAX);
+  let lastBubbleTrapEndedAt = 0;
+  const bubbleTrap = {
+    active: false,
+    popping: false,
+    trapped: false,
+    el: null,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: -24,
+    timer: 0,
+    frame: 0,
+    frameAccum: 0,
+    bubbleAnimName: 'idle1',
+    bubbleAnimTimer: 0,
+    renderScale: 3.4,
+    width: BUBBLE_FRAME_W * 3.4,
+    height: BUBBLE_FRAME_H * 3.4
+  };
+
+  function randomBubbleTrapSpeed(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function signedBubbleTrapSpeed(sign, min, max) {
+    return (sign < 0 ? -1 : 1) * randomBubbleTrapSpeed(min, max);
+  }
+
+  function normalizeBubbleTrapVelocity() {
+    if (!bubbleTrap.active || bubbleTrap.popping) return;
+
+    const sx = bubbleTrap.vx < 0 ? -1 : 1;
+    const sy = bubbleTrap.vy < 0 ? -1 : 1;
+    const ax = Math.abs(bubbleTrap.vx);
+    const ay = Math.abs(bubbleTrap.vy);
+
+    if (ax < BUBBLE_DVD_MIN_X_SPEED) bubbleTrap.vx = signedBubbleTrapSpeed(sx, BUBBLE_DVD_MIN_X_SPEED, BUBBLE_DVD_MIN_X_SPEED + 14);
+    else if (ax > BUBBLE_DVD_MAX_X_SPEED) bubbleTrap.vx = sx * BUBBLE_DVD_MAX_X_SPEED;
+
+    if (ay < BUBBLE_DVD_MIN_Y_SPEED) bubbleTrap.vy = signedBubbleTrapSpeed(sy, BUBBLE_DVD_MIN_Y_SPEED, BUBBLE_DVD_MIN_Y_SPEED + 16);
+    else if (ay > BUBBLE_DVD_MAX_Y_SPEED) bubbleTrap.vy = sy * BUBBLE_DVD_MAX_Y_SPEED;
+  }
+
+  const BUBBLE_TRAP_SPEECH = {
+    trapped: [
+      'Help me, human.', 'I said help me.', 'Little rescue, please.',
+      'Bubble problem here.', 'Human. Pop bubble.', 'This is embarrassing.',
+      'I am floating now.', 'Please fix this.', 'Trapped. Very elegant.',
+      'Outstanding. I am trapped.', 'A tiny rescue?', 'Why am I airborne?',
+      'I do not like bubbles.', 'This smells like soap.', 'Too clean in here.',
+      'I wanted fish, not foam.', 'This is not a toy.', 'Who approved this bubble?',
+      'I feel ridiculous.', 'Floating was not my idea.', 'This is cat slander.',
+      'Soap prison. Great.', 'Pop it. Respectfully.', 'I miss the ground.',
+      'This is deeply undignified.', 'Bubbles are for baths.', 'I hate bath vibes.'
+    ],
+    petted: [
+      'That helps. Keep going.', 'Nice, but pop it.', 'Good pats. Wrong problem.',
+      'Comfort accepted.', 'That is nice. Still trapped.', 'Pet first, rescue second?',
+      'Yes, yes. Now pop it.', 'Better. Still floating.', 'Good human. Pop bubble.',
+      'Approved. Rescue me.', 'That smells like soap.', 'Soft pats. Bad bubble.',
+      'Nice try. Still airborne.', 'Love the pats. Hate this.', 'Excellent petting. Awful situation.',
+      'Very nice. Very trapped.', 'I appreciate the effort.', 'Okay, that is soothing.',
+      'Pamper later. Pop now.', 'Good service. Bad bubble.'
+    ],
+    popped: [
+      'Finally.', 'Freedom.', 'About time.', 'Much better.',
+      'Bubble defeated.', 'Ground. Sweet ground.', 'Back to business.',
+      'I can walk again.', 'That was rude.', 'Never again.',
+      'Soap era ended.', 'Fresh air, finally.', 'I survived the foam.',
+      'No more bubbles.', 'That was not funny.', 'I prefer gravity.',
+      'Rescued. As expected.', 'Excellent. We forget this.', 'I am judging that bubble.',
+      'My dignity returns.', 'Back on solid ground.'
+    ]
+  };
+
+  function getBubbleRenderScale() {
+    return Math.max(2.75, Math.min(5.25, 3.35 * sizeMultiplier));
+  }
+
+  function refreshBubbleTrapScale() {
+    if (!bubbleTrap || !bubbleTrap.el) return;
+    bubbleTrap.renderScale = getBubbleRenderScale();
+    bubbleTrap.width = BUBBLE_FRAME_W * bubbleTrap.renderScale;
+    bubbleTrap.height = BUBBLE_FRAME_H * bubbleTrap.renderScale;
+    bubbleTrap.el.style.width = `${bubbleTrap.width}px`;
+    bubbleTrap.el.style.height = `${bubbleTrap.height}px`;
+    bubbleTrap.el.style.backgroundSize = `${BUBBLE_FRAME_W * BUBBLE_FRAME_COUNT * bubbleTrap.renderScale}px ${BUBBLE_FRAME_H * bubbleTrap.renderScale}px`;
+    bubbleTrap.el.style.backgroundPosition = `${-bubbleTrap.frame * bubbleTrap.width}px 0px`;
+  }
+
+  function setBubbleTrapFrame(frame) {
+    if (!bubbleTrap.el) return;
+    bubbleTrap.frame = Math.max(0, Math.min(BUBBLE_FRAME_COUNT - 1, frame | 0));
+    bubbleTrap.el.style.backgroundPosition = `${-bubbleTrap.frame * bubbleTrap.width}px 0px`;
+  }
+
+  function positionBubbleTrap() {
+    if (!bubbleTrap.el) return;
+    const tx = Math.round(bubbleTrap.x - bubbleTrap.width / 2);
+    const ty = Math.round(bubbleTrap.y - bubbleTrap.height / 2);
+    bubbleTrap.el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+  }
+
+  function cleanupBubbleTrap() {
+    if (bubbleTrap.el && bubbleTrap.el.isConnected) bubbleTrap.el.remove();
+    bubbleTrap.active = false;
+    bubbleTrap.popping = false;
+    bubbleTrap.trapped = false;
+    bubbleTrap.el = null;
+    bubbleTrapBlocksPickup = false;
+  }
+
+  function pickBubbleTrapAnim(previous = '') {
+    const options = ['idle1', 'idle2', 'sleep', 'scared'];
+    const weighted = ['idle1', 'idle1', 'idle2', 'idle2', 'sleep', 'sleep', 'scared'];
+    let next = weighted[(Math.random() * weighted.length) | 0];
+    if (next === previous) {
+      const fallback = options.filter(name => name !== previous && ANIMS[name]);
+      if (fallback.length) next = fallback[(Math.random() * fallback.length) | 0];
+    }
+    if (!ANIMS[next]) next = ANIMS.idle1 ? 'idle1' : (ANIMS.idle2 ? 'idle2' : (ANIMS.sleep ? 'sleep' : 'scared'));
+    return next;
+  }
+
+  function refreshBubbleTrapAnim(force) {
+    const next = pickBubbleTrapAnim(force ? '' : bubbleTrap.bubbleAnimName);
+    bubbleTrap.bubbleAnimName = next;
+    bubbleTrap.bubbleAnimTimer = 1.8 + Math.random() * 2.6;
+    setAnim(next, true);
+  }
+
+  function maybeSpeakBubbleTrap(kind, options) {
+    const lines = BUBBLE_TRAP_SPEECH[kind];
+    if (!lines || !lines.length) return;
+    if (isCompanion || !speechModule || typeof speechModule.showSpeech !== 'function') return;
+    if (!catEnabled || !isTabVisible || document.hidden) return;
+
+    const allowReplace = !!(options && options.allowReplace);
+    if (!allowReplace && speechModule.speechVisible) return;
+
+    const text = lines[(Math.random() * lines.length) | 0];
+    speechModule.showSpeech(text, {
+      durationMs: options && options.durationMs ? options.durationMs : 2800,
+      cooldownMs: options && options.cooldownMs ? options.cooldownMs : 1600
+    });
+  }
+
+  function releaseFromBubbleTrap() {
+    const wasActive = bubbleTrap.active;
+    cleanupBubbleTrap();
+    if (!wasActive || isDestroyed || !catEnabled) return;
+    lastBubbleTrapEndedAt = safeNow();
+    bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_REPEAT_DELAY_MIN, BUBBLE_REPEAT_DELAY_MAX);
+    animLockTimer = 0;
+    catEl.style.pointerEvents = 'auto';
+    catEl.style.opacity = '1';
+    catEl.style.zIndex = '9999999';
+    globalRot = 0;
+    visualRot = 0;
+    velX = (Math.random() - 0.5) * 90;
+    velY = 110 + Math.random() * 70;
+    onGround = false;
+    isJumping = true;
+    isDragging = false;
+    state = 'jump';
+    stateTimer = 2200;
+    setAnim('jump', true);
+    maybeSpeakBubbleTrap('popped', { allowReplace: true, durationMs: 2600, cooldownMs: 1400 });
+    applyPos();
+  }
+
+  function popBubbleTrap() {
+    if (!bubbleTrap.active || bubbleTrap.popping) return;
+    bubbleTrap.popping = true;
+    bubbleTrap.frameAccum = 0;
+    setBubbleTrapFrame(BUBBLE_POP_FIRST_FRAME);
+    if (typeof spawnDust === 'function') {
+      spawnDust(bubbleTrap.x, bubbleTrap.y + bubbleTrap.height * 0.28);
+    }
+  }
+
+  function checkBubbleTrapBuddyCollision() {
+    if (!bubbleTrap.active || bubbleTrap.popping || !bubbleTrap.trapped) return;
+    const myHalfW = Math.max(18, bubbleTrap.width * 0.48);
+    const myHalfH = Math.max(18, bubbleTrap.height * 0.48);
+
+    for (const other of PixelCatRuntime.instances) {
+      if (!other || other === api) continue;
+      if (!other.bubbleTrapActive || other.bubbleTrapPopping || !other.bubbleTrapTrapped) continue;
+
+      const otherHalfW = Math.max(18, Number(other.bubbleTrapWidth || 0) * 0.48);
+      const otherHalfH = Math.max(18, Number(other.bubbleTrapHeight || 0) * 0.48);
+      const dx = Math.abs(Number(other.bubbleTrapX || 0) - bubbleTrap.x);
+      const dy = Math.abs(Number(other.bubbleTrapY || 0) - bubbleTrap.y);
+
+      // Bubble sprites are close to circular, but rectangle contact feels better
+      // visually because the pixel bubble has transparent edges. A small margin
+      // makes them pop as soon as they visibly touch instead of overlapping deeply.
+      if (dx <= myHalfW + otherHalfW - 5 && dy <= myHalfH + otherHalfH - 5) {
+        popBubbleTrap();
+        if (typeof other.popBubbleTrap === 'function') other.popBubbleTrap();
+        break;
+      }
+    }
+  }
+
+  function canStartBubbleTrap(pageSettling) {
+    if (quickSpawnMenuOpen || pageSettling || lowPowerMode || !rareEventsEnabled) return false;
+    if (!catEnabled || !isTabVisible || document.hidden || isDragging || isPurring || isDeepSleep) return false;
+    if (!onGround || isJumping || Math.abs(velX) > 8 || Math.abs(velY) > 25) return false;
+    if (!IDLE_STATES.has(state) || _criticalStates.has(state)) return false;
+    if (targetFish || targetSpider || coinChaseTarget || PixelCatRuntime.activePickupKind !== null) return false;
+    if (speechModule && speechModule.speechVisible) return false;
+    return safeNow() - lastBubbleTrapEndedAt > BUBBLE_END_COOLDOWN_MS;
+  }
+
+  function startBubbleTrap() {
+    cleanupBubbleTrap();
+    bubbleTrapBlocksPickup = true;
+    clearGroundedPlatformAnchor();
+    const el = document.createElement('div');
+    el.className = 'pixelcat-trap-bubble';
+    el.style.backgroundImage = _bubbleImgUrl;
+    document.body.appendChild(el);
+
+    bubbleTrap.active = true;
+    bubbleTrap.popping = false;
+    bubbleTrap.trapped = false;
+    bubbleTrap.el = el;
+    bubbleTrap.frame = 0;
+    bubbleTrap.frameAccum = 0;
+    bubbleTrap.timer = 0;
+    bubbleTrap.vx = signedBubbleTrapSpeed(Math.random() < 0.5 ? -1 : 1, BUBBLE_DVD_MIN_X_SPEED + 8, BUBBLE_DVD_MAX_X_SPEED - 6);
+    // Start slightly upward, then bounce around the viewport like an old DVD logo.
+    bubbleTrap.vy = signedBubbleTrapSpeed(-1, BUBBLE_DVD_MIN_Y_SPEED + 6, BUBBLE_DVD_MAX_Y_SPEED - 8);
+    refreshBubbleTrapScale();
+    bubbleTrap.x = feetX;
+    // The bubble grows from the pet's feet, then carries the pet inside it.
+    bubbleTrap.y = feetY - bubbleTrap.height * 0.42;
+    positionBubbleTrap();
+    setBubbleTrapFrame(0);
+
+    if (speechModule && speechModule.hideSpeechBubble) speechModule.hideSpeechBubble();
+    velX = 0;
+    velY = 0;
+    onGround = false;
+    isJumping = false;
+    isDragging = false;
+    state = 'bubble_trap';
+    stateTimer = 999999;
+    animLockTimer = 0;
+    refreshBubbleTrapAnim(true);
+    catEl.style.opacity = '1';
+    catEl.style.zIndex = '10000004';
+
+    const popHandler = (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      popBubbleTrap();
+    };
+    el.addEventListener('mousedown', popHandler);
+    el.addEventListener('touchstart', popHandler, { passive: false });
+    el.addEventListener('contextmenu', (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      removeExistingQuickMenus();
+    });
+  }
+
+  function updateBubbleTrap(dt, pageSettling) {
+    if (isDestroyed) return;
+    if (!rareEventsEnabled || lowPowerMode) {
+      if (bubbleTrap.active) releaseFromBubbleTrap();
+      return;
+    }
+
+    if (!bubbleTrap.active) {
+      if (canStartBubbleTrap(pageSettling)) {
+        bubbleSpawnTimer -= dt;
+        if (bubbleSpawnTimer <= 0) {
+          startBubbleTrap();
+        }
+      } else if (bubbleSpawnTimer < 12) {
+        // Do not instantly fire the moment the pet becomes idle again.
+        bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_RETRY_DELAY_MIN, BUBBLE_RETRY_DELAY_MAX);
+      }
+      return;
+    }
+
+    if (!catEnabled || !isTabVisible || document.hidden) return;
+    bubbleTrap.timer += dt;
+    bubbleTrap.frameAccum += dt;
+
+    const frameStep = 1 / BUBBLE_FPS;
+    while (bubbleTrap.frameAccum >= frameStep) {
+      bubbleTrap.frameAccum -= frameStep;
+      if (bubbleTrap.popping) {
+        if (bubbleTrap.frame < BUBBLE_FRAME_COUNT - 1) {
+          setBubbleTrapFrame(bubbleTrap.frame + 1);
+        } else {
+          releaseFromBubbleTrap();
+          return;
+        }
+      } else if (bubbleTrap.frame < BUBBLE_GROW_LAST_FRAME) {
+        setBubbleTrapFrame(bubbleTrap.frame + 1);
+      }
+    }
+
+    if (!bubbleTrap.popping) {
+      const growProgress = Math.min(1, bubbleTrap.frame / BUBBLE_GROW_LAST_FRAME);
+      if (!bubbleTrap.trapped && growProgress >= 0.58) {
+        bubbleTrap.trapped = true;
+        maybeSpeakBubbleTrap('trapped', { durationMs: 2900, cooldownMs: 1800 });
+      }
+      if (bubbleTrap.trapped) {
+        // Noticeable soap-bubble movement: clean DVD-style edge bounces.
+        bubbleTrap.x += bubbleTrap.vx * dt;
+        bubbleTrap.y += bubbleTrap.vy * dt;
+
+        const marginX = bubbleTrap.width * 0.5 + 8;
+        const marginTop = bubbleTrap.height * 0.5 + 8;
+        const marginBottom = Math.max(0, bubbleTrap.height * 0.5 - 7);
+        const minX = marginX;
+        const maxX = Math.max(minX, _vw - marginX);
+        const minY = marginTop;
+        const maxY = Math.max(minY, _vh - marginBottom);
+
+        if (bubbleTrap.x < minX) {
+          bubbleTrap.x = minX;
+          bubbleTrap.vx = randomBubbleTrapSpeed(BUBBLE_DVD_MIN_X_SPEED, BUBBLE_DVD_MAX_X_SPEED);
+        }
+        if (bubbleTrap.x > maxX) {
+          bubbleTrap.x = maxX;
+          bubbleTrap.vx = -randomBubbleTrapSpeed(BUBBLE_DVD_MIN_X_SPEED, BUBBLE_DVD_MAX_X_SPEED);
+        }
+        if (bubbleTrap.y < minY) {
+          bubbleTrap.y = minY;
+          bubbleTrap.vy = randomBubbleTrapSpeed(BUBBLE_DVD_MIN_Y_SPEED, BUBBLE_DVD_MAX_Y_SPEED);
+        }
+        if (bubbleTrap.y > maxY) {
+          bubbleTrap.y = maxY;
+          bubbleTrap.vy = -randomBubbleTrapSpeed(BUBBLE_DVD_MIN_Y_SPEED, BUBBLE_DVD_MAX_Y_SPEED);
+        }
+
+        // Keep speed alive so it never gets stuck slowly floating against the ceiling.
+        normalizeBubbleTrapVelocity();
+        checkBubbleTrapBuddyCollision();
+
+        bubbleTrap.bubbleAnimTimer -= dt;
+        if (bubbleTrap.bubbleAnimTimer <= 0) refreshBubbleTrapAnim(false);
+
+        feetX = bubbleTrap.x;
+        // Keep the pet just a tiny bit higher so its feet stay visually inside the bubble.
+        feetY = bubbleTrap.y + bubbleTrap.height * 0.245;
+        velX = 0;
+        velY = 0;
+        onGround = false;
+        isJumping = false;
+        state = 'bubble_trap';
+      }
+    }
+
+    positionBubbleTrap();
+    applyPos();
+  }
 
   // 
   //  STATE
@@ -881,6 +1338,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   var lastStuckSampleY = 0;
   var lastGeneralUnstuckAt = 0;
 
+  // Tracks the exact DOM card/element the pet is standing on.
+  // This removes rare scroll/layout glitches where cached rectangles drift and
+  // the pet appears to sink into a YouTube card or detach from it.
+  var groundedPlatformEl = null;
+  var groundedPlatformOffsetX = 0;
+  var groundedPlatformLastSeenAt = 0;
+  var groundedPlatformGraceUntil = 0;
+
   //  LOYAL FOLLOWER MODE 
 
 
@@ -917,6 +1382,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   function setAnim(name, force) {
     const d = ANIMS[name];
     if (!d) return;
+
+    // Rare safety guard: a stale scroll/platform check can request a jump frame
+    // while the pet is actually calmly grounded. Ignore that single bad request
+    // instead of letting the sprite flash upward for one frame.
+    if (name === 'jump' && onGround && !isJumping && Math.abs(velY) < 35 &&
+        Math.abs(velX) < 8 && isCalmGroundedStateName(state) && state !== 'jump') {
+      return;
+    }
   
     if (curAnim === d) return;
     // If animation is locked (one-shot playing), don't override unless forced
@@ -1029,11 +1502,22 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     if (curAnim !== ANIMS[desired] || force) setAnim(desired, force);
   }
 
+  function normalizeGroundedCalmAnimation() {
+    if (animLockTimer > 0 || !onGround || isJumping || isDragging) return;
+    if (!isCalmGroundedStateName(state) || Math.abs(velX) >= 8 || Math.abs(velY) >= 35) return;
+    if (curAnim !== ANIMS.jump && curAnim !== ANIMS.run && curAnim !== ANIMS.walk) return;
+
+    if (state === 'groom' || state === 'stretch') setAnim(chosenClean, true);
+    else if (state === 'nap' || state === 'deepsleep') setAnim('sleep', true);
+    else setAnim(chosenIdle, true);
+  }
+
   // 
   //  DUST ANIMATION
   // 
   // Pre-cache dust image URL (avoid building it each time)
   const _dustImgUrl = `url("${u('assets/animations/dust.png')}")`;
+  const _bubbleImgUrl = `url("${u('assets/animations/bubble.png')}")`;
 
   function spawnDust(x, y) {
     const d = document.createElement('div');
@@ -1136,7 +1620,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       earnXP(0.2); // XP: petting earns XP.
       awardCoins(getPetCoinReward());
       recordQuestEvent('pet_sessions', 1);
-      speakObjectInteraction('happy');
+      if (bubbleTrap.active) {
+        maybeSpeakBubbleTrap('petted', { allowReplace: true, durationMs: 3000, cooldownMs: 1200 });
+      } else {
+        speakObjectInteraction('happy');
+      }
       velX = 0;
       setAnim('sleep');  // Closed eyes = content purring
       spawnHeart(feetX, feetY - VIS * sizeMultiplier * 0.5);
@@ -1387,6 +1875,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       e.preventDefault();
       e.stopPropagation();
       spider.isHeld = true;
+      markUserDrivenTarget(spider, 'spider');
       draggedSpider = spider;
       spiderDragOffsetX = e.clientX - spider.x;
       spiderDragOffsetY = e.clientY - spider.y;
@@ -1422,6 +1911,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       e.preventDefault();
       e.stopPropagation();
       spider.isHeld = true;
+      markUserDrivenTarget(spider, 'spider');
       draggedSpider = spider;
       spiderDragOffsetX = t.clientX - spider.x;
       spiderDragOffsetY = t.clientY - spider.y;
@@ -1494,8 +1984,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   }
 
   function updateSpiders(dt) {
-    // Cleanup if spiders disabled
-    if (!spiderEnabled && (activeSpiders.length > 0 || activeWebs.length > 0)) {
+    // Keep manually spawned spiders alive even when Auto Spawn is off.
+    // Full cleanup still happens when the whole pet is disabled/destroyed.
+    if (!catEnabled && (activeSpiders.length > 0 || activeWebs.length > 0)) {
       for (let i = 0; i < activeSpiders.length; i++) {
         releaseSpider(activeSpiders[i]);
         activeSpiders[i].el.remove();
@@ -1891,7 +2382,34 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     draggedBall = null;
     targetSpider = null;
     draggedSpider = null;
-    activePickupKind = null;
+    PixelCatRuntime.activePickupKind = null;
+  }
+
+  function applyEcoRuntimeRestrictions() {
+    // Eco Mode is a hard runtime cap: keep the core pet alive, but stop systems
+    // that create extra DOM nodes, physics work, speech layout, or companion AI.
+    autoFishSpawnEnabled = false;
+    ballEnabled = false;
+    spiderEnabled = false;
+    portalEnabled = false;
+    rareEventsEnabled = false;
+    uiMischiefEnabled = false;
+    speechEnabled = false;
+    memoryEnabled = false;
+    isAggressiveMode = false;
+    if (catEnergyLevel === 'hyper') {
+      catEnergyLevel = 'sleepy';
+      applyEnergyLevel();
+    }
+    if (speechModule) hideSpeechBubble();
+    if (typeof cleanupBubbleTrap === 'function') cleanupBubbleTrap();
+    cleanupGlobalArtifacts();
+    if (coinModule && typeof coinModule.cleanupCoinEffects === 'function') coinModule.cleanupCoinEffects();
+    fishSpawnTimer = 90 + Math.random() * 120;
+    ballSpawnTimer = 180 + Math.random() * 180;
+    spiderSpawnTimer = 240 + Math.random() * 240;
+    portalSpawnTimer = 300 + Math.random() * 300;
+    bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_REPEAT_DELAY_MIN, BUBBLE_REPEAT_DELAY_MAX);
   }
 
   let _activeBallId = 'ball_baseball';
@@ -1917,6 +2435,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     get sizeMultiplier() { return sizeMultiplier; },
     get catEnabled() { return catEnabled; },
     get ballEnabled() { return ballEnabled; },
+    go,
+    get state() { return state; },
     get activeBallId() { return _activeBallId; },
     get ballSpawnTimer() { return ballSpawnTimer; },
     set ballSpawnTimer(value) { ballSpawnTimer = value; },
@@ -1960,6 +2480,532 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   });
   const { spawnPortalPair, updatePortals, checkCatPortalCollision, teleportCat, cleanup: cleanupPortals } = portalModule;
 
+  //
+  //  RIGHT-CLICK QUICK SPAWN MENU
+  //
+  let quickSpawnMenuOpen = false;
+  let quickSpawnMenuCalmAnim = '';
+  let quickSpawnMenuAutoCloseTimer = null;
+
+  function chooseQuickMenuCalmAnim() {
+    const options = ['idle1', 'idle2', 'sleep'];
+    const available = options.filter((name) => ANIMS && ANIMS[name]);
+    return available.length ? available[(Math.random() * available.length) | 0] : 'idle1';
+  }
+
+  function holdPetForQuickMenu(forceNewAnim) {
+    if (bubbleTrap.active || bubbleTrap.popping || isDragging || state === 'dragged') return;
+    velX = 0;
+    targetX = feetX;
+    if (onGround) {
+      velY = 0;
+      isJumping = false;
+      if (!quickSpawnMenuCalmAnim || forceNewAnim) quickSpawnMenuCalmAnim = chooseQuickMenuCalmAnim();
+      state = quickSpawnMenuCalmAnim === 'sleep' ? 'nap' : 'sit';
+      stateTimer = Math.max(stateTimer, 1800);
+      setAnim(quickSpawnMenuCalmAnim, true);
+    } else {
+      isJumping = true;
+      stateTimer = Math.max(stateTimer, 350);
+      if (state !== 'jump') setAnim('jump', true);
+    }
+  }
+
+  const QUICK_MENU_XP_REQUIREMENTS = {
+    fish: 0,
+    ball: 10,
+    spider: 25,
+    portal: 135,
+    bubble: 0
+  };
+  const QUICK_MENU_LEVEL_LABELS = {
+    ball: 'Level 2',
+    spider: 'Level 3',
+    portal: 'Level 7'
+  };
+  const QUICK_MENU_BALL_IMAGES = {
+    ball_baseball: 'baseball.png',
+    ball_tennis: 'tennis.png',
+    ball_golf: 'golf.png',
+    ball_basketball: 'basketball.png',
+    ball_football: 'football.png',
+    ball_volleyball: 'valleyball.png',
+    ball_bowling: 'bowling.png'
+  };
+
+  function removeExistingQuickMenus() {
+    if (quickSpawnMenuAutoCloseTimer) {
+      removeTimeout(quickSpawnMenuAutoCloseTimer);
+      quickSpawnMenuAutoCloseTimer = null;
+    }
+    document.querySelectorAll('.pixelcat-action-menu').forEach((menu) => menu.remove());
+    quickSpawnMenuOpen = false;
+    quickSpawnMenuCalmAnim = '';
+  }
+
+  function scheduleQuickMenuAutoClose(menu) {
+    if (quickSpawnMenuAutoCloseTimer) {
+      removeTimeout(quickSpawnMenuAutoCloseTimer);
+      quickSpawnMenuAutoCloseTimer = null;
+    }
+    quickSpawnMenuAutoCloseTimer = addTimeout(() => {
+      quickSpawnMenuAutoCloseTimer = null;
+      if (menu && menu.isConnected && quickSpawnMenuOpen) {
+        removeExistingQuickMenus();
+      }
+    }, 5000);
+  }
+
+  function getQuickMenuBallIcon(activeBallId) {
+    const file = QUICK_MENU_BALL_IMAGES[activeBallId] || QUICK_MENU_BALL_IMAGES.ball_baseball;
+    return u(`assets/balls/${file}`);
+  }
+
+
+  function startManualBubbleTrap() {
+    if (bubbleTrap.active || bubbleTrap.popping) return false;
+    if (!catEnabled || !isTabVisible || document.hidden || isDestroyed) return false;
+    if (lowPowerMode || !rareEventsEnabled || isDragging || state === 'dragged') return false;
+    lastBubbleTrapEndedAt = 0;
+    startBubbleTrap();
+    return true;
+  }
+
+  function nextQuickMenuFishResetDelay() {
+    return 45 + Math.random() * 120 + (Math.random() < 0.2 ? 60 : 0);
+  }
+
+  function nextQuickMenuBallResetDelay() {
+    return 90 + Math.random() * 180 + (Math.random() < 0.15 ? 60 : 0);
+  }
+
+  function resetAutoSpawnTimersAfterMenuAction() {
+    fishSpawnTimer = nextQuickMenuFishResetDelay();
+    ballSpawnTimer = nextQuickMenuBallResetDelay();
+    spiderSpawnTimer = nextSpiderSpawnDelay();
+    portalSpawnTimer = nextPortalSpawnDelay();
+    bubbleSpawnTimer = randomBubbleTrapDelay(BUBBLE_REPEAT_DELAY_MIN, BUBBLE_REPEAT_DELAY_MAX);
+  }
+
+
+  function canQuickMenuForceReaction() {
+    return catEnabled && isTabVisible && !document.hidden && !isDestroyed &&
+      !lowPowerMode && !bubbleTrap.active && !bubbleTrap.popping && !isDragging && state !== 'dragged';
+  }
+
+  function getQuickMenuFishTarget() {
+    return activeFishes.find((fish) => fish && !fish.removing && fish.el && fish.el.isConnected) || null;
+  }
+
+  function getQuickMenuBallTarget() {
+    return activeBalls.find((ball) => ball && !ball.exiting && !ball.removing && ball.el && ball.el.isConnected) || null;
+  }
+
+  function getQuickMenuSpiderTarget() {
+    return activeSpiders.find((spider) => spider && !spider.dead && spider.el && spider.el.isConnected) || null;
+  }
+
+  function getQuickMenuPortalTarget() {
+    if (!portalModule || !portalModule.activePortals || !portalModule.activePortals.length) return null;
+    const openGroundPortal = portalModule.activePortals.find((portal) => portal && portal.placement === 'ground' && portal.state !== 'closing');
+    if (openGroundPortal) return openGroundPortal;
+    return portalModule.activePortals.find((portal) => portal && portal.state !== 'closing') || null;
+  }
+
+  function markUserDrivenTarget(target, kind) {
+    if (!target) return target;
+    target.manualSpawned = true;
+    target.userInteracted = true;
+    target.persistentChase = true;
+    target.lastUserEngagedAt = safeNow();
+    target.userEngagedKind = kind || target.userEngagedKind || 'item';
+    return target;
+  }
+
+  function isUserDrivenTarget(target) {
+    return !!(target && (target.manualSpawned || target.userInteracted || target.persistentChase || target.isHeld));
+  }
+
+  function refreshUserDrivenChaseTimer(target, minMs) {
+    if (!isUserDrivenTarget(target)) return false;
+    stateTimer = Math.max(stateTimer, minMs || 12000);
+    return true;
+  }
+
+  function forceTargetChase(kind, target) {
+    if (!target || !canQuickMenuForceReaction()) return false;
+    markUserDrivenTarget(target, kind);
+
+    if (kind === 'fish') {
+      targetFish = target;
+      targetBall = null;
+      targetSpider = null;
+      if (typeof speakObjectInteraction === 'function') speakObjectInteraction('fishing');
+      go('chasefish');
+      stateTimer = Math.max(stateTimer, 18000);
+      return true;
+    }
+
+    if (kind === 'ball') {
+      targetBall = target;
+      targetFish = null;
+      targetSpider = null;
+      if (typeof speakObjectInteraction === 'function') speakObjectInteraction('ball');
+      go('ball_play');
+      stateTimer = Math.max(stateTimer, 18000);
+      return true;
+    }
+
+    if (kind === 'spider') {
+      targetSpider = target;
+      targetFish = null;
+      targetBall = null;
+      if (typeof speakObjectInteraction === 'function') speakObjectInteraction(target.isBig ? 'bigSpider' : 'spider');
+      go('chasing_bug');
+      stateTimer = Math.max(stateTimer, 18000);
+      return true;
+    }
+
+    return false;
+  }
+
+  function forceQuickMenuSpawnReaction(kind) {
+    if (!canQuickMenuForceReaction()) return false;
+
+    if (kind === 'fish') {
+      const fish = getQuickMenuFishTarget();
+      return !!fish && forceTargetChase('fish', fish);
+    }
+
+    if (kind === 'ball') {
+      const ball = getQuickMenuBallTarget();
+      return !!ball && forceTargetChase('ball', ball);
+    }
+
+    if (kind === 'spider') {
+      const spider = getQuickMenuSpiderTarget();
+      return !!spider && forceTargetChase('spider', spider);
+    }
+
+    if (kind === 'portal') {
+      const portal = getQuickMenuPortalTarget();
+      if (!portal) return false;
+      markUserDrivenTarget(portal, 'portal');
+      targetFish = null;
+      targetBall = null;
+      targetSpider = null;
+      go('portal_seek');
+      stateTimer = Math.max(stateTimer, 12000);
+      return true;
+    }
+
+    return false;
+  }
+
+  function runQuickMenuAction(kind) {
+    // Menu buttons trigger the existing normal spawn actions.
+    // No custom menu position is passed, so objects keep their natural spawn behavior:
+    // fish throw in from their normal edge/top paths, balls drop from above, etc.
+    if (kind === 'fish') {
+      const ok = !!spawnFishTreat();
+      if (ok) {
+        resetAutoSpawnTimersAfterMenuAction();
+        forceQuickMenuSpawnReaction('fish');
+      }
+      return ok;
+    }
+    if (kind === 'ball') {
+      const ok = !!spawnBall();
+      if (ok) {
+        resetAutoSpawnTimersAfterMenuAction();
+        forceQuickMenuSpawnReaction('ball');
+      }
+      return ok;
+    }
+    if (kind === 'spider') {
+      const ok = !!spawnSpider();
+      if (ok) {
+        resetAutoSpawnTimersAfterMenuAction();
+        forceQuickMenuSpawnReaction('spider');
+      }
+      return ok;
+    }
+    if (kind === 'portal') {
+      const ok = !!spawnPortalPair();
+      if (ok) {
+        resetAutoSpawnTimersAfterMenuAction();
+        forceQuickMenuSpawnReaction('portal');
+      }
+      return ok;
+    }
+    if (kind === 'bubble') {
+      const ok = startManualBubbleTrap();
+      if (ok) resetAutoSpawnTimersAfterMenuAction();
+      return ok;
+    }
+    return false;
+  }
+
+  function getQuickMenuDisabledReason(kind, xp) {
+    const requiredXP = QUICK_MENU_XP_REQUIREMENTS[kind] || 0;
+    if (xp < requiredXP) {
+      return `Locked until ${QUICK_MENU_LEVEL_LABELS[kind] || 'a higher level'}`;
+    }
+    if (lowPowerMode) return 'Turn off Eco Mode first';
+    if (bubbleTrap.active && kind !== 'bubble') return 'Bubble is active';
+    if (kind === 'bubble') {
+      if (bubbleTrap.active || bubbleTrap.popping) return 'Bubble already active';
+      if (!rareEventsEnabled) return 'Rare Events is off';
+      if (lowPowerMode) return 'Power saving is on';
+      if (isDragging || state === 'dragged') return 'Drop the pet first';
+      return '';
+    }
+    if (hasActivePickup()) return 'Another item is active';
+    if (kind === 'spider' && activeSpiders.length >= 1) return 'Spider already active';
+    if (kind === 'portal' && portalModule.activePortals.length > 0) return 'Portal already active';
+    return '';
+  }
+
+  function makeQuickMenuIconStyle(item, activeBallId) {
+    if (item.kind === 'ball') {
+      return {
+        image: getQuickMenuBallIcon(activeBallId),
+        size: 'contain',
+        position: 'center'
+      };
+    }
+    if (item.kind === 'fish') {
+      return {
+        image: u('assets/fishes/fish3.png'),
+        size: 'contain',
+        position: 'center'
+      };
+    }
+    if (item.kind === 'portal') {
+      return {
+        image: u('assets/icons/menu_portal.png'),
+        size: 'contain',
+        position: 'center'
+      };
+    }
+    if (item.kind === 'spider') {
+      return {
+        image: u('assets/icons/menu_spider.png'),
+        size: 'contain',
+        position: 'center'
+      };
+    }
+    return {
+      image: u('assets/icons/menu_bubble.png'),
+      size: 'contain',
+      position: 'center'
+    };
+  }
+
+  function stopSpeechForQuickMenu() {
+    if (speechModule && typeof speechModule.hideSpeechBubble === 'function') {
+      speechModule.hideSpeechBubble();
+    } else if (typeof hideSpeechBubble === 'function') {
+      hideSpeechBubble();
+    }
+  }
+
+  function getQuickMenuAnchorPoint(evt) {
+    const fallbackX = evt && Number.isFinite(evt.clientX) ? evt.clientX : feetX;
+    const fallbackY = evt && Number.isFinite(evt.clientY) ? evt.clientY : feetY;
+    const petX = Number.isFinite(feetX) ? feetX : fallbackX;
+    const petFeetY = Number.isFinite(feetY) ? feetY : fallbackY;
+    const isWallState = state === 'wall_left' || state === 'wall_right' ||
+      state === 'wall_left_sit' || state === 'wall_right_sit' || state === 'ninja_climb';
+    const isBubbleTrapState = !!(bubbleTrap && (bubbleTrap.active || bubbleTrap.popping)) || state === 'bubble_trap';
+    const sizeScale = Math.max(1, (VIS * sizeMultiplier) / 80);
+    const gap = Math.max(6, POSITIONING.BUBBLE_GAP * sizeScale);
+
+    let top;
+    let mid;
+    let bottom;
+    let halfW;
+
+    if (isBubbleTrapState) {
+      const bubbleWidth = Math.max(VIS * sizeMultiplier * 0.95, bubbleTrap ? bubbleTrap.width : 0);
+      const bubbleHeight = Math.max(VIS * sizeMultiplier * 1.05, bubbleTrap ? bubbleTrap.height : 0);
+      const bubbleCenterY = petFeetY - bubbleHeight * 0.245;
+      top = bubbleCenterY - bubbleHeight * 0.5;
+      mid = bubbleCenterY;
+      bottom = bubbleCenterY + bubbleHeight * 0.31;
+      halfW = bubbleWidth * 0.5;
+    } else if (isWallState) {
+      top = petFeetY - VIS * sizeMultiplier * 0.42;
+      mid = petFeetY - VIS * sizeMultiplier * 0.08;
+      bottom = petFeetY + VIS * sizeMultiplier * 0.28;
+      halfW = VIS * sizeMultiplier * 0.22;
+    } else {
+      // Match the speech-bubble anchor math instead of using getBoundingClientRect().
+      // The sprite element can include transparent sheet space, which made the menu
+      // jump far above the visible pet when a speech bubble had just been hidden.
+      top = petFeetY - VIS * sizeMultiplier * 0.35;
+      mid = petFeetY - VIS * sizeMultiplier * 0.18;
+      bottom = petFeetY;
+      halfW = VIS * sizeMultiplier * 0.5;
+    }
+
+    return {
+      x: petX,
+      top,
+      mid,
+      bottom,
+      left: petX - halfW,
+      right: petX + halfW,
+      gap,
+      margin: Math.max(8, POSITIONING.BUBBLE_MARGIN * sizeScale)
+    };
+  }
+
+  function placeQuickMenu(menu, clientX, clientY, anchorPoint) {
+    const rect = menu.getBoundingClientRect();
+    const anchor = anchorPoint || getQuickMenuAnchorPoint({ clientX, clientY });
+    const width = rect.width || 150;
+    const height = rect.height || 42;
+    const margin = Number.isFinite(anchor.margin) ? anchor.margin : 8;
+    const gap = Number.isFinite(anchor.gap) ? anchor.gap : 6;
+    const anchorX = Number.isFinite(anchor.x) ? anchor.x : clientX;
+    const anchorTop = Number.isFinite(anchor.top) ? anchor.top : clientY;
+    const anchorBottom = Number.isFinite(anchor.bottom) ? anchor.bottom : clientY;
+
+    const candidates = [
+      { anchor: 'top', tail: 'bottom', x: anchorX - width / 2, y: anchorTop - height - gap },
+      { anchor: 'bottom', tail: 'top', x: anchorX - width / 2, y: anchorBottom + gap }
+    ];
+
+    let chosen = candidates[0];
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      if (c.y >= margin && c.y + height <= _vh - margin) {
+        chosen = c;
+        break;
+      }
+    }
+
+    let left = Math.max(margin, Math.min(_vw - width - margin, chosen.x));
+    let top = Math.max(margin, Math.min(_vh - height - margin, chosen.y));
+
+    menu.dataset.tail = chosen.tail;
+    menu.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(top)}px, 0)`;
+  }
+
+  async function openQuickSpawnMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    // Do not open the quick menu while this pet is trapped in a bubble.
+    // Left-click/touch can still pop the bubble, but right-click should not
+    // stack a menu on top of the trap or keep a stale menu on screen.
+    if ((bubbleTrap && (bubbleTrap.active || bubbleTrap.popping || bubbleTrap.trapped)) || state === 'bubble_trap') {
+      removeExistingQuickMenus();
+      return;
+    }
+
+    if (!catEnabled || isDestroyed) return;
+
+    // Right-click is a direct command: close any speech bubble first so the
+    // menu never stacks on top of text or inherits a bad click position.
+    stopSpeechForQuickMenu();
+    removeExistingQuickMenus();
+    quickSpawnMenuOpen = true;
+    holdPetForQuickMenu(true);
+
+    let data = { catXP: 0, activeBall: _activeBallId, rareEventsEnabled };
+    try {
+      data = await getLocal({ catXP: 0, activeBall: _activeBallId, rareEventsEnabled: true });
+    } catch (_) {
+      // Local fallbacks keep the menu usable if storage is temporarily busy.
+    }
+
+    const xp = Math.min(270, Math.max(0, Number(data.catXP) || 0));
+    const activeBallId = (typeof data.activeBall === 'string' && QUICK_MENU_BALL_IMAGES[data.activeBall]) ? data.activeBall : _activeBallId;
+    rareEventsEnabled = typeof data.rareEventsEnabled === 'boolean' ? data.rareEventsEnabled : rareEventsEnabled;
+
+    const menu = document.createElement('div');
+    menu.className = 'pixelcat-action-menu';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'PixelCat quick spawn menu');
+
+    const items = [
+      { kind: 'ball', label: 'Ball' },
+      { kind: 'fish', label: 'Fish' },
+      { kind: 'portal', label: 'Portal' },
+      { kind: 'spider', label: 'Spider' },
+      { kind: 'bubble', label: 'Bubble' }
+    ];
+
+    items.forEach((item) => {
+      const reason = getQuickMenuDisabledReason(item.kind, xp);
+      const button = document.createElement('button');
+      button.className = 'pixelcat-action-menu-btn';
+      button.type = 'button';
+      button.setAttribute('role', 'menuitem');
+      button.setAttribute('aria-label', reason ? `${item.label}. ${reason}.` : item.label);
+      button.title = reason || item.label;
+      button.dataset.kind = item.kind;
+      if (reason) {
+        button.disabled = true;
+        button.classList.add('is-disabled');
+      }
+
+      const iconStyle = makeQuickMenuIconStyle(item, activeBallId);
+      const icon = document.createElement('span');
+      icon.className = `pixelcat-action-menu-icon pixelcat-action-${item.kind}`;
+      icon.style.setProperty('--pixelcat-action-image', `url("${iconStyle.image}")`);
+      icon.style.setProperty('--pixelcat-action-size', iconStyle.size);
+      icon.style.setProperty('--pixelcat-action-position', iconStyle.position);
+      button.appendChild(icon);
+
+      if (reason) {
+        const lock = document.createElement('span');
+        lock.className = 'pixelcat-action-menu-lock';
+        lock.setAttribute('aria-hidden', 'true');
+        button.appendChild(lock);
+      }
+
+      button.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (button.disabled) return;
+        const ok = runQuickMenuAction(item.kind);
+        removeExistingQuickMenus();
+        if (!ok && speechModule && typeof speechModule.speakFromCategory === 'function') {
+          speechModule.speakFromCategory('confused', { durationMs: 2200, cooldownMs: 3500 });
+        }
+      });
+
+      menu.appendChild(button);
+    });
+
+    document.body.appendChild(menu);
+    scheduleQuickMenuAutoClose(menu);
+    holdPetForQuickMenu(false);
+    requestAnimationFrame(() => {
+      stopSpeechForQuickMenu();
+      placeQuickMenu(menu, evt.clientX, evt.clientY, getQuickMenuAnchorPoint(evt));
+    });
+  }
+
+  addManagedEventListener(catEl, 'contextmenu', openQuickSpawnMenu);
+  addManagedEventListener(document, 'mousedown', (evt) => {
+    const menu = document.querySelector('.pixelcat-action-menu');
+    if (!menu || menu.contains(evt.target) || evt.target === catEl) return;
+    removeExistingQuickMenus();
+  }, true);
+  addManagedEventListener(document, 'keydown', (evt) => {
+    if (evt.key === 'Escape') removeExistingQuickMenus();
+  });
+  addManagedEventListener(window, 'resize', removeExistingQuickMenus);
+  addManagedEventListener(window, 'scroll', removeExistingQuickMenus, { passive: true });
+
   function hitBall(ball, vx, vy) {
     if (!ball || ball.exiting || ball.removing) return false;
     ball.vx = vx;
@@ -1967,6 +3013,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     ball.onGround = false;
     ball.hitCount = (ball.hitCount || 0) + 1;
     ball.vrot = (vx || 0) * 2;
+
+    if (isUserDrivenTarget(ball)) {
+      ball.exitOnWall = false;
+      ball.lifetime = Math.max(Number(ball.lifetime) || 0, 25);
+      return true;
+    }
 
     const age = Number(ball.age) || 0;
     const exitAfter = Number(ball.exitAfter) || 30;
@@ -2104,6 +3156,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   let contentMutationObserver = null;
   let mutationScanTimeout = null;
   let lastMutationScanNudge = 0;
+  let lastEnvScanAt = 0;
 
   // YouTube is a SPA: clicking a video often triggers a soft navigation where
   // the page rebuilds a large part of its DOM without a normal page reload.
@@ -2115,6 +3168,18 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   }
   function isPageSettling() {
     return safeNow() < pageSettlingUntil;
+  }
+
+  const currentHost = (location.hostname || '').toLowerCase();
+  const IS_GOOGLE_PAGE = /(^|\.)google\.(com|co\.ma)$/.test(currentHost);
+  const GOOGLE_PATH = (location.pathname || '').toLowerCase();
+  const GOOGLE_Q = new URLSearchParams(location.search || '').get('q');
+  const IS_GOOGLE_SEARCH_RESULTS = IS_GOOGLE_PAGE && (!!GOOGLE_Q || GOOGLE_PATH === '/search');
+  const IS_YOUTUBE_PAGE = /(^|\.)youtube\.com$/.test(currentHost);
+
+  function safeMatches(el, selector) {
+    if (!el || typeof el.matches !== 'function') return false;
+    try { return el.matches(selector); } catch (_) { return false; }
   }
 
   // Hoist selector arrays outside function  no re-allocation each scan
@@ -2139,6 +3204,33 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     'ytd-reel-item-renderer',
     'ytd-reel-shelf-renderer',
     'ytm-shorts-lockup-view-model',
+    // Google homepage surfaces only. No broad generic-web selectors:
+    // this keeps site support controlled and avoids invisible wrappers/text lines.
+    'form[role="search"]',
+    'form[action="/search"]',
+    'div.RNNXgb',
+    'div.A8SBwf',
+    'div[role="search"]',
+    'textarea[name="q"]',
+    'input[name="q"]',
+    'center input[name="btnK"]',
+    'center input[name="btnI"]',
+    'input[name="btnK"]',
+    'input[name="btnI"]',
+    '#search .MjjYud',
+    '#search .g',
+    '#rso .MjjYud',
+    '#rso .g',
+    '#rhs .g',
+    '#rhs',
+    '#botstuff',
+    '#botstuff .g',
+    '#bres',
+    'g-scrolling-carousel',
+    'div.isv-r',
+    'div[role="contentinfo"]',
+    'footer',
+    '#fbar',
     // NOTE: video player controls (.ytp-chrome-bottom, .ytp-progress-bar-container) intentionally
     // EXCLUDED from platforms — they hide/show dynamically and cause the cat to float mid-air.
     // They remain in _attackSels so the cat can still interact with them.
@@ -2184,7 +3276,249 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     'ytd-searchbox',
     'ytd-guide-entry-renderer',
     'ytd-mini-guide-entry-renderer',
+    // Google homepage + search result targets.
+    'textarea[name="q"]',
+    'input[name="q"]',
+    'input[name="btnK"]',
+    'input[name="btnI"]',
+    'a[href*="gmail"]',
+    'a[href*="imghp"]',
+    'a[aria-label*="Google apps"]',
+    'a[aria-label*="Google Account"]',
+    '#search a h3',
+    '#search .MjjYud a',
+    '#search .g a',
+    '#rhs a',
+    '#botstuff a',
+    '#top_nav a',
+    'a[href*="tbm=isch"]',
+    'a[href*="tbm=nws"]',
+    'a[href*="tbm=vid"]',
+    'div[role="contentinfo"] a',
+    'footer a',
+    '#fbar a',
   ];
+
+  const _blockedPlatformTags = new Set([
+    'HTML', 'BODY', 'SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT', 'IFRAME',
+    'SVG', 'PATH', 'SPAN', 'P', 'A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT',
+    'LABEL', 'TIME', 'SMALL', 'STRONG', 'EM', 'B', 'I', 'CODE', 'PRE',
+    'H1', 'H2', 'H3', 'H4', 'H5', 'H6'
+  ]);
+
+  const _genericSurfaceNameRe = /(?:^|[\s_\-])(card|post|tile|feed|item|product|result|entry|article|panel|box|media|story|thread)(?:$|[\s_\-])/i;
+  const _badPlatformNameRe = /(tooltip|popover|popup|dropdown|menu|modal|overlay|toast|drawer|sidebar|navbar|header|footer|cookie|consent|advert|ads-|sponsor|sponsored|pixelcat|youtube-pixel-cat)/i;
+
+  function elementTextName(el) {
+    if (!el) return '';
+    const cls = typeof el.className === 'string' ? el.className : '';
+    return `${el.tagName || ''} ${el.id || ''} ${cls}`;
+  }
+
+  function isTransparentColor(value) {
+    if (!value || value === 'transparent') return true;
+    return /^rgba\([^)]*,\s*(0|0\.0+)\)$/i.test(value);
+  }
+
+  function hasVisibleMediaSurface(el) {
+    if (!el || typeof el.querySelectorAll !== 'function') return false;
+    let media = null;
+    try {
+      media = el.querySelectorAll('img, video, canvas, picture, svg');
+    } catch (_) {
+      return false;
+    }
+    for (let i = 0; i < media.length && i < 4; i++) {
+      const m = media[i];
+      if (!m || !m.isConnected) continue;
+      const r = m.getBoundingClientRect();
+      if (r.width >= 34 && r.height >= 24 && r.bottom > 0 && r.top < _vh && r.right > 0 && r.left < _vw) return true;
+    }
+    return false;
+  }
+
+  function hasPaintedSurface(style) {
+    if (!style) return false;
+    if (!isTransparentColor(style.backgroundColor)) return true;
+    if (style.boxShadow && style.boxShadow !== 'none') return true;
+    if (style.outlineStyle && style.outlineStyle !== 'none' && parseFloat(style.outlineWidth || '0') > 0) return true;
+    const borderTop = parseFloat(style.borderTopWidth || '0');
+    const borderBottom = parseFloat(style.borderBottomWidth || '0');
+    const borderLeft = parseFloat(style.borderLeftWidth || '0');
+    const borderRight = parseFloat(style.borderRightWidth || '0');
+    return (borderTop + borderBottom + borderLeft + borderRight) > 0;
+  }
+
+  function isYouTubePlatformTag(tag) {
+    return /^YTD/.test(tag) || /^YT-/.test(tag) || /^YTM/.test(tag);
+  }
+
+  function findGoogleSearchBarElement(el) {
+    if (!IS_GOOGLE_PAGE || !el) return null;
+    if (safeMatches(el, 'div.RNNXgb, div.A8SBwf')) return el;
+
+    let queryField = null;
+    if (safeMatches(el, 'textarea[name="q"], input[name="q"]')) {
+      queryField = el;
+    } else if (typeof el.querySelector === 'function') {
+      try { queryField = el.querySelector('textarea[name="q"], input[name="q"]'); } catch (_) { queryField = null; }
+    }
+    if (!queryField) return null;
+
+    const directBox = queryField.closest && queryField.closest('div.RNNXgb, div.A8SBwf');
+    if (directBox) return directBox;
+
+    // Fallback for Google A/B layouts: climb from the input and pick the real
+    // rounded field-size parent, not the huge form/wrapper section.
+    let best = null;
+    let cur = queryField.parentElement;
+    for (let depth = 0; cur && depth < 8; depth++, cur = cur.parentElement) {
+      if (cur === document.body || cur === document.documentElement) break;
+      const r = cur.getBoundingClientRect();
+      if (r.width >= 180 && r.height >= 30 && r.height <= 88 && r.width <= _vw * 0.82 && r.top >= 4 && r.bottom <= _vh - 4) {
+        best = cur;
+      }
+    }
+    return best;
+  }
+
+  function normalizeGooglePlatformElement(el, selector) {
+    if (!IS_GOOGLE_PAGE || !el) return el;
+    const sel = selector || '';
+    if (/form\[|textarea\[name="q"\]|input\[name="q"\]|RNNXgb|A8SBwf|role="search"/.test(sel) || isGoogleSearchSurfaceLoose(el)) {
+      const searchBox = findGoogleSearchBarElement(el);
+      if (searchBox) return searchBox;
+      if (safeMatches(el, 'form[role="search"], form[action="/search"]')) return null;
+    }
+    return el;
+  }
+
+  function isGoogleSearchSurfaceLoose(el) {
+    return IS_GOOGLE_PAGE && !!(el && (
+      safeMatches(el, 'form[role="search"], form[action="/search"], div.RNNXgb, div.A8SBwf, div[role="search"], textarea[name="q"], input[name="q"]') ||
+      (el.closest && el.closest('form[role="search"], form[action="/search"], div.RNNXgb, div.A8SBwf'))
+    ));
+  }
+
+  function isGoogleSearchSurface(el) {
+    if (!IS_GOOGLE_PAGE || !el) return false;
+    const box = findGoogleSearchBarElement(el);
+    return !!box && box === el;
+  }
+
+
+  function isGoogleButtonSurface(el) {
+    return IS_GOOGLE_PAGE && safeMatches(el, 'input[name="btnK"], input[name="btnI"]');
+  }
+
+  function isGoogleFooterSurface(el) {
+    return IS_GOOGLE_PAGE && (
+      safeMatches(el, 'div[role="contentinfo"], footer, #fbar') ||
+      !!(el.closest && el.closest('div[role="contentinfo"], footer, #fbar') === el)
+    );
+  }
+
+  function isGoogleResultSurface(el) {
+    if (!IS_GOOGLE_SEARCH_RESULTS || !el) return false;
+    if (safeMatches(el, '#search .MjjYud, #search .g, #rso .MjjYud, #rso .g, #rhs, #rhs .g, #botstuff, #botstuff .g, #bres, g-scrolling-carousel, div.isv-r')) return true;
+    const block = el.closest && el.closest('#search .MjjYud, #search .g, #rso .MjjYud, #rso .g, #rhs, #rhs .g, #botstuff, #botstuff .g, #bres, g-scrolling-carousel, div.isv-r');
+    return !!block && block === el;
+  }
+
+  function isGoogleStandableSurface(el, rect) {
+    if (!IS_GOOGLE_PAGE || !el || !rect) return false;
+    if (rect.right <= 0 || rect.left >= _vw || rect.bottom <= 40 || rect.top >= _vh - 4) return false;
+
+    if (isGoogleSearchSurface(el)) {
+      // Only the actual rounded search bar is standable.
+      // Reject the huge Google form/wrapper area highlighted by DevTools.
+      if (rect.height > 88 || rect.width > _vw * 0.82) return false;
+      if (IS_GOOGLE_SEARCH_RESULTS) {
+        return rect.width >= 220 && rect.height >= 34 && rect.top > 4 && rect.top < 170;
+      }
+      return rect.width >= 180 && rect.height >= 28 && rect.top > 70 && rect.top < _vh * 0.72;
+    }
+
+    if (isGoogleButtonSurface(el)) {
+      return rect.width >= 50 && rect.height >= 22 && rect.top > 100 && rect.top < _vh * 0.78;
+    }
+
+    if (isGoogleResultSurface(el)) {
+      if (rect.width < Math.min(220, _vw * 0.24) || rect.height < 48) return false;
+      if (rect.top < 100 || rect.top > _vh - 54) return false;
+      return true;
+    }
+
+    if (isGoogleFooterSurface(el)) {
+      return rect.width >= Math.min(260, _vw * 0.45) && rect.height >= 36 && rect.top > _vh * 0.55;
+    }
+
+    return false;
+  }
+
+  function isStandablePlatformCandidate(el, rect, selector) {
+    if (!el || !rect || !el.isConnected) return false;
+    if (el === document.body || el === document.documentElement || el === catEl || catEl.contains(el)) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    const googleSurface = isGoogleStandableSurface(el, rect);
+    if (_blockedPlatformTags.has(tag) && !googleSurface) return false;
+    if (!googleSurface && (rect.width < 90 || rect.height < 42 || rect.width * rect.height < 5200)) return false;
+    if ((googleSurface ? rect.top < 4 : rect.top < 38) || rect.bottom <= 42 || rect.top >= _vh - 8 || rect.right <= 0 || rect.left >= _vw) return false;
+    if (!googleSurface && rect.width > _vw * 0.98 && rect.height > _vh * 0.42) return false;
+    if (!googleSurface && rect.height > _vh * 0.62) return false;
+
+    const name = elementTextName(el);
+    if (!googleSurface && _badPlatformNameRe.test(name)) return false;
+
+    let style = null;
+    try { style = getComputedStyle(el); } catch (_) { return false; }
+    if (!style || style.display === 'none' || style.display === 'contents' || style.visibility === 'hidden') return false;
+    if (parseFloat(style.opacity || '1') < 0.08) return false;
+    if (style.pointerEvents === 'none' && !googleSurface) return false;
+    if (!googleSurface && !isYouTubePlatformTag(tag) && (style.position === 'fixed' || style.position === 'sticky')) return false;
+    if (googleSurface) return true;
+
+    const role = (el.getAttribute && (el.getAttribute('role') || '')) || '';
+    const semanticSurface = tag === 'ARTICLE' || role === 'article' || role === 'listitem';
+    const namedSurface = _genericSurfaceNameRe.test(name);
+    const paintedSurface = hasPaintedSurface(style);
+    const mediaSurface = hasVisibleMediaSurface(el);
+
+    // Avoid plain text rows and invisible wrappers on generic websites.
+    if (!isYouTubePlatformTag(tag)) {
+      if (tag === 'LI' && !namedSurface && !mediaSurface && !paintedSurface) return false;
+      if (!semanticSurface && !namedSurface && !paintedSurface && !mediaSurface) return false;
+      if (rect.height < 56 && !paintedSurface && !mediaSurface) return false;
+    }
+
+    return true;
+  }
+
+  function horizontalOverlap(a, b) {
+    return Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+  }
+
+  function pushEnvRect(out, data) {
+    if (!data || !data.el) return;
+    if (!data.isPlatform) {
+      out.push(data);
+      return;
+    }
+    const newArea = data.w * data.h;
+    for (let i = 0; i < out.length; i++) {
+      const old = out[i];
+      if (!old || !old.isPlatform || old.el === data.el) continue;
+      const overlap = horizontalOverlap(old, data);
+      const minWidth = Math.min(old.w, data.w);
+      const sameSurfaceLine = Math.abs(getPlatformStandY(old) - getPlatformStandY(data)) < 8 && overlap > minWidth * 0.72;
+      if (!sameSurfaceLine) continue;
+      const oldArea = old.w * old.h;
+      // Prefer the smaller real card over a broad wrapper when their top edge is the same.
+      if (newArea < oldArea * 0.88) out[i] = data;
+      return;
+    }
+    out.push(data);
+  }
 
   function doEnvScan() {
     envPending = false;
@@ -2204,24 +3538,29 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     function collect(sels, isPlatform, isAttack) {
       const root = document.querySelector('ytd-app') || document.body;
       for (let s = 0; s < sels.length; s++) {
-        if (out.length >= 30) break;
+        if (out.length >= 36) break;
         try {
           const els = root.querySelectorAll(sels[s]);
           const minH = sels[s].indexOf('ytp') !== -1 ? 2 : 10;
-          for (let i = 0; i < els.length && out.length < 30; i++) {
-            const el = els[i];
+          for (let i = 0; i < els.length && out.length < 36; i++) {
+            let el = els[i];
+            if (isPlatform && IS_GOOGLE_PAGE) {
+              const normalized = normalizeGooglePlatformElement(el, sels[s]);
+              if (!normalized) continue;
+              el = normalized;
+            }
             if (!isElVisible(el)) continue;
             const r = el.getBoundingClientRect();
             if (r.width < 10 || r.height < minH) continue;
             if (r.top >= vh || r.bottom <= 40 || r.right <= 0 || r.left >= vw) continue;
-            if (isPlatform && r.height > vh * 0.6) continue;
+            if (isPlatform && !isStandablePlatformCandidate(el, r, sels[s])) continue;
 
             const tag = el.tagName.toUpperCase();
             const isChip = tag === 'YTD-CHIP-CLOUD-CHIP-RENDERER';
             const isLogo = tag === 'YTD-LOGO' || el.id === 'logo' || el.closest('ytd-logo');
             const isSearch = el.id === 'search' || tag === 'YTD-SEARCHBOX' || el.closest('#search');
 
-            out.push({
+            pushEnvRect(out, {
               el,
               left: r.left, right: r.right,
               top: r.top, bottom: r.bottom,
@@ -2237,6 +3576,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     collect(_attackSels, false, true);
     PixelCatRuntime.envRects.length = 0;
     PixelCatRuntime.envRects.push(...out);
+    lastEnvScanAt = safeNow();
   }
 
   function shiftCachedEnvForScroll(deltaY) {
@@ -2274,12 +3614,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     if (isCompanion) return;
     if (isDestroyed || !isTabVisible || document.hidden) return;
     if (envPending) return;
+    if (lowPowerMode && PixelCatRuntime.envRects.length > 0 && safeNow() - lastEnvScanAt < 20000) return;
     if (isPageSettling()) {
-      scheduleContentSettledScan(Math.max(450, delay == null ? 0 : delay));
+      scheduleContentSettledScan(Math.max(lowPowerMode ? 1800 : 450, delay == null ? 0 : delay));
       return;
     }
     envPending = true;
-    addTimeout(runEnvScanWhenReady, delay == null ? 0 : delay);
+    const requestedDelay = delay == null ? 0 : delay;
+    addTimeout(runEnvScanWhenReady, lowPowerMode ? Math.max(1800, requestedDelay) : requestedDelay);
   }
 
   function scheduleContentSettledScan(delay) {
@@ -2319,6 +3661,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // Background rescans are intentionally calm. Mutation and navigation listeners
   // handle most layout changes, so a slower backup scan reduces YouTube CPU usage.
   addInterval(() => {
+    if (lowPowerMode) return;
     if (!catEnabled || !isTabVisible || document.hidden) return;
     if (isScrolling || envPending || mutationScanTimeout) return;
     scheduleEnvScan(0);
@@ -2499,7 +3842,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (!r || !r.isPlatform || !r.el || !r.el.isConnected) continue;
       const inset = getPlatformInset(r);
       if (feetX < r.left + inset || feetX > r.right - inset) continue;
-      const dist = Math.abs(r.top - expectedY);
+      const dist = Math.abs(getPlatformStandY(r) - expectedY);
       if (dist < 90 && dist < bestDist) {
         best = r;
         bestDist = dist;
@@ -2507,7 +3850,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }
 
     if (!best) return;
-    feetY = best.top;
+    captureGroundedPlatform(best);
+    feetY = getPlatformStandY(best);
     velY = 0;
     isJumping = false;
     lastTransformStr = '';
@@ -2530,7 +3874,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         const dy = _pendingScrollDeltaY;
         _pendingScrollDeltaY = 0;
         shiftCachedEnvForScroll(dy);
-        syncCatToScrolledPlatform(dy);
+        if (!syncGroundedPlatformAnchor(false)) syncCatToScrolledPlatform(dy);
       });
     }
 
@@ -2544,14 +3888,36 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   //  PLATFORM FLOOR
   // 
+  function getPortalSeekTargetPoint() {
+    const portal = getQuickMenuPortalTarget();
+    return portal ? { x: portal.x, y: portal.y } : null;
+  }
+
+  function getActiveChaseTargetPoint() {
+    if (state === 'chasefish' && targetFish) return { x: targetFish.x, y: targetFish.y, target: targetFish };
+    if (state === 'ball_play' && targetBall) return { x: targetBall.x, y: targetBall.y, target: targetBall };
+    if (state === 'chasing_bug' && targetSpider) return { x: targetSpider.x, y: targetSpider.y, target: targetSpider };
+    if (state === 'portal_seek') return getPortalSeekTargetPoint();
+    if (state === 'coinchase' && coinChaseTarget) {
+      const coinSize = 16 * sizeMultiplier;
+      return { x: coinChaseTarget.x + coinSize / 2, y: coinChaseTarget.y + coinSize / 2, target: coinChaseTarget };
+    }
+    return null;
+  }
+
+  function shouldIgnorePlatformsForLowerChaseTarget() {
+    if (velY <= 0 || onGround) return false;
+    if (safeNow() < chaseDropThroughUntil) return true;
+    const targetPoint = getActiveChaseTargetPoint();
+    if (!targetPoint) return false;
+    return targetPoint.y - feetY > 34;
+  }
+
   function computeFloor(catX) {
     const base = _vh;
-    // When the cat intentionally drops toward a target below a card, skip
-    // temporary video-card platforms so it does not land back on the same card.
-    if (state === 'chasefish' && velY > 0 && !onGround) {
-      return base;
-    }
-    if ((state === 'coinchase' || state === 'ball_play') && velY > 0 && !onGround && safeNow() < chaseDropThroughUntil) {
+    // When the pet intentionally drops toward a lower item, skip page cards/surfaces.
+    // This prevents Google/search result cards from catching the pet above the target.
+    if (shouldIgnorePlatformsForLowerChaseTarget()) {
       return base;
     }
     let best = base;
@@ -2560,7 +3926,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (!r.isPlatform) continue;
       const inset = getPlatformInset(r);
       if (catX < r.left + inset || catX > r.right - inset) continue;
-      const standY = r.top;
+      const standY = getPlatformStandY(r);
       if (feetY <= standY + getPlatformSnapTolerance() && standY < best && standY > 50) {
         best = standY;
       }
@@ -2575,19 +3941,87 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       const r = envRects[i];
       if (!r.isPlatform || !r.el.isConnected) continue;
       const inset = getPlatformInset(r);
-      if (feetX >= r.left + inset && feetX <= r.right - inset && Math.abs(feetY - r.top) < getPlatformAttachTolerance()) {
+      if (feetX >= r.left + inset && feetX <= r.right - inset && Math.abs(feetY - getPlatformStandY(r)) < getPlatformAttachTolerance()) {
         return r;
       }
     }
     return null;
   }
 
+  function getLivePlatformRect(el) {
+    if (!el || !el.isConnected || !isElVisible(el)) return null;
+    const r = el.getBoundingClientRect();
+    if (!r || r.width < 10 || r.height < 10) return null;
+    if (r.bottom <= -80 || r.top >= _vh + 80 || r.right <= 0 || r.left >= _vw) return null;
+    if (!isStandablePlatformCandidate(el, r, 'live')) return null;
+    return {
+      el,
+      left: r.left, right: r.right,
+      top: r.top, bottom: r.bottom,
+      w: r.width, h: r.height,
+      isPlatform: true, isAttack: false
+    };
+  }
+
+  function clearGroundedPlatformAnchor() {
+    groundedPlatformEl = null;
+    groundedPlatformOffsetX = 0;
+    groundedPlatformGraceUntil = 0;
+  }
+
+  function captureGroundedPlatform(platform) {
+    if (!platform || !platform.el || !platform.el.isConnected || feetY >= _vh - 8) {
+      clearGroundedPlatformAnchor();
+      return;
+    }
+    groundedPlatformEl = platform.el;
+    groundedPlatformOffsetX = Math.max(0, Math.min(platform.w || (platform.right - platform.left) || 0, feetX - platform.left));
+    groundedPlatformLastSeenAt = safeNow();
+    groundedPlatformGraceUntil = groundedPlatformLastSeenAt + 850;
+  }
+
+  function syncGroundedPlatformAnchor(allowGrace) {
+    if (!onGround || isDragging || state === 'dragged' || state === 'hide' || state === 'hidden') {
+      if (!onGround || isDragging) clearGroundedPlatformAnchor();
+      return false;
+    }
+    if (feetY >= _vh - 8) {
+      clearGroundedPlatformAnchor();
+      return false;
+    }
+
+    let live = getLivePlatformRect(groundedPlatformEl);
+    if (!live) {
+      const current = getCurrentPlatform();
+      if (current) {
+        captureGroundedPlatform(current);
+        live = getLivePlatformRect(current.el) || current;
+      }
+    }
+
+    if (!live) {
+      return allowGrace !== false && safeNow() < groundedPlatformGraceUntil;
+    }
+
+    const inset = getPlatformInset(live);
+    const minX = live.left + inset;
+    const maxX = live.right - inset;
+    if (maxX > minX) {
+      const desiredOffset = groundedPlatformOffsetX || Math.min(Math.max(feetX - live.left, inset), live.w - inset);
+      feetX = Math.max(minX, Math.min(maxX, live.left + desiredOffset));
+    }
+    feetY = getPlatformStandY(live);
+    velY = 0;
+    isJumping = false;
+    groundedPlatformLastSeenAt = safeNow();
+    groundedPlatformGraceUntil = groundedPlatformLastSeenAt + 850;
+    return true;
+  }
+
   // Check if the platform the cat is standing on still exists and is visible
   function isPlatformStillValid(platform) {
     if (!platform || !platform.el) return false;
-    if (!platform.el.isConnected) return false;
-    if (!isElVisible(platform.el)) return false;
-    return true;
+    return !!getLivePlatformRect(platform.el);
   }
 
   // Find platform that target is on
@@ -2595,7 +4029,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     for (let i = 0; i < envRects.length; i++) {
       const r = envRects[i];
       if (!r.isPlatform || !r.el.isConnected) continue;
-      if (x >= r.left && x <= r.right && Math.abs(y - r.top) < 30) {
+      if (x >= r.left && x <= r.right && Math.abs(y - getPlatformStandY(r)) < 30) {
         return r;
       }
     }
@@ -2611,7 +4045,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (!r.isPlatform || !r.el.isConnected) continue;
       const inset = getPlatformInset(r);
       if (catX < r.left + inset || catX > r.right - inset) continue;
-      if (Math.abs(feetY - r.top) > getPlatformAttachTolerance()) continue;
+      if (Math.abs(feetY - getPlatformStandY(r)) > getPlatformAttachTolerance()) continue;
       const edgeZone = Math.max(50, inset + 22);
       if (direction > 0 && catX > r.right - edgeZone) return true;
       if (direction < 0 && catX < r.left + edgeZone)  return true;
@@ -2638,13 +4072,58 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   function startChaseDropThrough(edgeDir, speedMultiplier = 1.45) {
     const dir = edgeDir < 0 ? -1 : 1;
-    chaseDropThroughUntil = safeNow() + 1150;
+    chaseDropThroughUntil = safeNow() + 2200;
+    clearGroundedPlatformAnchor();
     velX = dir * SPEED_RUN * speedMultiplier;
-    velY = Math.max(velY, 90);
+    velY = Math.max(velY, 150);
     onGround = false;
     isJumping = true;
     setDir(velX < 0);
     setAnim('jump', true);
+  }
+
+  function platformCoversLowerTarget(platform, tx, ty, horizontalWindow = 90) {
+    if (!platform || ty - feetY <= 40) return false;
+    const inset = getPlatformInset(platform);
+    const width = Math.max(0, platform.right - platform.left);
+    const petInside = feetX >= platform.left + inset && feetX <= platform.right - inset;
+    const targetInside = tx >= platform.left + inset && tx <= platform.right - inset;
+    if (!petInside || !targetInside) return false;
+
+    const distToLeft = Math.max(0, feetX - platform.left);
+    const distToRight = Math.max(0, platform.right - feetX);
+    const nearestEdgeDist = Math.min(distToLeft, distToRight);
+    const isBroadSurface = width > _vw * 0.68 || (IS_GOOGLE_PAGE && width > _vw * 0.48);
+    const isGoogleFullFooter = IS_GOOGLE_PAGE && platform.el && isGoogleFooterSurface(platform.el);
+    const targetNearlyUnderPet = Math.abs(tx - feetX) <= horizontalWindow;
+
+    // Wide Google surfaces/footers cover the whole route, so running to the far
+    // left/right edge makes the pet look trapped. For those cases, intentionally
+    // drop through the current surface and ignore platforms for a short window.
+    return isGoogleFullFooter || isBroadSurface || nearestEdgeDist > 220 || targetNearlyUnderPet;
+  }
+
+  function startChaseDropThroughToward(tx, ty, speedMultiplier = 0.65) {
+    const dx = tx - feetX;
+    const dir = Math.abs(dx) > 8 ? (dx > 0 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1);
+    chaseDropThroughUntil = safeNow() + 2600;
+    clearGroundedPlatformAnchor();
+    velX = dir * SPEED_RUN * speedMultiplier;
+    velY = Math.max(velY, 220);
+    onGround = false;
+    isJumping = true;
+    setDir(velX < 0);
+    setAnim('jump', true);
+  }
+
+  function maybeDropThroughCurrentPlatformForLowerTarget(tx, ty, horizontalWindow = 90) {
+    if (!onGround || isJumping) return false;
+    if (ty - feetY <= 40) return false;
+    const catPlat = getCurrentPlatform();
+    if (!catPlat || catPlat.top >= _vh - 30) return false;
+    if (!platformCoversLowerTarget(catPlat, tx, ty, horizontalWindow)) return false;
+    startChaseDropThroughToward(tx, ty);
+    return true;
   }
 
   function moveToDropEdgeForLowerTarget(tx, ty, horizontalWindow = 90) {
@@ -2653,6 +4132,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
     const catPlat = getCurrentPlatform();
     if (!catPlat || catPlat.top >= _vh - 30) return false;
+    if (platformCoversLowerTarget(catPlat, tx, ty, horizontalWindow)) {
+      startChaseDropThroughToward(tx, ty);
+      return true;
+    }
 
     const dx = tx - feetX;
     const distToLeft = Math.max(0, feetX - catPlat.left);
@@ -2669,7 +4152,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     setDir(velX < 0);
     setAnim('run');
 
-    if (edgeDist < 46) {
+    if (edgeDist < 58) {
       startChaseDropThrough(edgeDir);
     }
     return true;
@@ -2796,10 +4279,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         return true;
       }
       case 'drop-down': {
-        velX = route.dir * SPEED_RUN * 1.2;
-        velY = 50;
-        onGround = false; isJumping = true;
-        setAnim('jump', true);
+        startChaseDropThrough(route.dir, 1.25);
         return true;
       }
       case 'hop-platform': {
@@ -2839,6 +4319,30 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   function getUiActionTarget() {
     const candidates = [];
+
+    if (IS_GOOGLE_PAGE) {
+      const googleTargets = document.querySelectorAll(
+        'input[name="btnK"], input[name="btnI"], textarea[name="q"], input[name="q"], a[href*="gmail"], a[href*="imghp"], a[aria-label*="Google apps"], a[aria-label*="Google Account"], #search a h3, #search .MjjYud a, #search .g a, #rhs a, #botstuff a, #top_nav a, a[href*="tbm=isch"], a[href*="tbm=nws"], a[href*="tbm=vid"], div[role="contentinfo"] a, footer a, #fbar a'
+      );
+      for (let i = 0; i < googleTargets.length && candidates.length < 16; i++) {
+        const el = googleTargets[i];
+        if (!el || !el.isConnected || !isElVisible(el)) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8 || r.bottom < 0 || r.top > _vh || r.right < 0 || r.left > _vw) continue;
+        candidates.push({ type: 'google', el });
+      }
+      if (candidates.length) {
+        const pick = candidates[(Math.random() * candidates.length) | 0];
+        const r = pick.el.getBoundingClientRect();
+        return {
+          type: pick.type,
+          el: pick.el,
+          x: r.left + r.width / 2,
+          y: r.top + r.height / 2,
+        };
+      }
+    }
+
     const topButtons = document.querySelectorAll('#top-level-buttons-computed ytd-toggle-button-renderer button, ytd-menu-renderer ytd-toggle-button-renderer button');
     for (let i = 0; i < topButtons.length; i++) {
       const btn = topButtons[i];
@@ -3619,7 +5123,19 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         targetX = targetBall.x;
         velX = SPEED_RUN * (targetX > feetX ? 1 : -1);
         setDir(velX < 0); setAnim('run');
-        stateTimer = 6000;
+        stateTimer = targetBall.manualSpawned ? 9000 : 6000;
+        break;
+      }
+
+      case 'portal_seek': {
+        const portal = getQuickMenuPortalTarget();
+        if (!portal) { go('sit'); return; }
+        targetX = portal.x;
+        const dx = targetX - feetX;
+        velX = Math.abs(dx) > 36 ? SPEED_RUN * (dx > 0 ? 1 : -1) : 0;
+        setDir(dx < 0);
+        setAnim(Math.abs(dx) > 36 ? 'run' : chosenIdle);
+        stateTimer = 7000;
         break;
       }
 
@@ -3670,7 +5186,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   let knockoffCheckAccum = 0;
   
   // Hoisted outside updateState  avoids per-frame array allocation
-  const _criticalStates = new Set(['eatfish', 'chasefish', 'ball_play', 'dragged', 'stunned', 'wall_left', 'wall_right', 'ninja_climb', 'deepsleep']);
+  const _criticalStates = new Set(['eatfish', 'chasefish', 'ball_play', 'dragged', 'stunned', 'wall_left', 'wall_right', 'ninja_climb', 'deepsleep', 'bubble_trap']);
   const _sittingStates  = new Set(['sit', 'stare', 'groom', 'stretch', 'pawplay', 'headtilt']);
   const _restingStates  = new Set(['sit', 'stare', 'headtilt', 'edgesit', 'groom']);
   const _sleepingStates = new Set(['nap', 'sleep', 'deepsleep']);
@@ -3706,6 +5222,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     if (isDragging) return;
     stateTimer -= dt * 1000;
     tickNeeds(dt);
+    if (bubbleTrap.active) return;
     
     //  PETTING DETECTION 
     tickPetting(dt);
@@ -4420,10 +5937,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       case 'ball_play': {
         if (state === 'ball_play') {
           if (!targetBall || targetBall.exiting || targetBall.removing || !activeBalls.includes(targetBall)) { targetBall = null; go('sit'); return; }
+          if (isUserDrivenTarget(targetBall)) {
+            refreshUserDrivenChaseTimer(targetBall, targetBall.isHeld ? 22000 : 16000);
+          }
           
           // REALISTIC: Cat might lose interest mid-play
           // Check every few seconds if still interested
-          if (Math.random() < 0.002) { // ~0.2% per frame = check every few seconds
+          if (!targetBall.manualSpawned && Math.random() < 0.002) { // ~0.2% per frame = check every few seconds
             let continueInterest = 0.65; // Base 65% to continue (slightly lower than fish)
             
             // Low energy = lose interest faster
@@ -4727,7 +6247,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             ballStuckCheckTimer = 0;
           }
 
-          if (stateTimer <= 0) go('sit');
+          if (stateTimer <= 0) {
+            if (isUserDrivenTarget(targetBall) && targetBall && !targetBall.exiting && !targetBall.removing) {
+              stateTimer = 12000;
+            } else {
+              go('sit');
+            }
+          }
           break;
         }
 
@@ -5049,6 +6575,43 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         break;
       }
 
+      /*  QUICK MENU PORTAL SEEK */
+      case 'portal_seek': {
+        const portal = getQuickMenuPortalTarget();
+        if (!portal) { go('sit'); break; }
+        if (isUserDrivenTarget(portal)) refreshUserDrivenChaseTimer(portal, 12000);
+
+        targetX = portal.x;
+        const pdx = portal.x - feetX;
+        const pdy = portal.y - feetY;
+        const nearPortal = Math.abs(pdx) < 44 && Math.abs(pdy) < 90;
+
+        if (!nearPortal && moveToDropEdgeForLowerTarget(portal.x, portal.y, 120)) {
+          stateTimer = Math.max(stateTimer, 3000);
+          break;
+        }
+
+        if (Math.abs(pdx) > 38) {
+          velX = (pdx > 0 ? 1 : -1) * SPEED_RUN * 1.05;
+          setDir(velX < 0);
+          setAnim('run');
+        } else {
+          velX = 0;
+          setDir(pdx < 0);
+          if (onGround && !isJumping && pdy < -50) {
+            velY = JUMP_V * 0.55;
+            onGround = false;
+            isJumping = true;
+            setAnim('jump', true);
+          } else {
+            setAnim(chosenIdle);
+          }
+        }
+
+        if (stateTimer <= 0) go('sit');
+        break;
+      }
+
       /*  CHASE FISH  */
       case 'chasefish': {
         // Fish gone or despawned? Stop chasing
@@ -5056,10 +6619,13 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
            targetFish = null;
            go('sit'); break;
         }
+        if (isUserDrivenTarget(targetFish)) {
+          refreshUserDrivenChaseTimer(targetFish, targetFish.isHeld ? 26000 : 18000);
+        }
         
         // REALISTIC: Cat might lose interest mid-chase
         // Check every few seconds if still interested
-        if (Math.random() < 0.002) { // ~0.2% per frame = check every few seconds
+        if (!targetFish.manualSpawned && Math.random() < 0.002) { // ~0.2% per frame = check every few seconds
           let continueInterest = 0.7; // Base 70% to continue
           
           // Low energy = lose interest faster
@@ -5164,6 +6730,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         const catPlat = onGround ? getCurrentPlatform() : null;
         const catIsOnPlatform = catPlat !== null && catPlat.top < _vh - 30;
         
+        if (fishIsBelow && catIsOnPlatform && maybeDropThroughCurrentPlatformForLowerTarget(targetFish.x, targetFish.y, 90)) {
+          stuckCheckTimer = 0;
+          stateTimer = Math.max(stateTimer, 18000);
+          break;
+        }
+
         //  DIRECTION WITH HYSTERESIS 
         // Prevent rapid left-right oscillation when fish is roughly below
         let fishDir;
@@ -5206,16 +6778,16 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           
           if (moved < 6 && onGround && !isJumping) {
             if (fishIsBelow && catIsOnPlatform) {
-              // Find nearest edge of current platform
-              const distToLeft = feetX - catPlat.left;
-              const distToRight = catPlat.right - feetX;
-              const edgeDir = distToLeft < distToRight ? -1 : 1;
-              // Small horizontal push off the edge + tiny downward velocity
-              velX = edgeDir * SPEED_RUN * 1.5;
-              velY = 50;  // Push DOWN
-              onGround = false;
-              isJumping = true;
-              setAnim('jump', true);
+              if (platformCoversLowerTarget(catPlat, targetFish.x, targetFish.y, 90)) {
+                startChaseDropThroughToward(targetFish.x, targetFish.y, 0.75);
+              } else {
+                // Find nearest edge of current platform
+                const distToLeft = feetX - catPlat.left;
+                const distToRight = catPlat.right - feetX;
+                const edgeDir = distToLeft < distToRight ? -1 : 1;
+                // Small horizontal push off the edge + drop-through window.
+                startChaseDropThrough(edgeDir, 1.5);
+              }
             } else if (fishRawYDist < -40) {
               // Fish is ABOVE  jump up toward it
               const jumpH = 0.7 + Math.random() * 0.4;
@@ -5241,6 +6813,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           
           //  PRIORITY 1: Fish is below and cat is on a platform  GET DOWN
           if (fishIsBelow && catIsOnPlatform) {
+            if (platformCoversLowerTarget(catPlat, targetFish.x, targetFish.y, 90)) {
+              startChaseDropThroughToward(targetFish.x, targetFish.y, 0.7);
+              break;
+            }
+
             const distToLeft = feetX - catPlat.left;
             const distToRight = catPlat.right - feetX;
             const nearestEdgeDist = Math.min(distToLeft, distToRight);
@@ -5252,13 +6829,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             
             // At the edge? DROP OFF (don't jump to adjacent!)
             if (nearestEdgeDist < 50) {
-              // Small hop off the edge with horizontal push toward fish
+              // Small hop off the edge with a drop-through window.
               const towardFish = targetFish.x > feetX ? 1 : -1;
-              velX = towardFish * SPEED_RUN * 1.2;
-              velY = 50;  // Gentle downward push  let gravity do the rest
-              onGround = false;
-              isJumping = true;
-              setAnim('jump', true);
+              startChaseDropThrough(towardFish, 1.25);
               break;
             }
             break;  // Don't run other pathfinding  just run to edge
@@ -5303,11 +6876,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             // If fish is below and there's an adjacent platform,
             // DON'T jump to it  drop down instead
             if (fishIsBelow) {
-              velX = fishDir * SPEED_RUN * 1.3;
-              velY = 50;  // Downward push
-              onGround = false;
-              isJumping = true;
-              setAnim('jump', true);
+              startChaseDropThrough(fishDir, 1.35);
             } else if (adj) {
               // Fish is roughly same level or above  jump to adjacent
               const jp = 0.6 + Math.random() * 0.5;
@@ -5342,9 +6911,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         // Only give up on absolute timeout (30s) or fish truly off-screen
         const fishOffScreen = targetFish.x < -200 || targetFish.x > _vw + 200 ||
                               targetFish.y > _vh + 200;
-        if (stateTimer <= 0 || fishOffScreen) {
+        if (fishOffScreen || (stateTimer <= 0 && !isUserDrivenTarget(targetFish))) {
           targetFish = null;
           go('sit');
+        } else if (stateTimer <= 0) {
+          stateTimer = 15000;
         }
         break;
       }
@@ -5369,6 +6940,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             targetSpider = null;
             go('sit');
             break;
+         }
+         if (isUserDrivenTarget(targetSpider)) {
+            refreshUserDrivenChaseTimer(targetSpider, targetSpider.isHeld ? 22000 : 16000);
          }
          
          const dx = targetSpider.x - feetX;
@@ -5416,6 +6990,11 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
             break;
          }
 
+         if (onGround && !isJumping && targetSpider.y - feetY > 45) {
+            const route = planRouteToTarget(targetSpider.x, targetSpider.y);
+            if (route && route.type === 'drop-down' && executeRoute(route)) break;
+         }
+
          if (onGround && !isJumping) {
             if (dy < -150) {
                // Spider is too high on the ceiling/web, stare up
@@ -5443,8 +7022,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
          }
          
          if (stateTimer <= 0) {
-            targetSpider = null;
-            go('sit');
+            if (isUserDrivenTarget(targetSpider) && targetSpider && !targetSpider.dead) {
+              stateTimer = 12000;
+            } else {
+              targetSpider = null;
+              go('sit');
+            }
          }
          break;
       }
@@ -5528,7 +7111,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     const activeStates = new Set([
       'wander', 'zoomies', 'spook', 'patrol', 'explore', 'chase', 'attack',
       'jump', 'climbtop', 'ninja_climb', 'wall_left', 'wall_right',
-      'chasefish', 'eatfish', 'coinchase', 'ball_chase', 'ball_play',
+      'chasefish', 'eatfish', 'coinchase', 'ball_chase', 'ball_play', 'portal_seek',
       'loyal_follow', 'ui_mischief', 'knockoff', 'logo_hunt', 'chip_pounce',
       'search_paw', 'pounce'
     ]);
@@ -5634,7 +7217,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
     const moved = Math.hypot(feetX - lastStuckSampleX, feetY - lastStuckSampleY);
     const expectedMoving = Math.abs(velX) > 24 || Math.abs(velY) > 24 || state === 'wall_left' || state === 'wall_right' ||
-      state === 'chasefish' || state === 'coinchase' || state === 'ball_chase' || state === 'attack' || state === 'chase';
+      state === 'chasefish' || state === 'coinchase' || state === 'ball_chase' || state === 'ball_play' ||
+      state === 'chasing_bug' || state === 'portal_seek' || state === 'attack' || state === 'chase';
 
     if (expectedMoving && moved < 2.4) {
       generalStuckTimer += stuckSampleTimer;
@@ -5657,6 +7241,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   //  PHYSICS
   // 
   function updatePhysics(dt) {
+    if (bubbleTrap.active) return;
     if (isDragging) return;
     const vw = _vw;
     const baseFloor = _vh;
@@ -5992,13 +7577,18 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     // slowly sink through the page.
     const physicsNow = safeNow();
     const layoutSettling = isPageSettling() || isScrolling || !!mutationScanTimeout || envPending || (physicsNow - lastScrollActivityAt < 450);
-    if (layoutSettling && onGround && feetY < baseFloor - 24 && activeFloor === baseFloor) {
-      activeFloor = feetY;
+    if (layoutSettling && onGround && feetY < baseFloor - 24) {
+      if (syncGroundedPlatformAnchor()) {
+        activeFloor = feetY;
+      } else if (activeFloor === baseFloor) {
+        activeFloor = feetY;
+      }
       velY = 0;
       isJumping = false;
     }
 
     if (!onGround) {
+      clearGroundedPlatformAnchor();
       velY += GRAVITY * dt;
       if (catThrowHeavyTimer > 0) {
         catThrowHeavyTimer = Math.max(0, catThrowHeavyTimer - dt);
@@ -6050,12 +7640,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         shakeScreen(Math.min(4.8, 1.8 + landingVelY / 220), Math.min(320, 180 + landingVelY / 6));
         
         //  BOUNCE EFFECT ON LANDING 
-        if (landingVelY > 150 && activeFloor < baseFloor) {
-          // We landed hard on a platform! Let's bounce it.
+        if (activeFloor < baseFloor) {
           const catPlat = getCurrentPlatform();
           if (catPlat && catPlat.el && catPlat.el.isConnected) {
-            bounceElement(catPlat.el, landingVelY);
+            captureGroundedPlatform(catPlat);
+            if (landingVelY > 150) bounceElement(catPlat.el, landingVelY);
           }
+        } else {
+          clearGroundedPlatformAnchor();
         }
 
         if (state === 'jump' || state === 'climbtop')
@@ -6070,8 +7662,9 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     // instead of slowly floating or sinking on stale platform data.
     if (onGround && feetY < baseFloor - 20) {
       const catPlat = getCurrentPlatform();
+      if (catPlat) captureGroundedPlatform(catPlat);
       const platformGone = !catPlat || !isPlatformStillValid(catPlat);
-      const waitForFreshLayout = layoutSettling && (physicsNow - lastScrollActivityAt < 650);
+      const waitForFreshLayout = (layoutSettling && (physicsNow - lastScrollActivityAt < 900)) || safeNow() < groundedPlatformGraceUntil;
       if (platformGone && !waitForFreshLayout) {
         onGround = false;
         isJumping = true;
@@ -6197,6 +7790,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   addManagedEventListener(catEl, 'mousedown', e => {
     if (e.button !== 0) return;
+    removeExistingQuickMenus();
+    if (bubbleTrap.active) { e.preventDefault(); e.stopPropagation(); popBubbleTrap(); return; }
     e.preventDefault(); e.stopPropagation();
     
     // Clear any old bubble, then let the cat react immediately to being grabbed.
@@ -6205,6 +7800,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }
     
     isDragging = true; 
+    clearGroundedPlatformAnchor();
     catEl.style.cursor = 'grabbing';
     catEl.style.zIndex = '10000005'; // Higher than speech bubble to be safe
     
@@ -6228,6 +7824,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   addManagedEventListener(catEl, 'touchstart', e => {
     const t = e.touches[0];
     if (!t) return;
+    removeExistingQuickMenus();
+    if (bubbleTrap.active) { e.preventDefault(); e.stopPropagation(); popBubbleTrap(); return; }
     
     // Clear any old bubble, then let the cat react immediately to being grabbed.
     if (speechModule && speechModule.hideSpeechBubble) {
@@ -6235,6 +7833,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }
     
     isDragging = true; 
+    clearGroundedPlatformAnchor();
     catEl.style.cursor = 'grabbing';
     catEl.style.zIndex = '10000005';
     
@@ -6333,6 +7932,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedFish.y = ny;
       draggedFish.rot *= 0.9;
       draggedFish.onGround = false;
+      markUserDrivenTarget(draggedFish, 'fish');
+      targetFish = draggedFish;
+      if (!isDragging && state !== 'dragged' && state !== 'chasefish') go('chasefish');
+      stateTimer = Math.max(stateTimer, 18000);
       lastFishDragX = nx;
       lastFishDragY = ny;
       lastFishDragTs = now;
@@ -6349,6 +7952,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedBall.x = nx;
       draggedBall.y = ny;
       draggedBall.onGround = false;
+      markUserDrivenTarget(draggedBall, 'ball');
+      targetBall = draggedBall;
+      if (!isDragging && state !== 'dragged' && state !== 'ball_play') go('ball_play');
+      stateTimer = Math.max(stateTimer, 18000);
       lastBallDragX = nx;
       lastBallDragY = ny;
       lastBallDragTs = now;
@@ -6364,6 +7971,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedSpider.vy = ((ny - lastSpiderDragY) / dtMs) * 1000;
       draggedSpider.x = nx;
       draggedSpider.y = ny;
+      markUserDrivenTarget(draggedSpider, 'spider');
+      targetSpider = draggedSpider;
+      if (!isDragging && state !== 'dragged' && state !== 'chasing_bug') go('chasing_bug');
+      stateTimer = Math.max(stateTimer, 18000);
       lastSpiderDragX = nx;
       lastSpiderDragY = ny;
       lastSpiderDragTs = now;
@@ -6399,6 +8010,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedFish.y = ny;
       draggedFish.rot *= 0.9;
       draggedFish.onGround = false;
+      markUserDrivenTarget(draggedFish, 'fish');
+      targetFish = draggedFish;
+      if (!isDragging && state !== 'dragged' && state !== 'chasefish') go('chasefish');
+      stateTimer = Math.max(stateTimer, 18000);
       lastFishDragX = nx;
       lastFishDragY = ny;
       lastFishDragTs = now;
@@ -6416,6 +8031,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedBall.x = nx;
       draggedBall.y = ny;
       draggedBall.onGround = false;
+      markUserDrivenTarget(draggedBall, 'ball');
+      targetBall = draggedBall;
+      if (!isDragging && state !== 'dragged' && state !== 'ball_play') go('ball_play');
+      stateTimer = Math.max(stateTimer, 18000);
       lastBallDragX = nx;
       lastBallDragY = ny;
       lastBallDragTs = now;
@@ -6432,6 +8051,10 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       draggedSpider.vy = ((ny - lastSpiderDragY) / dtMs) * 1000;
       draggedSpider.x = nx;
       draggedSpider.y = ny;
+      markUserDrivenTarget(draggedSpider, 'spider');
+      targetSpider = draggedSpider;
+      if (!isDragging && state !== 'dragged' && state !== 'chasing_bug') go('chasing_bug');
+      stateTimer = Math.max(stateTimer, 18000);
       lastSpiderDragX = nx;
       lastSpiderDragY = ny;
       lastSpiderDragTs = now;
@@ -6461,6 +8084,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     draggedFish.vy = Math.max(-1000, Math.min(1000, draggedFish.vy));
 
     draggedFish.vrot = draggedFish.vx * 0.7;
+    markUserDrivenTarget(draggedFish, 'fish');
+    targetFish = draggedFish;
+    if (!isDragging && state !== 'dragged') {
+      go('chasefish');
+      stateTimer = Math.max(stateTimer, 18000);
+    }
     draggedFish = null;
   }
 
@@ -6472,6 +8101,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     draggedBall.vy = Math.max(-1300, Math.min(1300, draggedBall.vy));
 
     draggedBall.vrot = draggedBall.vx * 2;
+    markUserDrivenTarget(draggedBall, 'ball');
+    targetBall = draggedBall;
+    if (!isDragging && state !== 'dragged') {
+      go('ball_play');
+      stateTimer = Math.max(stateTimer, 18000);
+    }
     draggedBall = null;
   }
 
@@ -6488,6 +8123,12 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     draggedSpider.stateTimer = 1000 + Math.random() * 500;
     draggedSpider.curFrame = 0;
     draggedSpider.animAccum = 0;
+    markUserDrivenTarget(draggedSpider, 'spider');
+    targetSpider = draggedSpider;
+    if (!isDragging && state !== 'dragged') {
+      go('chasing_bug');
+      stateTimer = Math.max(stateTimer, 18000);
+    }
     draggedSpider = null;
   }
 
@@ -6573,7 +8214,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   addManagedEventListener(catEl, 'dblclick', e => {
     e.stopPropagation();
     const nextLoyalMode = !isLoyalMode;
-    API.storage.local.set({ loyalMode: nextLoyalMode }); // Sync to popup
+    setLocal({ loyalMode: nextLoyalMode }); // Sync to popup
     
     // We update local state immediately so celebration triggers instantly
     isLoyalMode = nextLoyalMode;
@@ -6607,6 +8248,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   // Check scroll reaction periodically
   addInterval(() => {
+    if (lowPowerMode) { scrollAccum = 0; return; }
     if (scrollAccum > 1100 && !isScrolling && !mutationScanTimeout && !isDragging && state !== 'dragged' && state !== 'stunned') {
       // Fast scroll reaction, kept subtle to avoid interrupting browsing.
       if (state === 'wall_left' || state === 'wall_right' || state === 'ninja_climb') {
@@ -6626,6 +8268,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // Random behavior nudge. Slower cadence prevents the cat from feeling restless
   // or constantly interrupting itself on busy YouTube pages.
   addInterval(() => {
+    if (lowPowerMode) return;
     if (isDragging || state === 'hidden' || state === 'dragged' || state === 'stunned') return;
     if (isLoyalMode || isDeepSleep || isPurring || speechModule?.speechVisible) return;
     if (Math.random() < 0.1) go(null, [state]);
@@ -6643,10 +8286,58 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       if (!isYouTubeVideoPlaying()) return;
       recordQuestEvent('watch_seconds', 15);
     }, 15000);
+
+    let googleVisitQuestRecorded = false;
+    let lastGoogleSearchQuestValue = '';
+
+    function getGoogleQuestSearchValue() {
+      if (!IS_GOOGLE_PAGE) return '';
+      try {
+        const url = new URL(location.href);
+        const value = (url.searchParams.get('q') || '').trim();
+        if (value) return value.slice(0, 120);
+      } catch (e) {}
+      const searchInput = document.querySelector('textarea[name="q"], input[name="q"]');
+      return searchInput && typeof searchInput.value === 'string' ? searchInput.value.trim().slice(0, 120) : '';
+    }
+
+    function recordGoogleQuestVisitOnce() {
+      if (googleVisitQuestRecorded || !IS_GOOGLE_PAGE || !catEnabled || document.hidden) return;
+      googleVisitQuestRecorded = true;
+      recordQuestEvent('google_visits', 1);
+    }
+
+    function recordGoogleQuestSearchIfNeeded() {
+      if (!IS_GOOGLE_PAGE || !catEnabled || document.hidden) return;
+      const value = getGoogleQuestSearchValue();
+      if (!value || value === lastGoogleSearchQuestValue) return;
+      lastGoogleSearchQuestValue = value;
+      recordQuestEvent('google_searches', 1);
+    }
+
+    if (IS_GOOGLE_PAGE) {
+      addTimeout(() => {
+        recordGoogleQuestVisitOnce();
+        recordGoogleQuestSearchIfNeeded();
+      }, 1200);
+
+      addManagedEventListener(document, 'submit', () => {
+        addTimeout(recordGoogleQuestSearchIfNeeded, 350);
+      }, true);
+
+      addInterval(() => {
+        if (!catEnabled || !isTabVisible || document.hidden) return;
+        recordQuestEvent('google_active_seconds', 15);
+        recordGoogleQuestSearchIfNeeded();
+      }, 15000);
+
+      addInterval(recordGoogleQuestSearchIfNeeded, 2500);
+    }
   }
 
   // Occasional UI interactions (like/dislike/progress prank).
   addInterval(() => {
+    if (lowPowerMode) return;
     if (isFoxPet() || !isAggressiveMode || !uiMischiefEnabled || !catEnabled) return;
     if (isDragging || state === 'dragged' || state === 'chasefish' || state === 'eatfish' || state === 'deepsleep') return;
     if (Math.random() < ((uiMischiefRate / 100) * 0.55)) go('ui_mischief');
@@ -6656,6 +8347,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // If cursor hovers very close for a while, cat might react
   let cursorNearTimer = 0;
   addInterval(() => {
+    if (lowPowerMode) return;
     if (isDragging || state === 'dragged' || speechModule?.speechVisible) return;
     const cdist = Math.hypot(cursorX - feetX, cursorY - feetY);
     if (cdist < 72) {
@@ -6757,6 +8449,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   // 
   addManagedEventListener(document, 'visibilitychange', () => {
     isTabVisible = !document.hidden;
+    if (!isTabVisible && typeof flushXP === 'function') flushXP();
     if (isTabVisible) {
       _scrollTrackY = window.scrollY;
       lastTs = null;
@@ -6770,6 +8463,14 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }
   });
 
+  addManagedEventListener(window, 'pagehide', () => {
+    if (typeof flushXP === 'function') flushXP();
+  }, { capture: true });
+
+  addManagedEventListener(window, 'beforeunload', () => {
+    if (typeof flushXP === 'function') flushXP();
+  }, { capture: true });
+
   // 
   // 
 
@@ -6782,8 +8483,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 
   function applyPowerModeSettings() {
     if (lowPowerMode) {
-      ACTIVE_FRAME_MS = 1000 / 24;
-      IDLE_FRAME_MS = 1000 / 10;
+      ACTIVE_FRAME_MS = 1000 / 18;
+      IDLE_FRAME_MS = 1000 / 8;
     } else {
       ACTIVE_FRAME_MS = 1000 / 30;
       IDLE_FRAME_MS = 1000 / 15;
@@ -6824,21 +8525,32 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     lastUpdateTs = ts;
 
     const pageSettling = isPageSettling();
+    if (!lowPowerMode) {
+      updateBubbleTrap(dt, pageSettling);
+    }
 
     if (!isDragging) { 
-      // DECISION MAKING: Throttled to 10Hz. Use true logic delta, not frame dt,
-      // so state timers do not crawl during normal 30/60fps rendering.
-      // While YouTube is rebuilding the route, pause random decisions and target
-      // logic; this prevents stutters and wrong collisions against half-built DOM.
-      if (!pageSettling && ts - lastLogicTs > 100) {
-        const logicDt = Math.min(0.22, Math.max(0.01, (ts - lastLogicTs) / 1000));
-        _logicRectCache.clear();
-        updateState(logicDt); 
+      if (quickSpawnMenuOpen) {
+        // Keep the pet calm under the menu, but do NOT suspend physics.
+        // The old branch zeroed vertical speed and skipped updatePhysics(), so a
+        // right-clicked companion could float forever if the menu opened mid-air.
+        holdPetForQuickMenu(false);
         lastLogicTs = ts;
-      } else if (pageSettling && onGround && feetY < _vh - 24) {
-        velX *= 0.55;
-        velY = 0;
-        isJumping = false;
+      } else {
+        // DECISION MAKING: Throttled to 10Hz. Use true logic delta, not frame dt,
+        // so state timers do not crawl during normal 30/60fps rendering.
+        // While YouTube is rebuilding the route, pause random decisions and target
+        // logic; this prevents stutters and wrong collisions against half-built DOM.
+        if (!pageSettling && ts - lastLogicTs > 100) {
+          const logicDt = Math.min(0.22, Math.max(0.01, (ts - lastLogicTs) / 1000));
+          _logicRectCache.clear();
+          updateState(logicDt); 
+          lastLogicTs = ts;
+        } else if (pageSettling && onGround && feetY < _vh - 24) {
+          velX *= 0.55;
+          velY = 0;
+          isJumping = false;
+        }
       }
 
       const physicsSteps = (!pageSettling && !lowPowerMode && frameDt > 0.026) ? Math.min(5, Math.ceil(frameDt / (1 / 60))) : 1;
@@ -6849,15 +8561,16 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
       }
       if (!pageSettling) monitorGeneralStuck(frameDt);
       syncMovementAnimation(false);
+      normalizeGroundedCalmAnimation();
     }
 
     // ANIMATION & RENDERING: Always run at full refresh rate
     tickAnim(dt);
     applyPos();
-    updateWeightFootsteps(dt);
+    if (!lowPowerMode) updateWeightFootsteps(dt);
 
     companionThinkTimer += dt;
-    if (PixelCatRuntime.instances.length > 1 && !isDragging && companionThinkTimer >= 0.35) {
+    if (!lowPowerMode && PixelCatRuntime.instances.length > 1 && !isDragging && !quickSpawnMenuOpen && companionThinkTimer >= 0.35) {
       companionThinkTimer = 0;
       const other = PixelCatRuntime.instances.find(c => c !== api);
       if (other) {
@@ -6914,16 +8627,20 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
          }
       }
     }
-    // Main cat owns auto-spawns so companion mode never doubles objects.
-    if (!isCompanion && !pageSettling) {
-      updateFishes(dt);
-      updateBalls(dt);
+    // Main pet owns automatic item updates so companion mode never doubles objects.
+    // Manual companion portal spawns still need their own portal updater/collision.
+    // Eco Mode intentionally skips item/coin/spider/portal update loops.
+    if (!pageSettling && !lowPowerMode) {
+      if (!isCompanion) {
+        updateFishes(dt);
+        updateBalls(dt);
+      }
       
       // Update portals. The next countdown starts only after the current pair is fully gone.
       if (portalEnabled || portalModule.activePortals.length > 0) {
         updatePortals(dt);
         
-        if (portalEnabled) {
+        if (!isCompanion && portalEnabled) {
           const portalSpawnBlocked = portalModule.activePortals.length > 0 || hasActivePickup();
           if (portalSpawnBlocked) {
             portalTimerPausedForObject = true;
@@ -6942,7 +8659,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
               }
             }
           }
-        } else {
+        } else if (!portalEnabled) {
           portalTimerPausedForObject = false;
         }
         
@@ -6960,17 +8677,17 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
               const prevVelX = velX;
               const prevVelY = velY;
               
-              // Hide cat briefly during teleport
+              // Hide pet briefly during teleport
               catEl.style.opacity = '0';
               setAnimLocked('jump', 300);
               
               addTimeout(() => {
-                // Teleport cat to destination
+                // Teleport pet to destination
                 feetX = destination.x;
                 feetY = destination.y;
                 applyPos();
                 
-                // Show cat again
+                // Show pet again
                 catEl.style.opacity = '1';
                 
                 // Restore velocity
@@ -6986,7 +8703,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
         }
       }
       
-      if (spiderEnabled || activeSpiders.length > 0 || activeWebs.length > 0) {
+      if (!isCompanion && (spiderEnabled || activeSpiders.length > 0 || activeWebs.length > 0)) {
         updateSpiders(dt);
         if (spiderEnabled) {
           const spiderSpawnBlocked = activeSpiders.length > 0 || activeWebs.length > 0 || hasActivePickup();
@@ -7011,8 +8728,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           spiderTimerPausedForObject = false;
         }
       }
-      // Coin drops (main cat only)
-      updateCoinDrops(dt);
+      // Coin drops are main-pet owned so companion mode never double-updates drops.
+      if (!isCompanion) updateCoinDrops(dt);
     }
   }
 
@@ -7026,6 +8743,8 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   applyPos();
   revealCatWhenReady();
   go('sit');
+  applyPowerModeSettings();
+  if (lowPowerMode) applyEcoRuntimeRestrictions();
   scheduleIdleChatter(15000 + Math.random() * 30000);
   if (!PixelCatRuntime.instances.includes(api)) {
     PixelCatRuntime.instances.push(api);
@@ -7041,6 +8760,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   }
 
   function applyPet(pet) {
+    if (bubbleTrap && bubbleTrap.active) releaseFromBubbleTrap();
     const normalizedPet = normalizePet(pet);
     activePet = normalizedPet;
     activePetStr = getStoragePetId(normalizedPet);
@@ -7063,8 +8783,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     applyTransform();
 
     if (normalizedPet === 'fox') {
-      stopSkinAnimation();
-      catEl.style.filter = 'none';
+      applySkin(resolveFoxSkin(foxSkinStr));
       isAggressiveMode = false;
       uiMischiefEnabled = false;
       uiTarget = null;
@@ -7076,19 +8795,28 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
     }
   }
 
-  function normalizeSkin(skin) {
+  function normalizeCatSkin(skin) {
     return ['white', 'orange', 'rainbow'].includes(skin) ? skin : 'white';
   }
 
+  function normalizeFoxSkin(skin) {
+    return ['white', 'orange', 'rainbow'].includes(skin) ? skin : 'orange';
+  }
+
   function getAlternateSkin(skin) {
-    const normalized = normalizeSkin(skin);
+    const normalized = normalizeCatSkin(skin);
     if (normalized === 'orange') return 'white';
     if (normalized === 'rainbow') return 'orange';
     return 'orange';
   }
 
   function resolveCatSkin(mainSkin) {
-    const normalized = normalizeSkin(mainSkin);
+    const normalized = normalizeCatSkin(mainSkin);
+    return isCompanion ? getAlternateSkin(normalized) : normalized;
+  }
+
+  function resolveFoxSkin(mainSkin) {
+    const normalized = normalizeFoxSkin(mainSkin);
     return isCompanion ? getAlternateSkin(normalized) : normalized;
   }
 
@@ -7099,13 +8827,34 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
   }
 
   function applySkin(skin) {
-    const resolvedSkin = normalizeSkin(skin);
     if (activePet === 'fox') {
-      catSkinStr = resolvedSkin;
+      const resolvedSkin = normalizeFoxSkin(skin);
+      foxSkinStr = resolvedSkin;
       stopSkinAnimation();
+      if (resolvedSkin === 'white') {
+        catEl.style.filter = 'grayscale(1) brightness(1.9) contrast(1.06)';
+        return;
+      }
+      if (resolvedSkin === 'rainbow') {
+        const rainbowBase = 'sepia(1) saturate(7) hue-rotate(0deg) brightness(1.08) contrast(1.08)';
+        catEl.style.filter = rainbowBase;
+        if (typeof catEl.animate === 'function') {
+          skinAnimation = catEl.animate([
+            { filter: 'sepia(1) saturate(7) hue-rotate(0deg) brightness(1.08) contrast(1.08)' },
+            { filter: 'sepia(1) saturate(7) hue-rotate(72deg) brightness(1.08) contrast(1.08)' },
+            { filter: 'sepia(1) saturate(7) hue-rotate(144deg) brightness(1.08) contrast(1.08)' },
+            { filter: 'sepia(1) saturate(7) hue-rotate(216deg) brightness(1.08) contrast(1.08)' },
+            { filter: 'sepia(1) saturate(7) hue-rotate(288deg) brightness(1.08) contrast(1.08)' },
+            { filter: 'sepia(1) saturate(7) hue-rotate(360deg) brightness(1.08) contrast(1.08)' }
+          ], { duration: 3600, iterations: Infinity, easing: 'linear' });
+        }
+        return;
+      }
       catEl.style.filter = 'none';
       return;
     }
+
+    const resolvedSkin = normalizeCatSkin(skin);
     catSkinStr = resolvedSkin;
     stopSkinAnimation();
     if (resolvedSkin === 'orange') {
@@ -7123,11 +8872,7 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
           { filter: 'sepia(1) saturate(7) hue-rotate(216deg) brightness(1.08) contrast(1.08)' },
           { filter: 'sepia(1) saturate(7) hue-rotate(288deg) brightness(1.08) contrast(1.08)' },
           { filter: 'sepia(1) saturate(7) hue-rotate(360deg) brightness(1.08) contrast(1.08)' }
-        ], {
-          duration: 3600,
-          iterations: Infinity,
-          easing: 'linear'
-        });
+        ], { duration: 3600, iterations: Infinity, easing: 'linear' });
       }
       return;
     }
@@ -7138,17 +8883,37 @@ function spawnPixelCat(catId, isCompanion, initialSkin) {
 } // end spawnPixelCat
 
 const API = typeof browser !== 'undefined' ? browser : chrome;
+function getRuntimeFairPlay() {
+  return typeof globalThis !== 'undefined' ? globalThis.PixelCatFairPlay : null;
+}
+
 function getLocal(keys) {
+  const fairPlay = getRuntimeFairPlay();
+  if (fairPlay && typeof fairPlay.hasProtectedKey === 'function' && fairPlay.hasProtectedKey(keys)) {
+    return fairPlay.ensure(API.storage.local, keys);
+  }
   if (typeof API.storage.local.get === 'function' && API.storage.local.get.length <= 1) {
     return API.storage.local.get(keys);
   }
   return new Promise((resolve) => API.storage.local.get(keys, resolve));
 }
 
+function setLocal(data) {
+  const fairPlay = getRuntimeFairPlay();
+  if (fairPlay && typeof fairPlay.hasProtectedKey === 'function' && fairPlay.hasProtectedKey(data)) {
+    return fairPlay.commit(API.storage.local, data);
+  }
+  if (typeof API.storage.local.set === 'function' && API.storage.local.set.length <= 1) {
+    return API.storage.local.set(data);
+  }
+  return new Promise((resolve) => API.storage.local.set(data, resolve));
+}
+
 const RUNTIME_SETTINGS_DEFAULTS = {
   catEnabled: true,
   companionEnabled: false,
   catSkin: 'white',
+  foxSkin: 'orange',
   spiderEnabled: false,
   ballEnabled: false,
   portalEnabled: false,
@@ -7179,13 +8944,27 @@ getLocal(RUNTIME_SETTINGS_DEFAULTS).then((data) => {
   if (xp < 10)  data.ballEnabled = false;
   if (xp < 25)  data.spiderEnabled = false;
   if (xp < 25 && data.catSkin === 'rainbow') data.catSkin = 'white';
+  if (xp < 25 && data.foxSkin === 'rainbow') data.foxSkin = 'orange';
   if (xp < 45)  data.sizeMultiplier = 1.0;
   const foxActive = data.activePet === 'pet_fox' || data.activePet === 'fox';
-  if (xp < 70 || foxActive) data.companionEnabled = false;
+  if (xp < 70) data.companionEnabled = false;
   if (xp < 100 || foxActive) data.uiMischiefEnabled = false;
   if (foxActive) data.aggressiveMode = false;
   if (xp < 175 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
   if (xp < 135) data.portalEnabled = false;
+  if (data.lowPowerMode) {
+    data.companionEnabled = false;
+    data.aggressiveMode = false;
+    data.uiMischiefEnabled = false;
+    data.speechEnabled = false;
+    data.memoryEnabled = false;
+    data.rareEventsEnabled = false;
+    data.autoFishSpawnEnabled = false;
+    data.ballEnabled = false;
+    data.spiderEnabled = false;
+    data.portalEnabled = false;
+    data.catEnergyLevel = 'sleepy';
+  }
 
   PixelCatRuntime.instances.slice().forEach((cat) => {
     if (cat && typeof cat.destroy === 'function') {
@@ -7205,10 +8984,10 @@ getLocal(RUNTIME_SETTINGS_DEFAULTS).then((data) => {
   const companionExists = PixelCatRuntime.instances.find(c => c.isCompanion);
   
   if (data.catEnabled && !mainExists) {
-    spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin);
+    spawnPixelCat('youtube-pixel-cat-main', false, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
   }
-  if (data.companionEnabled && data.activePet !== 'pet_fox' && !companionExists) {
-    spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
+  if (data.companionEnabled && !companionExists) {
+    spawnPixelCat('youtube-pixel-cat-companion', true, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
   }
   
   // Apply all settings immediately after spawning
@@ -7232,12 +9011,26 @@ function sanitizeLevelLockedSettings(data) {
   if (xp < 10)  data.ballEnabled = false;
   if (xp < 25)  data.spiderEnabled = false;
   if (xp < 25 && data.catSkin === 'rainbow') data.catSkin = 'white';
+  if (xp < 25 && data.foxSkin === 'rainbow') data.foxSkin = 'orange';
   if (xp < 45)  data.sizeMultiplier = 1.0;
-  if (xp < 70 || foxActive) data.companionEnabled = false;
+  if (xp < 70) data.companionEnabled = false;
   if (xp < 100 || foxActive) data.uiMischiefEnabled = false;
   if (foxActive) data.aggressiveMode = false;
   if (xp < 135) data.portalEnabled = false;
   if (xp < 175 && data.catEnergyLevel === 'hyper') data.catEnergyLevel = 'active';
+  if (data.lowPowerMode) {
+    data.companionEnabled = false;
+    data.aggressiveMode = false;
+    data.uiMischiefEnabled = false;
+    data.speechEnabled = false;
+    data.memoryEnabled = false;
+    data.rareEventsEnabled = false;
+    data.autoFishSpawnEnabled = false;
+    data.ballEnabled = false;
+    data.spiderEnabled = false;
+    data.portalEnabled = false;
+    data.catEnergyLevel = 'sleepy';
+  }
   return data;
 }
 
@@ -7267,6 +9060,7 @@ function sanitizeRuntimeSettings(settings) {
   if (['sleepy', 'active', 'hyper'].includes(settings.catEnergyLevel)) clean.catEnergyLevel = settings.catEnergyLevel;
   if (['en', 'fr', 'it', 'ar'].includes(settings.uiLanguage)) clean.uiLanguage = settings.uiLanguage;
   if (['white', 'orange', 'rainbow'].includes(settings.catSkin)) clean.catSkin = settings.catSkin;
+  if (['white', 'orange', 'rainbow'].includes(settings.foxSkin)) clean.foxSkin = settings.foxSkin;
   if (typeof settings.activeBall === 'string' && /^ball_[a-z0-9_]{1,40}$/.test(settings.activeBall)) clean.activeBall = settings.activeBall;
   if (['pet_cat', 'pet_fox'].includes(settings.activePet)) clean.activePet = settings.activePet;
   if (Array.isArray(settings.shopOwned)) {
@@ -7298,7 +9092,7 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     } else {
       getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin || 'white');
+        spawnPixelCat('youtube-pixel-cat-main', false, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
         const spawned = PixelCatRuntime.instances.find(c => !c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true, action: 'spawned' });
@@ -7315,7 +9109,14 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     } else {
       getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
+        if (!data.companionEnabled) {
+          sendResponse({
+            success: false,
+            locked: true
+          });
+          return;
+        }
+        spawnPixelCat('youtube-pixel-cat-companion', true, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
         const spawned = PixelCatRuntime.instances.find(c => c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true, action: 'spawned' });
@@ -7327,7 +9128,7 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!existing) {
       getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        spawnPixelCat('youtube-pixel-cat-main', false, data.catSkin || 'white');
+        spawnPixelCat('youtube-pixel-cat-main', false, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
         const spawned = PixelCatRuntime.instances.find(c => !c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true });
@@ -7346,12 +9147,11 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!existing) {
       getLocal(RUNTIME_SETTINGS_DEFAULTS).then(data => {
         data = sanitizeLevelLockedSettings(data);
-        if (data.activePet === 'pet_fox' || data.activePet === 'fox') {
-          API.storage.local.set({ companionEnabled: false, aggressiveMode: false, uiMischiefEnabled: false });
-          sendResponse({ success: false, disabledForFox: true });
+        if (!data.companionEnabled) {
+          sendResponse({ success: false, locked: true });
           return;
         }
-        spawnPixelCat('youtube-pixel-cat-companion', true, data.catSkin === 'orange' ? 'white' : 'orange');
+        spawnPixelCat('youtube-pixel-cat-companion', true, (data.activePet === 'pet_fox' || data.activePet === 'fox') ? (data.foxSkin || 'orange') : (data.catSkin || 'white'));
         const spawned = PixelCatRuntime.instances.find(c => c.isCompanion);
         if (spawned && spawned.updateSettings) spawned.updateSettings(data);
         sendResponse({ success: true });
@@ -7369,13 +9169,8 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const safeSettings = sanitizeRuntimeSettings(msg.settings);
     if (safeSettings) {
       if (safeSettings.activePet === 'pet_fox') {
-        safeSettings.companionEnabled = false;
         safeSettings.aggressiveMode = false;
         safeSettings.uiMischiefEnabled = false;
-        const comp = PixelCatRuntime.instances.find(c => c.isCompanion);
-        if (comp) comp.destroy();
-        const companionEl = document.getElementById('youtube-pixel-cat-companion');
-        if (companionEl) companionEl.remove();
       }
       PixelCatRuntime.instances.forEach(cat => {
         if (cat.updateSettings) {

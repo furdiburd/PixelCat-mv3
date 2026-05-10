@@ -44,7 +44,7 @@
         gravMult: physics.gravMult,
         groundFriction: physics.groundFriction,
         airDrag: physics.airDrag,
-        lifetime: 45 + Math.random() * 30,
+        lifetime: 25 + Math.random() * 30,
         age: 0,
         hitCount: 0,
         exitAfter: 18 + Math.random() * 28,
@@ -59,6 +59,9 @@
         e.preventDefault();
         e.stopPropagation();
         b.isHeld = true;
+        b.manualSpawned = true;
+        b.userInteracted = true;
+        b.persistentChase = true;
         ctx.draggedBall = b;
         ctx.ballDragOffsetX = e.clientX - b.x;
         ctx.ballDragOffsetY = e.clientY - b.y;
@@ -72,6 +75,7 @@
         ctx.lastBallDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
         if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('ball');
+        if (typeof ctx.go === 'function' && ctx.state !== 'dragged') ctx.go('ball_play');
       });
 
       el.addEventListener('touchstart', (e) => {
@@ -80,6 +84,9 @@
         e.preventDefault();
         e.stopPropagation();
         b.isHeld = true;
+        b.manualSpawned = true;
+        b.userInteracted = true;
+        b.persistentChase = true;
         ctx.draggedBall = b;
         ctx.ballDragOffsetX = t.clientX - b.x;
         ctx.ballDragOffsetY = t.clientY - b.y;
@@ -93,6 +100,7 @@
         ctx.lastBallDragTs = ctx.safeNow();
         el.style.cursor = 'grabbing';
         if (typeof ctx.speakObjectInteraction === 'function') ctx.speakObjectInteraction('ball');
+        if (typeof ctx.go === 'function' && ctx.state !== 'dragged') ctx.go('ball_play');
       }, { passive: false });
 
       ctx.activeBalls.push(b);
@@ -132,7 +140,7 @@
     }
 
     function updateBalls(dt) {
-      if (!ctx.catEnabled || !ctx.ballEnabled) {
+      if (!ctx.catEnabled) {
         if (ctx.activeBalls.length > 0) {
           ctx.activeBalls.forEach((b) => {
             releaseBall(b);
@@ -145,22 +153,26 @@
       }
 
       const spawnBlocked = ctx.activeBalls.length > 0 || (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup());
-      if (spawnBlocked) {
-        ballTimerPausedForObject = true;
-      } else {
-        if (ballTimerPausedForObject) {
-          ctx.ballSpawnTimer = nextBallSpawnDelay();
-          ballTimerPausedForObject = false;
-        }
-        ctx.ballSpawnTimer -= dt;
-        if (ctx.ballSpawnTimer <= 0) {
-          if (spawnBall()) {
+      if (ctx.ballEnabled) {
+        if (spawnBlocked) {
+          ballTimerPausedForObject = true;
+        } else {
+          if (ballTimerPausedForObject) {
             ctx.ballSpawnTimer = nextBallSpawnDelay();
-            ballTimerPausedForObject = true;
-          } else {
-            ctx.ballSpawnTimer = nextBallSpawnDelay();
+            ballTimerPausedForObject = false;
+          }
+          ctx.ballSpawnTimer -= dt;
+          if (ctx.ballSpawnTimer <= 0) {
+            if (spawnBall()) {
+              ctx.ballSpawnTimer = nextBallSpawnDelay();
+              ballTimerPausedForObject = true;
+            } else {
+              ctx.ballSpawnTimer = nextBallSpawnDelay();
+            }
           }
         }
+      } else {
+        ballTimerPausedForObject = false;
       }
 
       const size = ctx.sizeMultiplier || 1;
@@ -231,7 +243,7 @@
 
           if (Math.abs(b.vx) < 5 && Math.abs(b.vy) < 5 && b.onGround) {
             b.idleTimer = (b.idleTimer || 0) + dt;
-            if (b.idleTimer > 30) {
+            if (b.idleTimer > 20) {
               sendBallOffscreen(b);
               continue;
             }

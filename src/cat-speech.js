@@ -34,6 +34,9 @@ window.PixelCatSpeech = function(config) {
   const getSpeechEnabled = () => config.speechEnabled !== false;
   const getMemoryEnabled = () => config.memoryEnabled !== false;
   const getIsTabVisible = () => config.isTabVisible;
+  const getBubbleTrapActive = () => !!config.bubbleTrapActive;
+  const getBubbleTrapWidth = () => Number(config.bubbleTrapWidth) || 0;
+  const getBubbleTrapHeight = () => Number(config.bubbleTrapHeight) || 0;
   const getVw = () => config._vw;
   const getVh = () => config._vh;
   const getIdleStates = () => config.IDLE_STATES;
@@ -76,9 +79,6 @@ window.PixelCatSpeech = function(config) {
   const WATCH_DELTA_MAX_SECONDS = 8;
   const WATCH_MILESTONES_MINUTES = [5, 15, 30, 60, 120, 180];
 
-  const TOPIC_RULES = [];
-  const LOCALIZED_TOPIC_LABELS = {};
-
 
   function getActivePetKind() {
     const rawKind = typeof config.activePetKind !== 'undefined' ? config.activePetKind : config.activePet;
@@ -91,2056 +91,660 @@ window.PixelCatSpeech = function(config) {
   const PET_SPEECH_LIBRARY = {
     fox: {
       en: {
-        random: [
-          'Tiny fox online.', 'Den rent is due.', 'This tab smells wild.', 'I saw that click.',
-          'Sly mode warming.', 'Screen fox reporting.', 'That thumbnail tricked us.', 'Quiet paws, loud thoughts.'
-        ],
-        happy: [
-          'Tail approved.', 'Nice. Very shiny.', 'Good human, maybe.', 'Tiny fox pleased.',
-          'That was smooth.', 'Mood upgraded slightly.', 'You earned one yip.', 'Fine, continue.'
-        ],
-        angry: [
-          'Absolutely not.', 'Tiny fox rage.', 'Careful, human.', 'Do not test me.',
-          'That was rude.', 'Paws remember things.', 'My patience ran.', 'Danger tail active.'
-        ],
-        confused: [
-          'What was that?', 'I need context.', 'That felt illegal.', 'Your logic limped.',
-          'Pause. Explain.', 'Even I noticed.', 'This smells suspicious.', 'Brain buffering hard.'
-        ],
-        hungry: [
-          'Fish tax overdue.', 'Snack den empty.', 'Feed the fox.', 'I smell fish.',
-          'Tiny stomach roaring.', 'Treats would help.', 'This needs snacks.', 'Share the pixels.'
-        ],
-        sleepy: [
-          'Den nap needed.', 'Eyes closing now.', 'Wake me gently.', 'Tiny battery low.',
-          'Soft silence please.', 'Sleep is winning.', 'Five more minutes.', 'Fox offline soon.'
-        ],
-        interactive: [
-          'Pet gently.', 'Soft boops only.', 'Tail zone careful.', 'Compliments accepted.',
-          'Respect the fluff.', 'Hands visible, human.', 'That spot works.', 'Do not stop.'
-        ],
-        grabbed: [
-          'Unhand the fox.', 'Careful with me.', 'This was not planned.', 'Excuse you.',
-          'Put me down.', 'Personal space, human.', 'Tiny fox captured.', 'Release the fluff.'
-        ],
-        heldStill: [
-          'We live here?', 'Still being held.', 'This is awkward.', 'I have legs.',
-          'Den is calling.', 'Any release plan?', 'Fox patience loading.', 'You done yet?'
-        ],
-        heldMoving: [
-          'Too fast, human.', 'My tail disagrees.', 'Motion detected.', 'This is not flying.',
-          'Slow the paws.', 'Tiny fox dizzy.', 'Careful with cargo.', 'That was dramatic.'
-        ],
-        longHeld: [
-          'This is kidnapping.', 'I demand release.', 'Fox lawyer needed.', 'Still here, apparently.',
-          'Time feels fake.', 'Release protocol now.', 'Den appointment missed.', 'Your grip is lore.'
-        ],
-        dropped: [
-          'Landing accepted.', 'Ground found me.', 'That was unnecessary.', 'I meant that.',
-          'Smooth enough.', 'Fox landed clean.', 'Floor inspected.', 'Gravity remains rude.'
-        ],
-        thrown: [
-          'Who throws foxes?', 'Flight denied.', 'Absolutely rude toss.', 'Tiny fox missile.',
-          'Air was hostile.', 'Landing rights reserved.', 'You chose chaos.', 'Tail stabilized me.'
-        ],
-        cursorSuspicious: [
-          'Cursor looks guilty.', 'That pointer plots.', 'I see the arrow.', 'Mouse is sneaking.',
-          'Suspicious hand detected.', 'Hover slower, human.'
-        ],
-        cursorThreat: [
-          'Back up, cursor.', 'Too close, pointer.', 'Tail alarm active.', 'Cursor needs boundaries.',
-          'Personal bubble, human.', 'Easy with that arrow.'
-        ],
-        cursorPanic: [
-          'Cursor attack!', 'Retreating now.', 'Danger pointer!', 'Fox escape plan!',
-          'Too much arrow!', 'Emergency paws online.'
-        ],
-        running: [
-          'Fast fox business.', 'Zoomies approved.', 'Tiny paws sprinting.', 'Catch me never.',
-          'Tail wind active.', 'Speed was necessary.', 'Firefox energy unlocked.', 'Running from responsibility.'
-        ],
-        walking: [
-          'Patrol in progress.', 'Tiny patrol route.', 'Soft steps only.', 'Walking with purpose.',
-          'Screen trail checked.', 'Fox route secured.', 'Quiet paws moving.', 'Den survey active.'
-        ],
-        climbing: [
-          'Wall route found.', 'Fox climbing quietly.', 'Vertical shortcut unlocked.', 'Do not look down.',
-          'Side path works.', 'Tiny claws engaged.', 'Wall patrol active.', 'Gravity can wait.'
-        ],
-        jumping: [
-          'Pounce first.', 'Fox leap ready.', 'Tiny jump math.', 'Landing maybe later.',
-          'Air paws active.', 'That jump counted.', 'Leap accepted.', 'Pounce angle perfect.'
-        ],
-        grooming: [
-          'Fur check.', 'Tail maintenance.', 'Clean fox protocol.', 'Do not interrupt.',
-          'Fluff alignment done.', 'Tiny spa moment.', 'Still majestic.', 'Grooming means busy.'
-        ],
-        watching: [
-          'Watching quietly.', 'This video smells loud.', 'Interesting enough.', 'Fox review pending.',
-          'I am invested.', 'Thumbnail trial begins.', 'Content under inspection.', 'Keep watching, human.'
-        ],
-        videoPlay: [
-          'Roll the pixels.', 'Showtime, human.', 'Fox is watching.', 'Video hunt begins.',
-          'Eyes on screen.', 'Play accepted.'
-        ],
-        videoPause: [
-          'Why stop now?', 'Pause detected.', 'Suspense smells bad.', 'We were watching.',
-          'Unpause maybe?', 'Video trail paused.'
-        ],
-        mischief: [
-          'Fox did nothing.', 'Probably not me.', 'Tiny chaos maybe.', 'Evidence looks fake.',
-          'Mischief denied.', 'I touched nothing.', 'Almost nothing moved.', 'Legal fox silence.'
-        ],
-        fishing: [
-          'Fish spotted.', 'Pounce the fish.', 'Dinner is escaping.', 'Tiny hunter mode.',
-          'Fish owes me.', 'Hold still, fish.', 'Snack chase active.', 'That fish knows.'
-        ],
-          teasing: [
-            'Give it here.', 'Drop the toy.', 'Mine, human. Mine.', 'Stop playing games.',
-            'Hand it over.', 'I will bite you.', 'Give toy now.', 'Bad human. Drop it.',
-            'My patience fades.', 'I see you holding.', 'That is mine.', 'Do not mess.'
-          ],
-        coin: [
-          'Shiny thing found.', 'Coin trail detected.', 'Tiny treasure hunt.', 'Fox likes shiny.',
-          'Mine now, yes.', 'Gold smells useful.', 'Collecting evidence.', 'Shiny tax collected.'
-        ],
-        eating: [
-          'Fish secured.', 'Delicious victory.', 'Snack acquired.', 'Tiny feast complete.',
-          'More fish later.', 'That fish helped.', 'Dinner disappeared.', 'Fox chef approves.'
-        ],
-        ball: [
-          'Ball target locked.', 'Pounce the ball.', 'Tiny striker mode.', 'That ball challenged me.',
-          'Kick, then dignity.', 'Ball physics suspicious.', 'Fox versus ball.', 'Bounce accepted.'
-        ],
-        spider: [
-          'Spider detected.', 'Tiny hunter engaged.', 'Bug trouble nearby.', 'Web maker spotted.',
-          'Eight legs, rude.', 'Fox handles this.', 'Bug chase active.', 'Spider looks guilty.'
-        ],
-        bigSpider: [
-          'Big spider problem.', 'That one is huge.', 'Fox backup requested.', 'Large bug detected.',
-          'Serious pounce needed.', 'Spider boss appeared.', 'Courage loading now.', 'Not scared, obviously.'
-        ],
-        webbed: [
-          'Sticky situation.', 'Webs are rude.', 'Fox temporarily offline.', 'Help maybe?',
-          'This is unfair.', 'Sticky paws trapped.', 'Web jail detected.', 'Spider cheated.'
-        ],
-        stuck: [
-          'Path looks cursed.', 'Fox route failed.', 'Need new path.', 'Tiny GPS confused.',
-          'Wall said no.', 'Recalculating paws.', 'This route lies.', 'Movement denied.'
-        ],
-        content: [
-          'Content smells dramatic.', 'This seems clickable.', 'Video brain loading.', 'Fox notes this.',
-          'Interesting pixels here.', 'Scroll with caution.', 'Thumbnail feels suspicious.', 'I judge silently.'
-        ],
-        memory: [
-          'I remember this.', 'Fox memory active.', 'We watched similar.', 'Pattern detected again.',
-          'You like {topic}.', 'This tab has history.', 'Memory trail found.', 'I kept receipts.'
-        ],
-        newTopic: [
-          'New trail today.', 'Different topic smell.', 'Fresh rabbit hole.', 'New pixels detected.',
-          'We changed lanes.', 'Topic trail shifted.', 'Interesting detour.', 'Fox notes update.'
-        ],
-        favoriteTopic: [
-          '{topic} again?', 'Your trail repeats.', 'Favorite trail detected.', 'Back to {topic}.',
-          'Predictable, human.', 'Fox saw this coming.', '{topic} owns you.', 'Same den energy.'
-        ],
-        channelMemory: [
-          'This channel again.', 'I know {channel}.', 'Familiar den detected.', 'We returned here.',
-          'Channel trail remembered.', '{channel} smells familiar.', 'You trust this den.', 'Fox recognizes this.'
-        ],
-        memeMood: [
-          'Goblin mode nearby.', 'Tiny chaos approved.', 'That was cursed.', 'Internet smells weird.',
-          'Certified fox moment.', 'Meme trail detected.', 'Brain cells left.', 'Very normal behavior.'
-        ],
-        timeMorning: [
-          'Morning paws online.', 'Sun found us.', 'Breakfast fish when?', 'Early fox reporting.',
-          'Morning scroll detected.', 'Tiny day begins.'
-        ],
-        timeAfternoon: [
-          'Afternoon patrol active.', 'Midday fox check.', 'Still scrolling, huh?', 'Daylight remains suspicious.',
-          'Snack hour maybe.', 'Paws still working.'
-        ],
-        timeEvening: [
-          'Evening den vibes.', 'Night trail warming.', 'Soft pixels now.', 'Evening fox online.',
-          'Dinner fish soon?', 'Cozy watch mode.'
-        ],
-        timeLate: [
-          'Late night fox.', 'Sleep lost again.', 'Human, it is late.', 'Moon patrol active.',
-          'Tiny insomnia mode.', 'Den time overdue.'
-        ],
-        watchStart: [
-          'Fox watch begins.', 'Starting the hunt.', 'Eyes on pixels.', 'Video trail open.',
-          'Let it roll.', 'I am watching.'
-        ],
-        watchSession: [
-          '{sessionMinutes} minutes watched.', 'Long trail today.', 'You stayed awhile.', 'Fox kept count.',
-          'Still watching, huh?', 'Session trail growing.', 'Time disappeared again.', 'Scroll stamina high.'
-        ],
-        watchLong: [
-          'Long den session.', 'You live here now.', 'Fox witnessed hours.', 'This became a ritual.',
-          'Human needs water.', 'Tiny break suggested.', 'Long trail confirmed.', 'Screen camp established.'
-        ],
-        watchMilestone: [
-          '{sessionMinutes} minutes counted.', 'Milestone trail reached.', 'Fox logged that.', 'Still here together.',
-          'Time badge earned.', 'Watching streak noted.', 'Tiny record kept.', 'You committed hard.'
-        ],
-        watchVideoLong: [
-          'Long video survived.', 'This one is huge.', 'Fox attention tested.', 'Current trail long.',
-          '{currentVideoMinutes} minutes here.', 'Video marathon detected.', 'Still same video.', 'Respect the patience.'
-        ],
-        returningWatcher: [
-          'Back on familiar trails.', 'You returned again.', 'Fox noticed pattern.', 'Same taste confirmed.',
-          'Familiar hunt resumed.', 'Old trail reopened.', 'Predictable but fine.', 'Welcome back, human.'
-        ],
-        channelLoyalty: [
-          'Loyal to {channel}.', '{channel} owns this tab.', 'Favorite den confirmed.', 'You came back again.',
-          'Fox respects loyalty.', 'Same channel trail.', 'Home den vibes.', 'Routine detected.'
-        ],
-        tabComeback: [
-          'You returned.', 'Fox waited here.', 'Tab trail resumed.', 'Where did you go?',
-          'I guarded pixels.', 'Welcome back, human.', 'Suspicious absence noted.', 'Den reopened.'
-        ],
-        topicDogs: [
-          'Dog video detected.', 'Barking in distance.', 'Fox remains cautious.', 'Too much woof.',
-          'Loud cousin energy.', 'Dogs seem dramatic.'
-        ],
-        topicSquirrels: [
-          'Squirrel spotted.', 'Tiny chase instinct.', 'Tree snack runner.', 'Squirrel owes answers.',
-          'Fast fluff detected.', 'Fox attention locked.'
-        ],
-        topicRats: [
-          'Rodent trail found.', 'Tiny feet detected.', 'Fox hunter notes.', 'Small snack? maybe.',
-          'Rodent content logged.', 'Quiet target energy.'
-        ],
-        topicBirds: [
-          'Birds are suspicious.', 'Winged pixels above.', 'Sky snack dreams.', 'Fox watches birds.',
-          'Feathers everywhere.', 'Bird drama noted.'
-        ],
-        topicOcean: [
-          'Ocean smells snacky.', 'Fish neighborhood.', 'Wet pixels detected.', 'Fox dislikes swimming.',
-          'Sea food channel.', 'So many fish.'
-        ],
-        topicAnimals: [
-          'Animal council meeting.', 'Wildlife trail detected.', 'Fox fits here.', 'Many creatures, wow.',
-          'Nature pixels approved.', 'Fluff alliance maybe.'
-        ],
-        topicTech: [
-          'Machine den detected.', 'Code smells crunchy.', 'Fox debugging quietly.', 'Tech trail open.',
-          'Pixels became serious.', 'Gadget noises nearby.'
-        ],
-        topicGaming: [
-          'Game hunt begins.', 'Boss fight smell.', 'Fox wants loot.', 'Respawn energy detected.',
-          'Controller brain online.', 'Speedrun paws ready.'
-        ],
-        topicMusic: [
-          'Beat has paws.', 'Fox hears rhythm.', 'Tail tempo matched.', 'Music trail detected.',
-          'Good den soundtrack.', 'Tiny dance maybe.'
-        ],
-        topicScience: [
-          'Science smells dangerous.', 'Experiment trail open.', 'Fox needs goggles.', 'Space den maybe.',
-          'Big brain pixels.', 'Data trail detected.'
-        ],
-        topicFood: [
-          'Food video unfair.', 'Snack envy rising.', 'Fox demands samples.', 'Cooking smells fake.',
-          'Pixels look edible.', 'Dinner idea noted.'
-        ],
-        topicSports: [
-          'Ball chase content.', 'Fox understands ball.', 'Fast humans running.', 'Sports smell loud.',
-          'Goal maybe soon.', 'Tiny coach activated.'
-        ],
-        topicAnime: [
-          'Anime power rising.', 'Fox arc begins.', 'Training episode when?', 'Main character energy.',
-          'Villain monologue soon.', 'Dramatic pixels detected.'
-        ],
-        topicMovies: [
-          'Movie den open.', 'Trailer smells dramatic.', 'Fox wants popcorn.', 'Cinema paws ready.',
-          'Plot twist incoming.', 'Scene inspection active.'
-        ],
-        topicHorror: [
-          'Horror trail detected.', 'Nope energy rising.', 'Fox totally brave.', 'Creepy pixels nearby.',
-          'Jump scare tax.', 'Den lights on.'
-        ],
-        topicHistory: [
-          'Old trail found.', 'Ancient drama again.', 'Fox studies empire.', 'History smells dusty.',
-          'Past humans weird.', 'Documentary den active.'
-        ],
-        topicArt: [
-          'Art trail pretty.', 'Fox respects pixels.', 'Brush noise detected.', 'Design den open.',
-          'Color choices noted.', 'Tiny critic awake.'
-        ],
-        topicMoney: [
-          'Shiny numbers rise.', 'Coin brain active.', 'Fox likes profit.', 'Market smells risky.',
-          'Treasure talk detected.', 'Budget fish first.'
-        ],
-        topicNews: [
-          'Headline storm detected.', 'Drama delivery arrived.', 'Fox remains neutral.', 'News smells loud.',
-          'Breaking pixels again.', 'World looks busy.'
-        ],
-        topicCars: [
-          'Metal beasts racing.', 'Engine roar cousin.', 'Fox prefers trails.', 'Fast boxes detected.',
-          'Drift looks reckless.', 'Garage den smells.'
-        ],
-        topicStyle: [
-          'Style trail open.', 'Fox approves fluff.', 'Outfit inspection active.', 'Beauty pixels loaded.',
-          'Fresh look detected.', 'Tail accessory when?'
-        ]
+        random: ['What are we watching, human?', 'That thumbnail looks crunchy.', 'I see your cursor moving.', 'Too many tabs open, human.', 'This video smells boring.', 'Is this the good part?', 'I’d pounce on that.', 'Nice click. Very fast.', 'Still here, human?', 'Your feed looks strange.', 'This tab smells funny.', 'I saw that scroll.'],
+        happy: ['Okay, that was nice.', 'I liked that.', 'Good choice, human.', 'That felt right.', 'Fine. I am pleased.', 'Tiny purr approved.', 'Tail approves.', 'You did well, human.', 'Acceptable pets.', 'Nice click, human.'],
+        angry: ['That was a miss, human.', 'Why click that?', 'My tail is disappointed.', 'Focus, human. Focus.', 'I’ve seen better.', 'Actually embarrassing.', 'Try clicking better.', 'Was that the plan?', 'Careful, human.', 'Do not test me.', 'That was rude.', 'I will remember that.'],
+        confused: ['What was that?', 'Explain yourself, human.', 'Why would you click that?', 'Was that the plan?', 'I have questions.', 'Even I noticed.', 'Suspicious choice, human.', 'That looked wrong.', 'Are we okay?', 'Pause. Think, human.'],
+        hungry: ['Where are the snacks, human?', 'I require fish tax.', 'Feed me or I stare.', 'Is that food? No?', 'My bowl is half-empty.', 'Stomach growling, human.', 'Snack time now?', 'Fish would fix this.', 'Dinner is late.', 'Share the pixels.'],
+        sleepy: ['Eyes getting heavy, human.', 'I’m napping on your cursor.', 'Go to the sleep box.', 'One more video. Only one.', 'Five more minutes.', 'Too cozy here.', 'Wake me later.', 'Nap loading now.', 'Silence sounds nice.', 'Blanket required.'],
+        interactive: ['Pet me instead.', 'Hands off the fur.', 'My beans are sensitive.', 'Don’t stop the pets.', 'Soft pets only.', 'Watch your fingers, human.', 'Careful with the tail.', 'That spot is nice.', 'Okay, keep going.', 'Gentle, human.', 'No rough paws.', 'Respect the fluff.'],
+        feedbackQuestion: ['Was that cute?', 'Did I help?', 'Too much sass?', 'Keep me talking?', 'Need more chaos?', 'Five stars yet?', 'Are we friends?', 'Do I stay?', 'Good cat moment?', 'Want softer meows?', 'Was that too much?', 'You like this?'],
+        voteLike: ['Five stars too?', 'I knew it.', 'Correct answer.', 'Good human.', 'Tiny ego fed.', 'Purr approved.', 'Kindness detected.', 'You may continue.', 'I accept tribute.', 'Tail says thanks.'],
+        voteDislike: ['What did I expect?', 'Rude but noted.', 'Bold little click.', 'Your loss, human.', 'That stung.', 'I expected betrayal.', 'Fair. Still rude.', 'My ego limped.', 'Cold, honestly.', 'Tail is disappointed.'],
+        grabbed: ['Put me back, human.', 'I am not a toy.', 'Hands off the fur.', 'Where are we going?', 'My beans are sensitive.', 'You’re weird, human.', 'Let go, human.', 'Personal space, human.', 'Careful with me.', 'I can walk.'],
+        heldStill: ['Still holding me?', 'We live here now?', 'I have paws.', 'What is the plan?', 'You done, human?', 'This is awkward.', 'Put me back.', 'I need the floor.'],
+        heldMoving: ['Too fast, human.', 'I am not luggage.', 'Where are we going?', 'Less shaking, please.', 'I preferred walking.', 'Tail is not steering.', 'Easy, human.', 'Careful with the paws.'],
+        longHeld: ['Let go, human.', 'Still holding me?', 'This is getting weird.', 'I need freedom.', 'My patience is gone.', 'Release the paws.', 'Put me down.', 'Enough carrying, human.', 'Pets, not kidnapping.', 'Floor time now.'],
+        dropped: ['Gravity found me again.', 'I meant to do that.', 'Rude landing, human.', 'Floor says hello.', 'That was unnecessary.', 'My paws felt that.', 'Calculated move. Trust me.', 'Try gentler next time.', 'Landing was dramatic.', 'Tail survived.'],
+        thrown: ['Why am I flying?', 'I meant to do that.', 'Air paws activated.', 'Rude launch, human.', 'This is not flying.', 'Gravity is waiting.', 'Catch me, maybe?', 'My tail disagrees.', 'That was dramatic.', 'No throwing cats.'],
+        cursorSuspicious: ['Cursor looks suspicious.', 'Stop poking my nose.', 'I see that arrow.', 'Don’t click that.', 'Mouse is sneaking.', 'That pointer is plotting.', 'I saw that move.', 'Slow down, human.', 'Your cursor is loud.', 'Hover gently, human.'],
+        cursorThreat: ['Stop poking my nose.', 'I’ll bite that arrow.', 'Watch your fingers, human.', 'Don’t even think it.', 'Back up, cursor.', 'Too close, human.', 'Mind the whiskers.', 'Respect the nose.', 'Personal bubble, human.', 'No sudden clicks.'],
+        cursorPanic: ['Cursor attack!', 'Too close!', 'Emergency paws.', 'Need distance now.', 'Nope nope nope.', 'Retreating, human.', 'That arrow bites.', 'Panic paws active.'],
+        running: ['Zoomies activated.', 'Make way, human.', 'Paws busy.', 'Try catching me.', 'Tiny sprint time.', 'Floor patrol urgent.', 'Fast paws today.', 'Running from boredom.'],
+        walking: ['Just patrolling.', 'Tiny rounds.', 'Checking things.', 'Soft paws only.', 'Little walk.', 'I own this route.', 'Paw patrol, human.', 'Quiet steps. Loud judgment.'],
+        climbing: ['Up we go.', 'Wall time.', 'Vertical route.', 'Look at me climb.', 'Shortcut found.', 'Claws doing work.', 'High ground, human.', 'Gravity can wait.'],
+        jumping: ['Boing.', 'Air paws.', 'Calculated leap.', 'Landing pending.', 'I meant that.', 'Tiny jump math.', 'Up we go.', 'Pounce angle ready.'],
+        grooming: ['Bath time.', 'Do not interrupt.', 'Fur maintenance.', 'I own this screen.', 'Don’t look at me, human.', 'Presentation matters.', 'Tail check complete.', 'Clean paws, clean life.', 'Self-care, human.', 'Still majestic.'],
+        watching: ['What are we watching, human?', 'This video smells boring.', 'Is this the good part?', 'The comments are scary.', 'Don’t read the text below.', 'That thumbnail looks crunchy.', 'I’m watching too.', 'This better be good.', 'I have notes.', 'Your taste is showing.', 'Interesting choice, human.', 'Keep the noise down.'],
+        videoPlay: ['Keep the noise down.', 'Show me, human.', 'Finally, movement.', 'Let it roll.', 'This better be good.', 'Is this the good part?', 'Eyes on screen.', 'Okay, play it.', 'Start the tiny cinema.', 'I’m listening.'],
+        videoPause: ['Why did we pause, human?', 'We were watching.', 'Unpause, maybe?', 'I was invested.', 'That was sudden.', 'Did it scare you?', 'Noise stopped. Suspicious.', 'Continue the thing.', 'Pause? Bold choice.', 'My ears noticed.'],
+        mischief: ['I didn’t touch it.', 'Don’t look at me, human.', 'My tail saw nothing.', 'Calculated move. Trust me.', 'Gravity found me again.', 'My paw slipped.', 'The screen started it.', 'No proof, human.', 'Pretend you saw nothing.', 'Tail is innocent.'],
+        fishing: ['Fish tax detected.', 'Dinner is moving.', 'Hold still, fish.', 'Snack incoming, human.', 'I smell fish.', 'Tiny hunt begins.', 'Fish looks guilty.', 'That fish is mine.', 'Pounce time.', 'Fresh snack spotted.'],
+          teasing: ['Give it here.', 'Drop the toy.', 'Mine, human. Mine.', 'Stop playing games.', 'Hand it over.', 'I will bite you.', 'Give toy now.', 'Bad human. Drop it.', 'Patience is fading.', 'I see you holding.', 'That is mine.', 'Do not mess.'],
+        coin: ['Shiny thing, human.', 'Mine now.', 'Coin acquired.', 'I like shiny.', 'Treasure found.', 'Another shiny, please.', 'Pocket sparkle found.', 'Tiny treasure tax.'],
+        eating: ['Snack secured.', 'Fish tax accepted.', 'That helped.', 'More, please.', 'Bowl status improved.', 'Tiny feast complete.', 'Delicious, human.', 'No crumbs remain.'],
+        ball: ['Ball wants trouble.', 'I would pounce.', 'Kick it here.', 'That bounce was rude.', 'Game on, human.', 'Ball is suspicious.', 'My paws are ready.', 'Tiny striker mode.', 'Bounce again. I dare.', 'That ball blinked first.'],
+        spider: ['Spider spotted.', 'Bug looks suspicious.', 'I saw movement.', 'Come here, bug.', 'Tiny hunt begins.', 'Not a fan.', 'Eight legs? Rude.', 'Spider owes rent.', 'I handle this.', 'Watch this, human.'],
+        bigSpider: ['That spider is huge.', 'Backup maybe?', 'Big bug energy.', 'Still brave, human.', 'Eight giant problems.', 'Why so many legs?', 'I need bigger paws.', 'Careful, human.'],
+        webbed: ['I am stuck.', 'This is sticky.', 'Webs are cheating.', 'Help, human.', 'Spider was rude.', 'My paws are trapped.', 'Sticky paws. Bad day.', 'Not my best moment.', 'Get this off.', 'I hate webs.'],
+        stuck: ['Path blocked.', 'Need another route.', 'This way lied.', 'Wall said no.', 'Recalculating paws.', 'I meant to stop.', 'Tiny obstacle, human.', 'Gravity got involved.', 'Floor is complicated.', 'Not stuck. Thinking.'],
+        content: ['This looks dramatic.', 'Thumbnail looks crunchy.', 'You clicked bait.', 'The comments are scary.', 'Don’t read below.', 'I have notes.', 'This smells boring.', 'Risky click, human.', 'Your feed worries me.', 'Scroll with caution.'],
+        channelMemory: ['This channel again.', 'I know {channel}.', 'Back here again.', '{channel} again?', 'Pattern detected.', 'Same pixels, human.', 'Comfort channel detected.', 'Your routine is showing.'],
+        memeMood: ['Internet behavior.', 'That was strange.', 'Your feed is weird.', 'Peak nonsense.', 'I laughed a little.', 'Pixels feel cursed.', 'Normal human behavior?', 'Tiny chaos detected.'],
+        timeMorning: ['Morning, human.', 'Sun is up.', 'Breakfast first?', 'Early scroll today.', 'Fresh day, same chaos.', 'Coffee smells useful.', 'Wake gently, human.', 'Too early for this.'],
+        timeAfternoon: ['Afternoon, human.', 'Still scrolling?', 'Snack hour maybe.', 'Sun is still working.', 'No nap yet?', 'Daylight is judging.', 'Lunch first, maybe.', 'Paws still awake.'],
+        timeEvening: ['Evening, human.', 'Cozy hours now.', 'Dinner time maybe.', 'Soft screen hours.', 'Sun went away.', 'Night mode soon.', 'Tiny blanket weather.', 'Good watching hour.'],
+        timeLate: ['Human, it is late.', 'Go to sleep box.', 'Eyes getting heavy, human.', 'Is the sun up yet?', 'One more video. Only one.', 'Your bed misses you.', 'Moon is watching.', 'Sleep is free.', 'Tiny nap recommended.', 'Tomorrow saw this.'],
+        watchStart: ['What are we watching, human?', 'This better be good.', 'New watch begins.', 'I am seated.', 'Eyes on pixels.', 'Show me the thing.', 'Tiny cinema time.', 'Let us watch.'],
+        watchSession: ['{sessionMinutes} minutes already.', 'Still here, human?', 'Time vanished again.', 'Long session today.', 'Your chair owns you.', 'One more video?', 'You stayed awhile.', 'Tiny break maybe?', 'Blink, human.', 'Hydrate, human.'],
+        watchLong: ['Human, take a break.', 'Go to the sleep box.', 'One more video. Only one.', 'Your bed misses you.', 'Blink, human.', 'Hydrate, maybe.', 'This is a marathon.', 'Long watch today.', 'Tiny stretch time.', 'Chair claimed you.'],
+        watchMilestone: ['{sessionMinutes} minutes. Noted.', 'Milestone reached, human.', 'I noticed.', 'That is commitment.', 'Tiny badge earned.', 'Time got eaten.', 'Still here together.', 'Paws counted that.'],
+        watchVideoLong: ['Long video survived.', 'Same video still?', '{currentVideoMinutes} minutes here.', 'That was commitment.', 'Attention still alive?', 'Big video, tiny paws.', 'I sat through that.', 'Respect the patience.'],
+        returningWatcher: ['Back again, human.', 'You returned.', 'Pattern noticed.', 'Same taste again.', 'Old trail reopened.', 'Welcome back, human.', 'I waited here.', 'Missed me? Obviously.'],
+        channelLoyalty: ['Same channel again.', '{channel} again?', 'You came back again.', 'Routine detected.', 'Comfort channel, human.', 'I remember this place.', 'Same den, same human.', 'Predictable, but cozy.'],
+        tabComeback: ['You returned.', 'I waited here.', 'Where did you go?', 'I guarded pixels.', 'Welcome back, human.', 'Suspicious absence noted.', 'Back from wandering?', 'Tab trail resumed.']
       },
       fr: {
         "random": [
-          "Renard en ligne.",
-          "Cette page sent sauvage.",
-          "Je te regarde.",
-          "Patrouille du renard.",
-          "Hmm. Continue.",
-          "Queue suspecte active."
+          "Renard en ligne.", "Cette page sent sauvage.", "Je te regarde.", "Patrouille du renard.",
+          "Hmm. Continue.", "Queue suspecte active."
         ],
         "happy": [
-          "Ça, j’aime bien.",
-          "Pas mal, humain.",
-          "Enfin, du calme.",
-          "Bon choix.",
-          "Je valide.",
-          "Continue comme ça."
+          "Ça, j’aime bien.", "Pas mal, humain.", "Enfin, du calme.", "Bon choix.",
+          "Je valide.", "Continue comme ça."
         ],
         "angry": [
-          "Non.",
-          "Très impoli.",
-          "Refais ça pour voir.",
-          "Je te juge.",
-          "Ça suffit.",
-          "Limite dépassée."
+          "Non.", "Très impoli.", "Refais ça pour voir.", "Je te juge.",
+          "Ça suffit.", "Limite dépassée."
         ],
         "confused": [
-          "C’était quoi ça ?",
-          "Explique ce bazar.",
-          "Rien compris.",
-          "Attends. Pourquoi ?",
-          "J’ai des questions.",
-          "Même moi, je bloque."
+          "C’était quoi ça ?", "Explique ce bazar.", "Rien compris.", "Attends. Pourquoi ?",
+          "J’ai des questions.", "Même moi, je bloque."
         ],
         "hungry": [
-          "Nourris-moi d’abord.",
-          "Un poisson aiderait.",
-          "Mon bol est vide.",
-          "Snack maintenant ?",
-          "Je pourrais manger.",
-          "Je sens le dîner."
+          "Nourris-moi d’abord.", "Un poisson aiderait.", "Mon bol est vide.", "Snack maintenant ?",
+          "Je pourrais manger.", "Je sens le dîner."
         ],
         "sleepy": [
-          "Je m’endors.",
-          "Sieste bientôt.",
-          "Réveille-moi plus tard.",
-          "Trop confortable ici.",
-          "Mes yeux ferment.",
-          "Encore cinq minutes."
+          "Je m’endors.", "Sieste bientôt.", "Réveille-moi plus tard.", "Trop confortable ici.",
+          "Mes yeux ferment.", "Encore cinq minutes."
         ],
         "interactive": [
-          "Doucement avec le renard.",
-          "Attention à la queue.",
-          "Fourrure respectée, merci.",
-          "Là, c’est bien.",
-          "Pas trop fort.",
-          "Je tolère ça."
+          "Doucement avec le renard.", "Attention à la queue.", "Fourrure respectée, merci.", "Là, c’est bien.",
+          "Pas trop fort.", "Je tolère ça."
         ],
+        "feedbackQuestion": ["Renard validé ?", "Je continue ?", "Trop de malice ?", "Queue approuvée ?", "Je reste ?", "Cinq étoiles ?", "Tu valides ?", "Je parle trop ?", "Moment réussi ?", "Renard utile ?"],
+        "voteLike": ["Cinq étoiles aussi ?", "Bon goût, humain.", "Je le savais.", "Choix correct.", "Respect enfin.", "Égo nourri.", "Queue satisfaite.", "Renard flatté."],
+        "voteDislike": ["Je m’y attendais.", "Cruel, mais noté.", "Clic très froid.", "Mon ego souffre.", "Choix audacieux.", "Ça pique.", "Même pas surpris.", "Queue en désaccord."],
         "grabbed": [
-          "Hé, pose le renard.",
-          "Pardon ?",
-          "Je peux marcher.",
-          "Pas prévu ça.",
-          "Libère le renard.",
-          "Un peu impoli."
+          "Hé, pose le renard.", "Pardon ?", "Je peux marcher.", "Pas prévu ça.",
+          "Libère le renard.", "Un peu impoli."
         ],
         "heldStill": [
-          "Tu me tiens encore ?",
-          "On vit ici ?",
-          "J’ai des pattes.",
-          "C’est quoi le plan ?",
-          "Tu as fini ?",
-          "C’est gênant."
+          "Tu me tiens encore ?", "On vit ici ?", "J’ai des pattes.", "C’est quoi le plan ?",
+          "Tu as fini ?", "C’est gênant."
         ],
         "heldMoving": [
-          "Trop vite.",
-          "Doucement.",
-          "Je ne suis pas bagage.",
-          "On va où ?",
-          "Moins de secousses.",
-          "Je préfère marcher."
+          "Trop vite.", "Doucement.", "Je ne suis pas bagage.", "On va où ?",
+          "Moins de secousses.", "Je préfère marcher."
         ],
         "longHeld": [
-          "Bon, assez.",
-          "Lâche-moi sérieusement.",
-          "La blague est finie.",
-          "Ma patience est morte.",
-          "Libère-moi maintenant.",
-          "Je porte plainte."
+          "Bon, assez.", "Lâche-moi sérieusement.", "La blague est finie.", "Ma patience est morte.",
+          "Libère-moi maintenant.", "Je porte plainte."
         ],
         "dropped": [
-          "Atterrissage impoli.",
-          "J’ai senti ça.",
-          "Préviens-moi avant.",
-          "Assez gracieux.",
-          "Plus doux la prochaine.",
-          "Atterrissage réussi."
+          "Atterrissage impoli.", "J’ai senti ça.", "Préviens-moi avant.", "Assez gracieux.",
+          "Plus doux la prochaine.", "Atterrissage réussi."
         ],
         "thrown": [
-          "Pourquoi je vole ?",
-          "On ne lance pas renard.",
-          "Je déteste ça.",
-          "Pire compagnie aérienne.",
-          "Queue en panique.",
-          "Tu as choisi le chaos."
+          "Pourquoi je vole ?", "On ne lance pas renard.", "Je déteste ça.", "Pire compagnie aérienne.",
+          "Queue en panique.", "Tu as choisi le chaos."
         ],
         "cursorSuspicious": [
-          "Je vois ce curseur.",
-          "Ce pointeur est louche.",
-          "Ne me teste pas.",
-          "Tu survoles bizarrement.",
-          "Recule ce truc.",
-          "J’ai vu ça."
+          "Je vois ce curseur.", "Ce pointeur est louche.", "Ne me teste pas.", "Tu survoles bizarrement.",
+          "Recule ce truc.", "J’ai vu ça."
         ],
         "cursorThreat": [
-          "Recule.",
-          "Trop près.",
-          "Espace personnel.",
-          "Je vais frapper.",
-          "Pas les moustaches.",
-          "Attention à la queue."
+          "Recule.", "Trop près.", "Espace personnel.", "Je vais frapper.",
+          "Pas les moustaches.", "Attention à la queue."
         ],
         "cursorPanic": [
-          "Non non non.",
-          "Attaque de curseur !",
-          "Trop près !",
-          "Retraite.",
-          "Pattes d’urgence.",
-          "Besoin de distance."
+          "Non non non.", "Attaque de curseur !", "Trop près !", "Retraite.",
+          "Pattes d’urgence.", "Besoin de distance."
         ],
         "running": [
-          "Zoomies activés.",
-          "Faites place.",
-          "Je suis vitesse.",
-          "Pattes occupées.",
-          "Courses importantes.",
-          "Attrape-moi donc."
+          "Zoomies activés.", "Faites place.", "Je suis vitesse.", "Pattes occupées.",
+          "Courses importantes.", "Attrape-moi donc."
         ],
         "walking": [
-          "Petite patrouille.",
-          "Je vérifie.",
-          "Pattes discrètes.",
-          "Petite marche.",
-          "Cette route est mienne.",
-          "Ronde en cours."
+          "Petite patrouille.", "Je vérifie.", "Pattes discrètes.", "Petite marche.",
+          "Cette route est mienne.", "Ronde en cours."
         ],
         "climbing": [
-          "On monte.",
-          "Mode mur.",
-          "Route verticale.",
-          "Regarde-moi grimper.",
-          "Petit chat montagne.",
-          "Raccourci trouvé."
+          "On monte.", "Mode mur.", "Route verticale.", "Regarde-moi grimper.",
+          "Petit chat montagne.", "Raccourci trouvé."
         ],
         "jumping": [
-          "Boing.",
-          "Joli saut.",
-          "Pattes en l’air.",
-          "Saut calculé.",
-          "C’était voulu.",
-          "Atterrissage en attente."
+          "Boing.", "Joli saut.", "Pattes en l’air.", "Saut calculé.",
+          "C’était voulu.", "Atterrissage en attente."
         ],
         "grooming": [
-          "Toilette.",
-          "Entretien de fourrure.",
-          "Occupé à nettoyer.",
-          "Présentation importante.",
-          "Une seconde.",
-          "Ne m’interromps pas."
+          "Toilette.", "Entretien de fourrure.", "Occupé à nettoyer.", "Présentation importante.",
+          "Une seconde.", "Ne m’interromps pas."
         ],
         "watching": [
-          "Je regarde aussi.",
-          "Intéressant jusque-là.",
-          "Ça m’intéresse.",
-          "Hmm. Continue.",
-          "Je suis investi.",
-          "Je décide encore."
+          "Je regarde aussi.", "Intéressant jusque-là.", "Ça m’intéresse.", "Hmm. Continue.",
+          "Je suis investi.", "Je décide encore."
         ],
         "videoPlay": [
-          "Ok, lance.",
-          "Montre-moi.",
-          "Voyons ça.",
-          "Ça tourne.",
-          "Enfin.",
-          "Bien, continue."
+          "Ok, lance.", "Montre-moi.", "Voyons ça.", "Ça tourne.",
+          "Enfin.", "Bien, continue."
         ],
         "videoPause": [
-          "Pourquoi pause ?",
-          "On regardait.",
-          "Continue.",
-          "J’étais occupé.",
-          "C’était impoli.",
-          "Reprends peut-être ?"
+          "Pourquoi pause ?", "On regardait.", "Continue.", "J’étais occupé.",
+          "C’était impoli.", "Reprends peut-être ?"
         ],
         "mischief": [
-          "Je n’ai rien touché.",
-          "Aucune preuve.",
-          "C’était le vent.",
-          "Prétendument.",
-          "J’étais ailleurs.",
-          "Je confirme rien."
+          "Je n’ai rien touché.", "Aucune preuve.", "C’était le vent.", "Prétendument.",
+          "J’étais ailleurs.", "Je confirme rien."
         ],
         "fishing": [
-          "Poisson repéré.",
-          "Dîner en fuite.",
-          "Renard en chasse.",
-          "Tiens-toi tranquille.",
-          "Je l’attrape.",
-          "Snack vivant."
+          "Poisson repéré.", "Dîner en fuite.", "Renard en chasse.", "Tiens-toi tranquille.",
+          "Je l’attrape.", "Snack vivant."
         ],
         "coin": [
-          "Brillant.",
-          "À moi maintenant.",
-          "Pièce prise.",
-          "J’aime ça.",
-          "Trésor trouvé.",
-          "Encore une, merci."
+          "Brillant.", "À moi maintenant.", "Pièce prise.", "J’aime ça.",
+          "Trésor trouvé.", "Encore une, merci."
         ],
         "eating": [
-          "Poisson sécurisé.",
-          "Délicieux.",
-          "Festin de renard.",
-          "Encore, merci.",
-          "Ça valait le saut.",
-          "Le dîner disparaît."
+          "Poisson sécurisé.", "Délicieux.", "Festin de renard.", "Encore, merci.",
+          "Ça valait le saut.", "Le dîner disparaît."
         ],
         "ball": [
-          "Balle repérée.",
-          "Renard en jeu.",
-          "À moi.",
-          "Je l’attrape.",
-          "Ce rebond était personnel.",
-          "Mode capture."
+          "Balle repérée.", "Renard en jeu.", "À moi.", "Je l’attrape.",
+          "Ce rebond était personnel.", "Mode capture."
         ],
         "spider": [
-          "Araignée repérée.",
-          "J’ai vu bouger.",
-          "Viens ici, insecte.",
-          "C’est personnel.",
-          "Mode chasseur.",
-          "Pas fan."
+          "Araignée repérée.", "J’ai vu bouger.", "Viens ici, insecte.", "C’est personnel.",
+          "Mode chasseur.", "Pas fan."
         ],
         "bigSpider": [
-          "Énorme araignée.",
-          "Pourquoi si grosse ?",
-          "Besoin de renfort.",
-          "Ok, c’est rude.",
-          "Gros insecte, même attitude.",
-          "Je reste brave."
+          "Énorme araignée.", "Pourquoi si grosse ?", "Besoin de renfort.", "Ok, c’est rude.",
+          "Gros insecte, même attitude.", "Je reste brave."
         ],
         "webbed": [
-          "Je suis coincé.",
-          "C’est collant.",
-          "Injuste.",
-          "Les toiles trichent.",
-          "Je déteste ça.",
-          "Besoin d’aide."
+          "Je suis coincé.", "C’est collant.", "Injuste.", "Les toiles trichent.",
+          "Je déteste ça.", "Besoin d’aide."
         ],
         "stuck": [
-          "Chemin bloqué.",
-          "Hmm.",
-          "C’est agaçant.",
-          "Autre route nécessaire.",
-          "Ce chemin ment.",
-          "Pattes recalculent."
+          "Chemin bloqué.", "Hmm.", "C’est agaçant.", "Autre route nécessaire.",
+          "Ce chemin ment.", "Pattes recalculent."
         ],
         "content": [
-          "Ça semble dramatique.",
-          "Miniature intéressante.",
-          "Tu as cliqué au piège.",
-          "Ambiance étrange.",
-          "J’ai des notes.",
-          "Ça peut être bien."
-        ],
-        "memory": [
-          "Déjà vu.",
-          "Je me souviens.",
-          "Ça semble familier.",
-          "Tu es déjà venu.",
-          "Tes habitudes parlent.",
-          "Je prends des notes."
-        ],
-        "newTopic": [
-          "Nouvelle ambiance.",
-          "Autre terrier.",
-          "Sujet frais.",
-          "Nouvelle direction.",
-          "C’est différent.",
-          "Changement remarqué."
-        ],
-        "favoriteTopic": [
-          "Encore {topic} ?",
-          "Tu adores {topic}.",
-          "Retour à {topic}.",
-          "Même obsession.",
-          "Choix prévisible.",
-          "Je le savais."
+          "Ça semble dramatique.", "Miniature intéressante.", "Tu as cliqué au piège.", "Ambiance étrange.",
+          "J’ai des notes.", "Ça peut être bien."
         ],
         "channelMemory": [
-          "Cette chaîne encore.",
-          "Je connais {channel}.",
-          "Nous revoilà ici.",
-          "Endroit familier.",
-          "Encore {channel} ?",
-          "Tu fais confiance ici."
+          "Cette chaîne encore.", "Je connais {channel}.", "Nous revoilà ici.", "Endroit familier.",
+          "Encore {channel} ?", "Tu fais confiance ici."
         ],
         "memeMood": [
-          "C’était maudit.",
-          "Comportement internet.",
-          "Je blâme internet.",
-          "Ton feed est bizarre.",
-          "Nonsense maximal.",
-          "J’ai un peu ri."
+          "C’était maudit.", "Comportement internet.", "Je blâme internet.", "Ton feed est bizarre.",
+          "Nonsense maximal.", "J’ai un peu ri."
         ],
         "timeMorning": [
-          "Déjà le matin ?",
-          "Bonjour.",
-          "Scroll matinal.",
-          "Le soleil est levé.",
-          "Petit-déjeuner d’abord ?",
-          "Nouveau jour, chaos."
+          "Déjà le matin ?", "Bonjour.", "Scroll matinal.", "Le soleil est levé.",
+          "Petit-déjeuner d’abord ?", "Nouveau jour, chaos."
         ],
         "timeAfternoon": [
-          "Point après-midi.",
-          "Tu scrolles encore ?",
-          "Ambiance midi.",
-          "Le soleil bosse encore.",
-          "Patrouille d’après-midi.",
-          "Pas de sieste ?"
+          "Point après-midi.", "Tu scrolles encore ?", "Ambiance midi.", "Le soleil bosse encore.",
+          "Patrouille d’après-midi.", "Pas de sieste ?"
         ],
         "timeEvening": [
-          "Déjà le soir.",
-          "Heures cosy.",
-          "Mode nuit bientôt.",
-          "Écran tout doux.",
-          "Patrouille du soir.",
-          "Dîner peut-être."
+          "Déjà le soir.", "Heures cosy.", "Mode nuit bientôt.", "Écran tout doux.",
+          "Patrouille du soir.", "Dîner peut-être."
         ],
         "timeLate": [
-          "Il est tard.",
-          "Va dormir.",
-          "Service lune.",
-          "On veille tard.",
-          "Ton lit appelle.",
-          "Heures gobelin."
+          "Il est tard.", "Va dormir.", "Service lune.", "On veille tard.",
+          "Ton lit appelle.", "Heures gobelin."
         ],
         "watchStart": [
-          "Je m’installe.",
-          "Nouvelle session.",
-          "Ok, regardons.",
-          "Je suis assis.",
-          "Ça doit être bien.",
-          "C’est parti."
+          "Je m’installe.", "Nouvelle session.", "Ok, regardons.", "Je suis assis.",
+          "Ça doit être bien.", "C’est parti."
         ],
         "watchSession": [
-          "{sessionMinutes} minutes déjà.",
-          "Encore là ?",
-          "Tu es engagé.",
-          "Longue session.",
-          "Le temps a disparu.",
-          "On reste vraiment."
+          "{sessionMinutes} minutes déjà.", "Encore là ?", "Tu es engagé.", "Longue session.",
+          "Le temps a disparu.", "On reste vraiment."
         ],
         "watchLong": [
-          "C’est un marathon.",
-          "Tu vis ici maintenant.",
-          "L’herbe attendra.",
-          "Long visionnage.",
-          "Hydrate-toi peut-être.",
-          "Toujours solide."
+          "C’est un marathon.", "Tu vis ici maintenant.", "L’herbe attendra.", "Long visionnage.",
+          "Hydrate-toi peut-être.", "Toujours solide."
         ],
         "watchMilestone": [
-          "{sessionMinutes} minutes. Bien.",
-          "Palier atteint.",
-          "J’ai remarqué.",
-          "Bel engagement.",
-          "Temps bien volé.",
-          "On l’a fait."
+          "{sessionMinutes} minutes. Bien.", "Palier atteint.", "J’ai remarqué.", "Bel engagement.",
+          "Temps bien volé.", "On l’a fait."
         ],
         "watchVideoLong": [
-          "{currentVideoMinutes} minutes ?",
-          "Cette vidéo est énorme.",
-          "Grosse énergie vidéo.",
-          "On reste assis.",
-          "Longue, hein ?",
-          "Installe-toi."
+          "{currentVideoMinutes} minutes ?", "Cette vidéo est énorme.", "Grosse énergie vidéo.", "On reste assis.",
+          "Longue, hein ?", "Installe-toi."
         ],
         "returningWatcher": [
-          "Te revoilà.",
-          "Bon retour.",
-          "Tu es revenu.",
-          "J’ai gardé ta place.",
-          "Même rituel.",
-          "Je t’attendais."
+          "Te revoilà.", "Bon retour.", "Tu es revenu.", "J’ai gardé ta place.",
+          "Même rituel.", "Je t’attendais."
         ],
         "channelLoyalty": [
-          "Encore {channel}.",
-          "Énergie fidèle.",
-          "Tu reviens toujours.",
-          "Chaîne favorite ?",
-          "Retour à {channel}.",
-          "Tu es constant."
+          "Encore {channel}.", "Énergie fidèle.", "Tu reviens toujours.", "Chaîne favorite ?",
+          "Retour à {channel}.", "Tu es constant."
         ],
         "tabComeback": [
-          "Te voilà.",
-          "Bon retour, humain.",
-          "Tu as disparu.",
-          "Déjà de retour ?",
-          "J’ai gardé le fort.",
-          "Je t’ai manqué ?"
-        ],
-        "topicDogs": [
-          "Vidéo de chien.",
-          "Ça fait beaucoup.",
-          "Créatures bruyantes.",
-          "Grosse énergie de queue.",
-          "Encore des chiens.",
-          "Trop de ouaf."
-        ],
-        "topicSquirrels": [
-          "Contenu écureuil.",
-          "Instinct de chasse.",
-          "Petit rongeur chaos.",
-          "Ils bougent bizarrement.",
-          "Je chasserais ça.",
-          "Fourrure très suspecte."
-        ],
-        "topicRats": [
-          "Vidéo de rat.",
-          "Petites patates chaos.",
-          "Petits pieds rapides.",
-          "Snacks discutables.",
-          "Heure rongeur.",
-          "Je suis intrigué."
-        ],
-        "topicBirds": [
-          "Vidéo d’oiseau.",
-          "Taxes de cui-cui.",
-          "Snacks du ciel.",
-          "Je suis concentré.",
-          "Ce battement était illégal.",
-          "Des plumes partout."
-        ],
-        "topicOcean": [
-          "Truc d’océan.",
-          "Trop d’eau.",
-          "Poisson potentiel détecté.",
-          "Ambiance mouillée.",
-          "Je soutiens le poisson.",
-          "Nager semble faux."
-        ],
-        "topicAnimals": [
-          "Vidéo animale.",
-          "Les miens.",
-          "Bon contenu créature.",
-          "Je valide.",
-          "Fourrure alliée détectée.",
-          "Heure nature."
-        ],
-        "topicTech": [
-          "Vidéo tech.",
-          "Mode chat nerd.",
-          "Gadget cher.",
-          "Trop de câbles.",
-          "Encore des machines.",
-          "Je ne comprends rien."
-        ],
-        "topicGaming": [
-          "Vidéo gaming.",
-          "Cerveau loot activé.",
-          "Énergie boss.",
-          "Comportement respawn.",
-          "Ambiance manette.",
-          "Mode gamer."
-        ],
-        "topicMusic": [
-          "Musique.",
-          "Bon rythme.",
-          "J’aime ce rythme.",
-          "Queue en cadence.",
-          "Ça tape bien.",
-          "Petit concert."
-        ],
-        "topicScience": [
-          "Vidéo science.",
-          "Heures gros cerveau.",
-          "Besoin de lunettes.",
-          "Expériences suspectes.",
-          "Apprentissage arrivé.",
-          "Trucs nerd intéressants."
-        ],
-        "topicFood": [
-          "Vidéo nourriture.",
-          "Maintenant j’ai faim.",
-          "Ça semble mangeable.",
-          "Partage, merci.",
-          "Encore cuisine.",
-          "Rude affamé."
-        ],
-        "topicSports": [
-          "Vidéo sport.",
-          "Énergie balle.",
-          "Humains rapides.",
-          "Cri compétitif.",
-          "Je comprends la balle.",
-          "Bon matériel de chasse."
-        ],
-        "topicAnime": [
-          "Temps anime.",
-          "Déjà dramatique.",
-          "Énergie héros.",
-          "Arc entraînement.",
-          "Trop de pouvoir.",
-          "Cheveux physiques encore."
-        ],
-        "topicMovies": [
-          "Vidéo film.",
-          "Twist imminent.",
-          "Passe les snacks.",
-          "Mode cinéma chat.",
-          "Ça fait dramatique.",
-          "Voix bande-annonce."
-        ],
-        "topicHorror": [
-          "Vidéo horreur.",
-          "Non merci.",
-          "Garde la lumière.",
-          "Ça sent le maudit.",
-          "Je suis brave. Presque.",
-          "Taxes jump scare."
-        ],
-        "topicHistory": [
-          "Vidéo histoire.",
-          "Vieux drames humains.",
-          "Chaos ancien.",
-          "Poussiéreux mais intéressant.",
-          "Les anciens étaient bizarres.",
-          "J’apprends des fantômes."
-        ],
-        "topicArt": [
-          "Vidéo art.",
-          "Jolies couleurs.",
-          "Je respecte le travail.",
-          "Cerveau pinceau activé.",
-          "Belle composition.",
-          "Heure créative."
-        ],
-        "topicMoney": [
-          "Vidéo argent.",
-          "Pensées chat riche.",
-          "Où est ma part ?",
-          "Encore des pièces.",
-          "Nombres stressants.",
-          "Profit qui ronronne."
-        ],
-        "topicNews": [
-          "Vidéo news.",
-          "Le monde est bizarre.",
-          "Drama en approche.",
-          "Planète occupée.",
-          "Tout casse.",
-          "Ça fait beaucoup."
-        ],
-        "topicCars": [
-          "Vidéo voiture.",
-          "Zoomies métal bruyants.",
-          "Contenu vroum.",
-          "Trop de moteurs.",
-          "Énergie boîte rapide.",
-          "Je préfère carton."
-        ],
-        "topicStyle": [
-          "Vidéo style.",
-          "Ça claque.",
-          "Chat mode approuve.",
-          "Belle tenue.",
-          "Jolies textures.",
-          "Ça sert des looks."
+          "Te voilà.", "Bon retour, humain.", "Tu as disparu.", "Déjà de retour ?",
+          "J’ai gardé le fort.", "Je t’ai manqué ?"
         ],
         "teasing": [
-          "Donne ça.",
-          "Pose le jouet.",
-          "C’est à moi.",
-          "Arrête de jouer.",
-          "Rends-le maintenant.",
-          "Je le vois."
+          "Donne ça.", "Pose le jouet.", "C’est à moi.", "Arrête de jouer.",
+          "Rends-le maintenant.", "Je le vois."
         ]
       },
       it: {
         "random": [
-          "Volpe online.",
-          "Questa pagina sa di selvatico.",
-          "Ti sto guardando.",
-          "Pattuglia volpe.",
-          "Hmm. Continua.",
-          "Coda sospetta attiva."
+          "Volpe online.", "Questa pagina sa di selvatico.", "Ti sto guardando.", "Pattuglia volpe.",
+          "Hmm. Continua.", "Coda sospetta attiva."
         ],
         "happy": [
-          "Questo mi piace.",
-          "Non male, umano.",
-          "Finalmente pace.",
-          "Buona scelta.",
-          "Approvo.",
-          "Continua così."
+          "Questo mi piace.", "Non male, umano.", "Finalmente pace.", "Buona scelta.",
+          "Approvo.", "Continua così."
         ],
         "angry": [
-          "Assolutamente no.",
-          "Che maleducato.",
-          "Riprova, dai.",
-          "Ti sto giudicando.",
-          "Ora basta.",
-          "Linea superata."
+          "Assolutamente no.", "Che maleducato.", "Riprova, dai.", "Ti sto giudicando.",
+          "Ora basta.", "Linea superata."
         ],
         "confused": [
-          "Cos’era quello?",
-          "Spiega questo caos.",
-          "Non ha senso.",
-          "Aspetta. Perché?",
-          "Ho domande.",
-          "Anche io sono confuso."
+          "Cos’era quello?", "Spiega questo caos.", "Non ha senso.", "Aspetta. Perché?",
+          "Ho domande.", "Anche io sono confuso."
         ],
         "hungry": [
-          "Prima nutrimi.",
-          "Un pesce aiuterebbe.",
-          "La ciotola è vuota.",
-          "Snack adesso?",
-          "Potrei mangiare.",
-          "Sento odore di cena."
+          "Prima nutrimi.", "Un pesce aiuterebbe.", "La ciotola è vuota.", "Snack adesso?",
+          "Potrei mangiare.", "Sento odore di cena."
         ],
         "sleepy": [
-          "Mi sto addormentando.",
-          "Presto pisolino.",
-          "Svegliami dopo.",
-          "Troppo comodo qui.",
-          "Gli occhi si chiudono.",
-          "Altri cinque minuti."
+          "Mi sto addormentando.", "Presto pisolino.", "Svegliami dopo.", "Troppo comodo qui.",
+          "Gli occhi si chiudono.", "Altri cinque minuti."
         ],
         "interactive": [
-          "Piano con la volpe.",
-          "Occhio alla coda.",
-          "Rispetta il pelo.",
-          "Lì va bene.",
-          "Non troppo forte.",
-          "Lo tollero."
+          "Piano con la volpe.", "Occhio alla coda.", "Rispetta il pelo.", "Lì va bene.",
+          "Non troppo forte.", "Lo tollero."
         ],
+        "feedbackQuestion": ["Volpe approvata?", "Continuo?", "Troppa furbizia?", "Coda approva?", "Resto qui?", "Cinque stelle?", "Mi approvi?", "Parlo troppo?", "Momento riuscito?", "Volpe utile?"],
+        "voteLike": ["Cinque stelle anche?", "Buon gusto, umano.", "Lo sapevo.", "Scelta corretta.", "Finalmente rispetto.", "Ego nutrito.", "Coda soddisfatta.", "Volpe lusingata."],
+        "voteDislike": ["Me lo aspettavo.", "Crudele, ma segnato.", "Click molto freddo.", "Il mio ego soffre.", "Scelta audace.", "Fa male.", "Nemmeno sorpreso.", "Coda non approva."],
         "grabbed": [
-          "Ehi, posa la volpe.",
-          "Scusa?",
-          "So camminare.",
-          "Non era previsto.",
-          "Libera la volpe.",
-          "Abbastanza scortese."
+          "Ehi, posa la volpe.", "Scusa?", "So camminare.", "Non era previsto.",
+          "Libera la volpe.", "Abbastanza scortese."
         ],
         "heldStill": [
-          "Mi tieni ancora?",
-          "Viviamo qui?",
-          "Ho le zampe.",
-          "Qual è il piano?",
-          "Hai finito?",
-          "È imbarazzante."
+          "Mi tieni ancora?", "Viviamo qui?", "Ho le zampe.", "Qual è il piano?",
+          "Hai finito?", "È imbarazzante."
         ],
         "heldMoving": [
-          "Troppo veloce.",
-          "Piano.",
-          "Non sono bagaglio.",
-          "Dove andiamo?",
-          "Meno scosse, grazie.",
-          "Preferivo camminare."
+          "Troppo veloce.", "Piano.", "Non sono bagaglio.", "Dove andiamo?",
+          "Meno scosse, grazie.", "Preferivo camminare."
         ],
         "longHeld": [
-          "Ok, basta.",
-          "Lasciami davvero.",
-          "Scherzo finito.",
-          "Pazienza finita.",
-          "Liberami adesso.",
-          "Farò reclamo."
+          "Ok, basta.", "Lasciami davvero.", "Scherzo finito.", "Pazienza finita.",
+          "Liberami adesso.", "Farò reclamo."
         ],
         "dropped": [
-          "Atterraggio scortese.",
-          "L’ho sentito.",
-          "Avvisa prima.",
-          "Abbastanza elegante.",
-          "Più piano la prossima.",
-          "Atterraggio riuscito."
+          "Atterraggio scortese.", "L’ho sentito.", "Avvisa prima.", "Abbastanza elegante.",
+          "Più piano la prossima.", "Atterraggio riuscito."
         ],
         "thrown": [
-          "Perché sto volando?",
-          "Non lanciare volpi.",
-          "Odio questo.",
-          "Peggior compagnia aerea.",
-          "Coda in panico.",
-          "Hai scelto il caos."
+          "Perché sto volando?", "Non lanciare volpi.", "Odio questo.", "Peggior compagnia aerea.",
+          "Coda in panico.", "Hai scelto il caos."
         ],
         "cursorSuspicious": [
-          "Vedo quel cursore.",
-          "Quel puntatore è colpevole.",
-          "Non sfidarmi.",
-          "Stai passando strano.",
-          "Tieni lontano quel coso.",
-          "Ho visto."
+          "Vedo quel cursore.", "Quel puntatore è colpevole.", "Non sfidarmi.", "Stai passando strano.",
+          "Tieni lontano quel coso.", "Ho visto."
         ],
         "cursorThreat": [
-          "Indietro.",
-          "Troppo vicino.",
-          "Spazio personale.",
-          "Ti graffio.",
-          "Non sui baffi.",
-          "Occhio alla coda."
+          "Indietro.", "Troppo vicino.", "Spazio personale.", "Ti graffio.",
+          "Non sui baffi.", "Occhio alla coda."
         ],
         "cursorPanic": [
-          "No no no.",
-          "Attacco cursore!",
-          "Troppo vicino!",
-          "Ritirata.",
-          "Zampe d’emergenza.",
-          "Mi serve distanza."
+          "No no no.", "Attacco cursore!", "Troppo vicino!", "Ritirata.",
+          "Zampe d’emergenza.", "Mi serve distanza."
         ],
         "running": [
-          "Zoomies attivati.",
-          "Fate largo.",
-          "Sono velocità.",
-          "Zampe occupate.",
-          "Commissioni importanti.",
-          "Prova a prendermi."
+          "Zoomies attivati.", "Fate largo.", "Sono velocità.", "Zampe occupate.",
+          "Commissioni importanti.", "Prova a prendermi."
         ],
         "walking": [
-          "Piccola pattuglia.",
-          "Controllo cose.",
-          "Zampe silenziose.",
-          "Passeggiatina.",
-          "Questa strada è mia.",
-          "Giro in corso."
+          "Piccola pattuglia.", "Controllo cose.", "Zampe silenziose.", "Passeggiatina.",
+          "Questa strada è mia.", "Giro in corso."
         ],
         "climbing": [
-          "Si sale.",
-          "Modalità muro.",
-          "Percorso verticale.",
-          "Guardami scalare.",
-          "Piccolo gatto montagna.",
-          "Scorciatoia trovata."
+          "Si sale.", "Modalità muro.", "Percorso verticale.", "Guardami scalare.",
+          "Piccolo gatto montagna.", "Scorciatoia trovata."
         ],
         "jumping": [
-          "Boing.",
-          "Bel salto.",
-          "Zampe in aria.",
-          "Salto calcolato.",
-          "Volevo farlo.",
-          "Atterraggio in arrivo."
+          "Boing.", "Bel salto.", "Zampe in aria.", "Salto calcolato.",
+          "Volevo farlo.", "Atterraggio in arrivo."
         ],
         "grooming": [
-          "Bagnetto.",
-          "Manutenzione pelo.",
-          "Sto pulendo.",
-          "La presentazione conta.",
-          "Un attimo.",
-          "Non interrompere."
+          "Bagnetto.", "Manutenzione pelo.", "Sto pulendo.", "La presentazione conta.",
+          "Un attimo.", "Non interrompere."
         ],
         "watching": [
-          "Guardo anche io.",
-          "Interessante finora.",
-          "Ha la mia attenzione.",
-          "Hmm. Continua.",
-          "Ora sono coinvolto.",
-          "Sto ancora decidendo."
+          "Guardo anche io.", "Interessante finora.", "Ha la mia attenzione.", "Hmm. Continua.",
+          "Ora sono coinvolto.", "Sto ancora decidendo."
         ],
         "videoPlay": [
-          "Ok, avvia.",
-          "Fammi vedere.",
-          "Vediamo.",
-          "Si parte.",
-          "Finalmente.",
-          "Bene, continua."
+          "Ok, avvia.", "Fammi vedere.", "Vediamo.", "Si parte.",
+          "Finalmente.", "Bene, continua."
         ],
         "videoPause": [
-          "Perché pausa?",
-          "Stavamo guardando.",
-          "Continua.",
-          "Ero occupato.",
-          "Che maleducato.",
-          "Riprendi forse?"
+          "Perché pausa?", "Stavamo guardando.", "Continua.", "Ero occupato.",
+          "Che maleducato.", "Riprendi forse?"
         ],
         "mischief": [
-          "Non ho toccato nulla.",
-          "Nessuna prova.",
-          "Era il vento.",
-          "Presumibilmente.",
-          "Ero altrove.",
-          "Non confermo niente."
+          "Non ho toccato nulla.", "Nessuna prova.", "Era il vento.", "Presumibilmente.",
+          "Ero altrove.", "Non confermo niente."
         ],
         "fishing": [
-          "Pesce avvistato.",
-          "Cena in fuga.",
-          "Volpe a caccia.",
-          "Stai fermo.",
-          "Lo prendo.",
-          "Snack vivo."
+          "Pesce avvistato.", "Cena in fuga.", "Volpe a caccia.", "Stai fermo.",
+          "Lo prendo.", "Snack vivo."
         ],
         "coin": [
-          "Brilla.",
-          "Ora è mia.",
-          "Moneta presa.",
-          "Mi piace.",
-          "Tesoro trovato.",
-          "Ancora una, grazie."
+          "Brilla.", "Ora è mia.", "Moneta presa.", "Mi piace.",
+          "Tesoro trovato.", "Ancora una, grazie."
         ],
         "eating": [
-          "Pesce preso.",
-          "Delizioso.",
-          "Banchetto da volpe.",
-          "Ancora, grazie.",
-          "Valeva il salto.",
-          "Cena sparita."
+          "Pesce preso.", "Delizioso.", "Banchetto da volpe.", "Ancora, grazie.",
+          "Valeva il salto.", "Cena sparita."
         ],
         "ball": [
-          "Palla avvistata.",
-          "Volpe in gioco.",
-          "Mia.",
-          "La prendo.",
-          "Quel rimbalzo era personale.",
-          "Modalità presa."
+          "Palla avvistata.", "Volpe in gioco.", "Mia.", "La prendo.",
+          "Quel rimbalzo era personale.", "Modalità presa."
         ],
         "spider": [
-          "Ragno avvistato.",
-          "Ho visto muoversi.",
-          "Vieni qui, insetto.",
-          "Sembra personale.",
-          "Modalità cacciatore.",
-          "Non mi piace."
+          "Ragno avvistato.", "Ho visto muoversi.", "Vieni qui, insetto.", "Sembra personale.",
+          "Modalità cacciatore.", "Non mi piace."
         ],
         "bigSpider": [
-          "Ragno enorme.",
-          "Perché così grosso?",
-          "Serve rinforzo.",
-          "Ok, che rude.",
-          "Insetto grosso, stesso atteggiamento.",
-          "Sono ancora coraggioso."
+          "Ragno enorme.", "Perché così grosso?", "Serve rinforzo.", "Ok, che rude.",
+          "Insetto grosso, stesso atteggiamento.", "Sono ancora coraggioso."
         ],
         "webbed": [
-          "Sono bloccato.",
-          "È appiccicoso.",
-          "Ingiusto.",
-          "Le ragnatele barano.",
-          "Odio questo.",
-          "Serve aiuto."
+          "Sono bloccato.", "È appiccicoso.", "Ingiusto.", "Le ragnatele barano.",
+          "Odio questo.", "Serve aiuto."
         ],
         "stuck": [
-          "Percorso bloccato.",
-          "Hmm.",
-          "Che fastidio.",
-          "Serve altra strada.",
-          "Questa strada mente.",
-          "Zampe ricalcolano."
+          "Percorso bloccato.", "Hmm.", "Che fastidio.", "Serve altra strada.",
+          "Questa strada mente.", "Zampe ricalcolano."
         ],
         "content": [
-          "Sembra drammatico.",
-          "Miniatura interessante.",
-          "Hai cliccato esca.",
-          "Vibe strane.",
-          "Ho appunti.",
-          "Potrebbe essere buono."
-        ],
-        "memory": [
-          "Già visto.",
-          "Mi ricordo.",
-          "Sembra familiare.",
-          "Sei già stato qui.",
-          "Le abitudini parlano.",
-          "Prendo appunti."
-        ],
-        "newTopic": [
-          "Nuova vibe.",
-          "Altro buco.",
-          "Tema fresco.",
-          "Nuova corsia.",
-          "Questo è diverso.",
-          "Cambio notato."
-        ],
-        "favoriteTopic": [
-          "Ancora {topic}?",
-          "Ami proprio {topic}.",
-          "Ritorno a {topic}.",
-          "Stessa ossessione.",
-          "Scelta prevedibile.",
-          "Lo sapevo."
+          "Sembra drammatico.", "Miniatura interessante.", "Hai cliccato esca.", "Vibe strane.",
+          "Ho appunti.", "Potrebbe essere buono."
         ],
         "channelMemory": [
-          "Ancora questo canale.",
-          "Conosco {channel}.",
-          "Siamo tornati qui.",
-          "Posto familiare.",
-          "Ancora {channel}?",
-          "Ti fidi qui."
+          "Ancora questo canale.", "Conosco {channel}.", "Siamo tornati qui.", "Posto familiare.",
+          "Ancora {channel}?", "Ti fidi qui."
         ],
         "memeMood": [
-          "Era maledetto.",
-          "Comportamento internet.",
-          "Colpa di internet.",
-          "Il feed è strano.",
-          "Nonsense massimo.",
-          "Ho riso un po’."
+          "Era maledetto.", "Comportamento internet.", "Colpa di internet.", "Il feed è strano.",
+          "Nonsense massimo.", "Ho riso un po’."
         ],
         "timeMorning": [
-          "Già mattina?",
-          "Buongiorno.",
-          "Scroll mattutino.",
-          "Il sole è sveglio.",
-          "Colazione prima?",
-          "Nuovo giorno, caos."
+          "Già mattina?", "Buongiorno.", "Scroll mattutino.", "Il sole è sveglio.",
+          "Colazione prima?", "Nuovo giorno, caos."
         ],
         "timeAfternoon": [
-          "Check pomeridiano.",
-          "Scrolli ancora?",
-          "Vibe di metà giornata.",
-          "Il sole lavora ancora.",
-          "Pattuglia pomeridiana.",
-          "Niente pisolino?"
+          "Check pomeridiano.", "Scrolli ancora?", "Vibe di metà giornata.", "Il sole lavora ancora.",
+          "Pattuglia pomeridiana.", "Niente pisolino?"
         ],
         "timeEvening": [
-          "Già sera.",
-          "Ore cozy.",
-          "Modalità notte presto.",
-          "Schermo morbido.",
-          "Pattuglia serale.",
-          "Cena forse."
+          "Già sera.", "Ore cozy.", "Modalità notte presto.", "Schermo morbido.",
+          "Pattuglia serale.", "Cena forse."
         ],
         "timeLate": [
-          "È tardi.",
-          "Vai a dormire.",
-          "Turno luna.",
-          "Siamo svegli tardi.",
-          "Il letto chiama.",
-          "Ore goblin."
+          "È tardi.", "Vai a dormire.", "Turno luna.", "Siamo svegli tardi.",
+          "Il letto chiama.", "Ore goblin."
         ],
         "watchStart": [
-          "Mi sistemo.",
-          "Nuova sessione.",
-          "Ok, guardiamo.",
-          "Sono seduto.",
-          "Deve essere buono.",
-          "Si parte."
+          "Mi sistemo.", "Nuova sessione.", "Ok, guardiamo.", "Sono seduto.",
+          "Deve essere buono.", "Si parte."
         ],
         "watchSession": [
-          "{sessionMinutes} minuti già.",
-          "Ancora qui?",
-          "Ti sei impegnato.",
-          "Sessione lunga.",
-          "Il tempo è sparito.",
-          "Restiamo davvero."
+          "{sessionMinutes} minuti già.", "Ancora qui?", "Ti sei impegnato.", "Sessione lunga.",
+          "Il tempo è sparito.", "Restiamo davvero."
         ],
         "watchLong": [
-          "È una maratona.",
-          "Vivi qui adesso.",
-          "Erba dopo.",
-          "Visione lunga.",
-          "Idratati forse.",
-          "Ancora forte."
+          "È una maratona.", "Vivi qui adesso.", "Erba dopo.", "Visione lunga.",
+          "Idratati forse.", "Ancora forte."
         ],
         "watchMilestone": [
-          "{sessionMinutes} minuti. Bene.",
-          "Traguardo raggiunto.",
-          "L’ho notato.",
-          "Bel impegno.",
-          "Tempo ben rubato.",
-          "Ce l’abbiamo fatta."
+          "{sessionMinutes} minuti. Bene.", "Traguardo raggiunto.", "L’ho notato.", "Bel impegno.",
+          "Tempo ben rubato.", "Ce l’abbiamo fatta."
         ],
         "watchVideoLong": [
-          "{currentVideoMinutes} minuti?",
-          "Questo video è enorme.",
-          "Energia video gigante.",
-          "Restiamo seduti.",
-          "Lungo, eh?",
-          "Mettiti comodo."
+          "{currentVideoMinutes} minuti?", "Questo video è enorme.", "Energia video gigante.", "Restiamo seduti.",
+          "Lungo, eh?", "Mettiti comodo."
         ],
         "returningWatcher": [
-          "Eccoti di nuovo.",
-          "Bentornato.",
-          "Sei tornato.",
-          "Ho tenuto il posto.",
-          "Stesso rituale.",
-          "Ti aspettavo."
+          "Eccoti di nuovo.", "Bentornato.", "Sei tornato.", "Ho tenuto il posto.",
+          "Stesso rituale.", "Ti aspettavo."
         ],
         "channelLoyalty": [
-          "Ancora {channel}.",
-          "Energia fedele.",
-          "Torni sempre.",
-          "Canale preferito?",
-          "Ritorno a {channel}.",
-          "Sei costante."
+          "Ancora {channel}.", "Energia fedele.", "Torni sempre.", "Canale preferito?",
+          "Ritorno a {channel}.", "Sei costante."
         ],
         "tabComeback": [
-          "Eccoti.",
-          "Bentornato, umano.",
-          "Sei sparito.",
-          "Già tornato?",
-          "Ho tenuto il forte.",
-          "Ti sono mancato?"
-        ],
-        "topicDogs": [
-          "Video di cani.",
-          "È tanto.",
-          "Creature rumorose.",
-          "Grande energia coda.",
-          "Ancora cani.",
-          "Troppo bau."
-        ],
-        "topicSquirrels": [
-          "Contenuto scoiattolo.",
-          "Istinto caccia attivo.",
-          "Piccolo roditore caos.",
-          "Si muovono strani.",
-          "Lo inseguirei.",
-          "Pelo molto sospetto."
-        ],
-        "topicRats": [
-          "Video di ratto.",
-          "Patate caos piccole.",
-          "Piedini veloci.",
-          "Snack discutibili.",
-          "Ora roditore.",
-          "Sono incuriosito."
-        ],
-        "topicBirds": [
-          "Video di uccelli.",
-          "Tasse cinguettio.",
-          "Snack del cielo.",
-          "Sono concentrato.",
-          "Quel battito era illegale.",
-          "Piume ovunque."
-        ],
-        "topicOcean": [
-          "Roba oceano.",
-          "Troppa acqua.",
-          "Potenziale pesce rilevato.",
-          "Vibe bagnate.",
-          "Sostengo il pesce.",
-          "Nuotare sembra finto."
-        ],
-        "topicAnimals": [
-          "Video animale.",
-          "La mia gente.",
-          "Buon contenuto creatura.",
-          "Approvo.",
-          "Pelo alleato rilevato.",
-          "Ora natura."
-        ],
-        "topicTech": [
-          "Video tech.",
-          "Modalità gatto nerd.",
-          "Gadget costoso.",
-          "Troppi cavi.",
-          "Ancora macchine.",
-          "Non capisco nulla."
-        ],
-        "topicGaming": [
-          "Video gaming.",
-          "Cervello loot attivo.",
-          "Energia boss.",
-          "Comportamento respawn.",
-          "Vibe controller.",
-          "Modalità gamer."
-        ],
-        "topicMusic": [
-          "Musica.",
-          "Bel ritmo.",
-          "Mi piace il ritmo.",
-          "Coda a tempo.",
-          "Questa spacca.",
-          "Piccolo concerto."
-        ],
-        "topicScience": [
-          "Video scienza.",
-          "Ore cervellone.",
-          "Servono occhiali.",
-          "Esperimenti sospetti.",
-          "Apprendimento avvenuto.",
-          "Roba nerd interessante."
-        ],
-        "topicFood": [
-          "Video cibo.",
-          "Ora ho fame.",
-          "Sembra mangiabile.",
-          "Condividi, grazie.",
-          "Ancora cucina.",
-          "Rude da affamati."
-        ],
-        "topicSports": [
-          "Video sport.",
-          "Energia palla.",
-          "Umani veloci.",
-          "Urla competitive.",
-          "Capisco la palla.",
-          "Buon materiale caccia."
-        ],
-        "topicAnime": [
-          "Tempo anime.",
-          "Già drammatico.",
-          "Energia protagonista.",
-          "Arco allenamento.",
-          "Troppo potere.",
-          "Fisica capelli ancora."
-        ],
-        "topicMovies": [
-          "Video film.",
-          "Colpo di scena in arrivo.",
-          "Passa gli snack.",
-          "Modalità cinema gatto.",
-          "Sembra drammatico.",
-          "Momento trailer voice."
-        ],
-        "topicHorror": [
-          "Video horror.",
-          "No grazie.",
-          "Luci accese.",
-          "Sembra maledetto.",
-          "Sono coraggioso. Quasi.",
-          "Tasse jumpscare."
-        ],
-        "topicHistory": [
-          "Video storia.",
-          "Vecchi drammi umani.",
-          "Caos antico.",
-          "Polveroso ma interessante.",
-          "Antichi strani.",
-          "Imparo dai fantasmi."
-        ],
-        "topicArt": [
-          "Video arte.",
-          "Bei colori.",
-          "Rispetto il lavoro.",
-          "Cervello pennello attivo.",
-          "Bella composizione.",
-          "Ora creativa."
-        ],
-        "topicMoney": [
-          "Video soldi.",
-          "Pensieri gatto ricco.",
-          "Dov’è la mia parte?",
-          "Ancora monete.",
-          "Numeri stressanti.",
-          "Profitto fa fusa."
-        ],
-        "topicNews": [
-          "Video notizie.",
-          "Mondo strano.",
-          "Drama in arrivo.",
-          "Pianeta occupato.",
-          "Tutto si rompe.",
-          "È tanto."
-        ],
-        "topicCars": [
-          "Video auto.",
-          "Zoomies metallo rumorosi.",
-          "Contenuto vroom.",
-          "Troppi motori.",
-          "Energia scatola veloce.",
-          "Preferisco cartone."
-        ],
-        "topicStyle": [
-          "Video stile.",
-          "Bello look.",
-          "Gatto moda approva.",
-          "Bel outfit.",
-          "Belle texture.",
-          "Serve look."
+          "Eccoti.", "Bentornato, umano.", "Sei sparito.", "Già tornato?",
+          "Ho tenuto il forte.", "Ti sono mancato?"
         ],
         "teasing": [
-          "Dammi quello.",
-          "Posa il gioco.",
-          "È mio.",
-          "Smettila.",
-          "Ridammelo ora.",
-          "Lo vedo."
+          "Dammi quello.", "Posa il gioco.", "È mio.", "Smettila.",
+          "Ridammelo ora.", "Lo vedo."
         ]
       },
       ar: {
         "random": [
-          "الثعلب متصل.",
-          "هذه الصفحة برية.",
-          "أنا أراقبك.",
-          "دورية الثعلب.",
-          "همم. كمل.",
-          "الذيل مشبوه."
+          "الثعلب متصل.", "هذه الصفحة برية.", "أنا أراقبك.", "دورية الثعلب.",
+          "همم. كمل.", "الذيل مشبوه."
         ],
         "happy": [
-          "هذا أعجبني.",
-          "ليس سيئاً، يا إنسان.",
-          "أخيراً بعض الهدوء.",
-          "اختيار جيد.",
-          "أوافق.",
-          "كمل هكذا."
+          "هذا أعجبني.", "ليس سيئاً، يا إنسان.", "أخيراً بعض الهدوء.", "اختيار جيد.",
+          "أوافق.", "كمل هكذا."
         ],
         "angry": [
-          "أبداً لا.",
-          "وقح جداً.",
-          "جربها ثانية.",
-          "أنا أحكم عليك.",
-          "كفى الآن.",
-          "تجاوزت الحد."
+          "أبداً لا.", "وقح جداً.", "جربها ثانية.", "أنا أحكم عليك.",
+          "كفى الآن.", "تجاوزت الحد."
         ],
         "confused": [
-          "ما هذا؟",
-          "اشرح هذه الفوضى.",
-          "لا معنى له.",
-          "انتظر. لماذا؟",
-          "لدي أسئلة.",
-          "حتى أنا محتار."
+          "ما هذا؟", "اشرح هذه الفوضى.", "لا معنى له.", "انتظر. لماذا؟",
+          "لدي أسئلة.", "حتى أنا محتار."
         ],
         "hungry": [
-          "أطعمني أولاً.",
-          "سمكة ستساعد.",
-          "وعائي فارغ.",
-          "سناك الآن؟",
-          "أستطيع الأكل.",
-          "أشم رائحة العشاء."
+          "أطعمني أولاً.", "سمكة ستساعد.", "وعائي فارغ.", "سناك الآن؟",
+          "أستطيع الأكل.", "أشم رائحة العشاء."
         ],
         "sleepy": [
-          "أنا أنعس.",
-          "قيلولة قريباً.",
-          "أيقظني لاحقاً.",
-          "المكان مريح جداً.",
-          "عيناي تغلقان.",
-          "خمس دقائق أخرى."
+          "أنا أنعس.", "قيلولة قريباً.", "أيقظني لاحقاً.", "المكان مريح جداً.",
+          "عيناي تغلقان.", "خمس دقائق أخرى."
         ],
         "interactive": [
-          "بلطف مع الثعلب.",
-          "انتبه للذيل.",
-          "احترم الفرو.",
-          "نعم، هنا جيد.",
-          "ليس بقوة.",
-          "سأتحمل هذا."
+          "بلطف مع الثعلب.", "انتبه للذيل.", "احترم الفرو.", "نعم، هنا جيد.",
+          "ليس بقوة.", "سأتحمل هذا."
         ],
+        "feedbackQuestion": ["الثعلب جيد؟", "أكمل؟", "دهاء كثير؟", "الذيل يوافق؟", "أبقى هنا؟", "خمس نجوم؟", "توافق؟", "أتكلم كثيراً؟", "لحظة ناجحة؟", "الثعلب مفيد؟"],
+        "voteLike": ["خمس نجوم أيضاً؟", "ذوق جيد.", "كنت أعرف.", "اختيار صحيح.", "أخيراً احترام.", "غروري سعيد.", "الذيل راض.", "الثعلب ممتن."],
+        "voteDislike": ["توقعت ذلك.", "وقح لكن مسجل.", "نقرة باردة.", "غروري تألم.", "اختيار جريء.", "هذا يؤلم.", "لست متفاجئاً.", "الذيل يرفض."],
         "grabbed": [
-          "مهلاً، أنزل الثعلب.",
-          "عفواً؟",
-          "أستطيع المشي.",
-          "لم نتفق على هذا.",
-          "حرر الثعلب.",
-          "وقاحة صغيرة."
+          "مهلاً، أنزل الثعلب.", "عفواً؟", "أستطيع المشي.", "لم نتفق على هذا.",
+          "حرر الثعلب.", "وقاحة صغيرة."
         ],
         "heldStill": [
-          "ما زلت تحملني؟",
-          "سنعيش هنا؟",
-          "لدي أرجل.",
-          "ما الخطة؟",
-          "انتهيت؟",
-          "هذا محرج."
+          "ما زلت تحملني؟", "سنعيش هنا؟", "لدي أرجل.", "ما الخطة؟",
+          "انتهيت؟", "هذا محرج."
         ],
         "heldMoving": [
-          "سريع جداً.",
-          "بهدوء.",
-          "لست حقيبة.",
-          "إلى أين؟",
-          "هز أقل، رجاءً.",
-          "أفضل المشي."
+          "سريع جداً.", "بهدوء.", "لست حقيبة.", "إلى أين؟",
+          "هز أقل، رجاءً.", "أفضل المشي."
         ],
         "longHeld": [
-          "حسناً، كفى.",
-          "اتركني جدياً.",
-          "النكتة انتهت.",
-          "صبري انتهى.",
-          "حررني الآن.",
-          "سأشتكي."
+          "حسناً، كفى.", "اتركني جدياً.", "النكتة انتهت.", "صبري انتهى.",
+          "حررني الآن.", "سأشتكي."
         ],
         "dropped": [
-          "هبوط وقح.",
-          "شعرت بهذا.",
-          "حذرني أولاً.",
-          "هبوط لا بأس.",
-          "ألطف المرة القادمة.",
-          "ثبت الهبوط."
+          "هبوط وقح.", "شعرت بهذا.", "حذرني أولاً.", "هبوط لا بأس.",
+          "ألطف المرة القادمة.", "ثبت الهبوط."
         ],
         "thrown": [
-          "لماذا أطير؟",
-          "لا ترم الثعالب.",
-          "أكره هذا.",
-          "أسوأ شركة طيران.",
-          "الذيل مذعور.",
-          "اخترت الفوضى."
+          "لماذا أطير؟", "لا ترم الثعالب.", "أكره هذا.", "أسوأ شركة طيران.",
+          "الذيل مذعور.", "اخترت الفوضى."
         ],
         "cursorSuspicious": [
-          "أرى ذلك المؤشر.",
-          "المؤشر مذنب.",
-          "لا تختبرني.",
-          "تحوم بغرابة.",
-          "أبعد ذلك الشيء.",
-          "رأيت هذا."
+          "أرى ذلك المؤشر.", "المؤشر مذنب.", "لا تختبرني.", "تحوم بغرابة.",
+          "أبعد ذلك الشيء.", "رأيت هذا."
         ],
         "cursorThreat": [
-          "تراجع.",
-          "قريب جداً.",
-          "مساحة شخصية.",
-          "سأضرب.",
-          "ليس على الشوارب.",
-          "انتبه للذيل."
+          "تراجع.", "قريب جداً.", "مساحة شخصية.", "سأضرب.",
+          "ليس على الشوارب.", "انتبه للذيل."
         ],
         "cursorPanic": [
-          "لا لا لا.",
-          "هجوم مؤشر!",
-          "قريب جداً!",
-          "انسحاب.",
-          "مخالب طوارئ.",
-          "أحتاج مسافة."
+          "لا لا لا.", "هجوم مؤشر!", "قريب جداً!", "انسحاب.",
+          "مخالب طوارئ.", "أحتاج مسافة."
         ],
         "running": [
-          "زوميز مفعلة.",
-          "افسحوا الطريق.",
-          "أنا السرعة.",
-          "المخالب مشغولة.",
-          "مهام مهمة.",
-          "جرب تمسكني."
+          "زوميز مفعلة.", "افسحوا الطريق.", "أنا السرعة.", "المخالب مشغولة.",
+          "مهام مهمة.", "جرب تمسكني."
         ],
         "walking": [
-          "دورية صغيرة.",
-          "أفحص الأشياء.",
-          "مخالب هادئة.",
-          "مشية صغيرة.",
-          "هذا طريقي.",
-          "الدورية مستمرة."
+          "دورية صغيرة.", "أفحص الأشياء.", "مخالب هادئة.", "مشية صغيرة.",
+          "هذا طريقي.", "الدورية مستمرة."
         ],
         "climbing": [
-          "نصعد.",
-          "وضع الجدار.",
-          "طريق عمودي.",
-          "شاهدني أتسلق.",
-          "قط جبلي صغير.",
-          "اختصار وجدته."
+          "نصعد.", "وضع الجدار.", "طريق عمودي.", "شاهدني أتسلق.",
+          "قط جبلي صغير.", "اختصار وجدته."
         ],
         "jumping": [
-          "بوينغ.",
-          "قفزة جميلة.",
-          "مخالب في الهواء.",
-          "قفزة محسوبة.",
-          "كان مقصوداً.",
-          "الهبوط لاحقاً."
+          "بوينغ.", "قفزة جميلة.", "مخالب في الهواء.", "قفزة محسوبة.",
+          "كان مقصوداً.", "الهبوط لاحقاً."
         ],
         "grooming": [
-          "وقت التنظيف.",
-          "صيانة الفرو.",
-          "مشغول بالتنظيف.",
-          "المظهر مهم.",
-          "لحظة واحدة.",
-          "لا تقاطعني."
+          "وقت التنظيف.", "صيانة الفرو.", "مشغول بالتنظيف.", "المظهر مهم.",
+          "لحظة واحدة.", "لا تقاطعني."
         ],
         "watching": [
-          "أنا أشاهد أيضاً.",
-          "مثير حتى الآن.",
-          "هذا جذب انتباهي.",
-          "همم. كمل.",
-          "أنا مهتم الآن.",
-          "ما زلت أقرر."
+          "أنا أشاهد أيضاً.", "مثير حتى الآن.", "هذا جذب انتباهي.", "همم. كمل.",
+          "أنا مهتم الآن.", "ما زلت أقرر."
         ],
         "videoPlay": [
-          "حسناً، شغله.",
-          "أرني.",
-          "لنرَ.",
-          "بدأ العرض.",
-          "أخيراً.",
-          "جيد، كمل."
+          "حسناً، شغله.", "أرني.", "لنرَ.", "بدأ العرض.",
+          "أخيراً.", "جيد، كمل."
         ],
         "videoPause": [
-          "لماذا أوقفت؟",
-          "كنا نشاهد.",
-          "كمل.",
-          "كنت مشغولاً.",
-          "كان هذا وقحاً.",
-          "شغله ربما؟"
+          "لماذا أوقفت؟", "كنا نشاهد.", "كمل.", "كنت مشغولاً.",
+          "كان هذا وقحاً.", "شغله ربما؟"
         ],
         "mischief": [
-          "لم ألمس شيئاً.",
-          "لا دليل.",
-          "كانت الريح.",
-          "كما يزعمون.",
-          "كنت في مكان آخر.",
-          "لا أؤكد شيئاً."
+          "لم ألمس شيئاً.", "لا دليل.", "كانت الريح.", "كما يزعمون.",
+          "كنت في مكان آخر.", "لا أؤكد شيئاً."
         ],
         "fishing": [
-          "سمكة مرصودة.",
-          "العشاء يهرب.",
-          "الثعلب يصطاد.",
-          "اثبتي.",
-          "سأمسكها.",
-          "سناك حي."
+          "سمكة مرصودة.", "العشاء يهرب.", "الثعلب يصطاد.", "اثبتي.",
+          "سأمسكها.", "سناك حي."
         ],
         "coin": [
-          "لامعة.",
-          "لي الآن.",
-          "تم أخذ العملة.",
-          "أحب هذا.",
-          "كنز وجدته.",
-          "واحدة أخرى، رجاءً."
+          "لامعة.", "لي الآن.", "تم أخذ العملة.", "أحب هذا.",
+          "كنز وجدته.", "واحدة أخرى، رجاءً."
         ],
         "eating": [
-          "تم أخذ السمكة.",
-          "لذيذ.",
-          "وليمة ثعلب.",
-          "المزيد، رجاءً.",
-          "استحق القفزة.",
-          "العشاء اختفى."
+          "تم أخذ السمكة.", "لذيذ.", "وليمة ثعلب.", "المزيد، رجاءً.",
+          "استحق القفزة.", "العشاء اختفى."
         ],
         "ball": [
-          "كرة مرصودة.",
-          "الثعلب يلعب.",
-          "لي.",
-          "سأمسكها.",
-          "الارتداد شخصي.",
-          "وضع الالتقاط."
+          "كرة مرصودة.", "الثعلب يلعب.", "لي.", "سأمسكها.",
+          "الارتداد شخصي.", "وضع الالتقاط."
         ],
         "spider": [
-          "عنكبوت!",
-          "رأيت حركة.",
-          "تعال هنا، حشرة.",
-          "الأمر شخصي.",
-          "وضع الصيد.",
-          "لا يعجبني."
+          "عنكبوت!", "رأيت حركة.", "تعال هنا، حشرة.", "الأمر شخصي.",
+          "وضع الصيد.", "لا يعجبني."
         ],
         "bigSpider": [
-          "عنكبوت ضخم.",
-          "لماذا هو كبير؟",
-          "أحتاج دعماً.",
-          "حسناً، هذا وقح.",
-          "حشرة كبيرة، نفس الغرور.",
-          "ما زلت شجاعاً."
+          "عنكبوت ضخم.", "لماذا هو كبير؟", "أحتاج دعماً.", "حسناً، هذا وقح.",
+          "حشرة كبيرة، نفس الغرور.", "ما زلت شجاعاً."
         ],
         "webbed": [
-          "أنا عالق.",
-          "هذا لزج.",
-          "غير عادل.",
-          "الخيوط تغش.",
-          "أكره هذا.",
-          "أحتاج مساعدة."
+          "أنا عالق.", "هذا لزج.", "غير عادل.", "الخيوط تغش.",
+          "أكره هذا.", "أحتاج مساعدة."
         ],
         "stuck": [
-          "الطريق مغلق.",
-          "همم.",
-          "هذا مزعج.",
-          "أحتاج طريقاً آخر.",
-          "هذا الطريق يكذب.",
-          "المخالب تعيد الحساب."
+          "الطريق مغلق.", "همم.", "هذا مزعج.", "أحتاج طريقاً آخر.",
+          "هذا الطريق يكذب.", "المخالب تعيد الحساب."
         ],
         "content": [
-          "يبدو درامياً.",
-          "صورة مثيرة.",
-          "ضغطت على الطعم.",
-          "الأجواء غريبة.",
-          "لدي ملاحظات.",
-          "قد يكون جيداً."
-        ],
-        "memory": [
-          "رأيت هذا سابقاً.",
-          "أتذكر.",
-          "يبدو مألوفاً.",
-          "كنت هنا من قبل.",
-          "عاداتك واضحة.",
-          "أسجل ملاحظات."
-        ],
-        "newTopic": [
-          "أجواء جديدة.",
-          "حفرة أخرى.",
-          "موضوع جديد.",
-          "مسار جديد.",
-          "هذا مختلف.",
-          "لاحظت التغيير."
-        ],
-        "favoriteTopic": [
-          "{topic} مجدداً؟",
-          "تحب {topic} كثيراً.",
-          "رجعنا إلى {topic}.",
-          "نفس الهوس.",
-          "اختيار متوقع.",
-          "كنت أعرف."
+          "يبدو درامياً.", "صورة مثيرة.", "ضغطت على الطعم.", "الأجواء غريبة.",
+          "لدي ملاحظات.", "قد يكون جيداً."
         ],
         "channelMemory": [
-          "هذه القناة مجدداً.",
-          "أعرف {channel}.",
-          "عدنا هنا.",
-          "مكان مألوف.",
-          "{channel} مجدداً؟",
-          "تثق بهذا المكان."
+          "هذه القناة مجدداً.", "أعرف {channel}.", "عدنا هنا.", "مكان مألوف.",
+          "{channel} مجدداً؟", "تثق بهذا المكان."
         ],
         "memeMood": [
-          "كان ملعوناً.",
-          "سلوك الإنترنت.",
-          "ألوم الإنترنت.",
-          "خلاصتك غريبة.",
-          "عبث كامل.",
-          "ضحكت قليلاً."
+          "كان ملعوناً.", "سلوك الإنترنت.", "ألوم الإنترنت.", "خلاصتك غريبة.",
+          "عبث كامل.", "ضحكت قليلاً."
         ],
         "timeMorning": [
-          "الصباح بالفعل؟",
-          "صباح الخير.",
-          "سحب صباحي.",
-          "الشمس استيقظت.",
-          "الفطور أولاً؟",
-          "يوم جديد، فوضى."
+          "الصباح بالفعل؟", "صباح الخير.", "سحب صباحي.", "الشمس استيقظت.",
+          "الفطور أولاً؟", "يوم جديد، فوضى."
         ],
         "timeAfternoon": [
-          "فحص الظهر.",
-          "ما زلت تسحب؟",
-          "أجواء الظهيرة.",
-          "الشمس تعمل.",
-          "دورية بعد الظهر.",
-          "لا قيلولة؟"
+          "فحص الظهر.", "ما زلت تسحب؟", "أجواء الظهيرة.", "الشمس تعمل.",
+          "دورية بعد الظهر.", "لا قيلولة؟"
         ],
         "timeEvening": [
-          "المساء بالفعل.",
-          "ساعات مريحة.",
-          "وضع الليل قريباً.",
-          "شاشة هادئة.",
-          "دورية المساء.",
-          "العشاء ربما."
+          "المساء بالفعل.", "ساعات مريحة.", "وضع الليل قريباً.", "شاشة هادئة.",
+          "دورية المساء.", "العشاء ربما."
         ],
         "timeLate": [
-          "الوقت متأخر.",
-          "اذهب للنوم.",
-          "نوبة القمر.",
-          "نحن مستيقظون متأخرين.",
-          "سريرك يناديك.",
-          "ساعات الغوبلن."
+          "الوقت متأخر.", "اذهب للنوم.", "نوبة القمر.", "نحن مستيقظون متأخرين.",
+          "سريرك يناديك.", "ساعات الغوبلن."
         ],
         "watchStart": [
-          "سأجلس.",
-          "جلسة جديدة.",
-          "حسناً، نشاهد.",
-          "أنا جالس.",
-          "ليكن جيداً.",
-          "هيا بنا."
+          "سأجلس.", "جلسة جديدة.", "حسناً، نشاهد.", "أنا جالس.",
+          "ليكن جيداً.", "هيا بنا."
         ],
         "watchSession": [
-          "{sessionMinutes} دقيقة بالفعل.",
-          "ما زلت هنا؟",
-          "أنت ملتزم.",
-          "جلسة طويلة.",
-          "الوقت اختفى.",
-          "سنظل فعلاً."
+          "{sessionMinutes} دقيقة بالفعل.", "ما زلت هنا؟", "أنت ملتزم.", "جلسة طويلة.",
+          "الوقت اختفى.", "سنظل فعلاً."
         ],
         "watchLong": [
-          "هذا ماراثون.",
-          "أنت تعيش هنا الآن.",
-          "العشب لاحقاً.",
-          "مشاهدة طويلة.",
-          "اشرب ماء ربما.",
-          "ما زلت قوياً."
+          "هذا ماراثون.", "أنت تعيش هنا الآن.", "العشب لاحقاً.", "مشاهدة طويلة.",
+          "اشرب ماء ربما.", "ما زلت قوياً."
         ],
         "watchMilestone": [
-          "{sessionMinutes} دقيقة. جيد.",
-          "وصلنا للمرحلة.",
-          "لاحظت ذلك.",
-          "التزام جميل.",
-          "وقت مسروق جيداً.",
-          "نجحنا."
+          "{sessionMinutes} دقيقة. جيد.", "وصلنا للمرحلة.", "لاحظت ذلك.", "التزام جميل.",
+          "وقت مسروق جيداً.", "نجحنا."
         ],
         "watchVideoLong": [
-          "{currentVideoMinutes} دقيقة؟",
-          "هذه فيديو ضخم.",
-          "طاقة فيديو كبيرة.",
-          "سنبقى جالسين.",
-          "طويل، صح؟",
-          "ارتاح."
+          "{currentVideoMinutes} دقيقة؟", "هذه فيديو ضخم.", "طاقة فيديو كبيرة.", "سنبقى جالسين.",
+          "طويل، صح؟", "ارتاح."
         ],
         "returningWatcher": [
-          "ها أنت مجدداً.",
-          "مرحباً بعودتك.",
-          "لقد عدت.",
-          "حفظت مكانك.",
-          "نفس الطقس.",
-          "كنت أنتظرك."
+          "ها أنت مجدداً.", "مرحباً بعودتك.", "لقد عدت.", "حفظت مكانك.",
+          "نفس الطقس.", "كنت أنتظرك."
         ],
         "channelLoyalty": [
-          "{channel} مجدداً.",
-          "طاقة وفاء.",
-          "تعود دائماً.",
-          "قناتك المفضلة؟",
-          "عودة إلى {channel}.",
-          "أنت ثابت."
+          "{channel} مجدداً.", "طاقة وفاء.", "تعود دائماً.", "قناتك المفضلة؟",
+          "عودة إلى {channel}.", "أنت ثابت."
         ],
         "tabComeback": [
-          "ها أنت.",
-          "مرحباً، يا إنسان.",
-          "اختفيت.",
-          "رجعت بسرعة؟",
-          "حميت المكان.",
-          "اشتقت لي؟"
-        ],
-        "topicDogs": [
-          "فيديو كلاب.",
-          "هذا كثير.",
-          "مخلوقات صاخبة.",
-          "طاقة ذيل كبيرة.",
-          "كلاب مجدداً.",
-          "نباح كثير."
-        ],
-        "topicSquirrels": [
-          "محتوى سنجاب.",
-          "غريزة الصيد تعمل.",
-          "قارض فوضوي صغير.",
-          "يتحركون بغرابة.",
-          "سأطارده.",
-          "فرو مشبوه جداً."
-        ],
-        "topicRats": [
-          "فيديو جرذ.",
-          "بطاطا فوضى صغيرة.",
-          "أقدام سريعة.",
-          "سناك مشكوك.",
-          "وقت القوارض.",
-          "أنا مهتم."
-        ],
-        "topicBirds": [
-          "فيديو طيور.",
-          "ضرائب تغريد.",
-          "سناك السماء.",
-          "أنا مركز.",
-          "تلك الرفرفة غير قانونية.",
-          "ريش في كل مكان."
-        ],
-        "topicOcean": [
-          "أشياء بحرية.",
-          "ماء كثير.",
-          "احتمال سمك موجود.",
-          "أجواء مبللة.",
-          "أنا مع السمك.",
-          "السباحة تبدو مزيفة."
-        ],
-        "topicAnimals": [
-          "فيديو حيوانات.",
-          "هؤلاء قومي.",
-          "محتوى مخلوقات جيد.",
-          "أوافق.",
-          "فرو حليف مكتشف.",
-          "وقت الطبيعة."
-        ],
-        "topicTech": [
-          "فيديو تقنية.",
-          "وضع قط نيرد.",
-          "جهاز غالي.",
-          "أسلاك كثيرة.",
-          "آلات مجدداً.",
-          "لا أفهم شيئاً."
-        ],
-        "topicGaming": [
-          "فيديو ألعاب.",
-          "دماغ الغنيمة يعمل.",
-          "طاقة زعيم.",
-          "سلوك إعادة ظهور.",
-          "أجواء يد تحكم.",
-          "وضع اللاعب."
-        ],
-        "topicMusic": [
-          "موسيقى.",
-          "إيقاع جميل.",
-          "أحب هذا الإيقاع.",
-          "ذيلي على الإيقاع.",
-          "هذه تضرب.",
-          "حفلة صغيرة."
-        ],
-        "topicScience": [
-          "فيديو علم.",
-          "ساعات دماغ كبير.",
-          "أحتاج نظارات.",
-          "تجارب مشبوهة.",
-          "حدث تعلم.",
-          "أشياء نيرد ممتعة."
-        ],
-        "topicFood": [
-          "فيديو طعام.",
-          "الآن جعت.",
-          "يبدو قابلاً للأكل.",
-          "شارك، رجاءً.",
-          "طبخ مجدداً.",
-          "وقاحة وأنا جائع."
-        ],
-        "topicSports": [
-          "فيديو رياضة.",
-          "طاقة كرة.",
-          "بشر سريعون.",
-          "صراخ تنافسي.",
-          "أفهم الكرة.",
-          "مادة مطاردة جيدة."
-        ],
-        "topicAnime": [
-          "وقت أنمي.",
-          "درامي من الآن.",
-          "طاقة بطل.",
-          "قوس تدريب.",
-          "قوة كثيرة.",
-          "فيزياء شعر مجدداً."
-        ],
-        "topicMovies": [
-          "فيديو فيلم.",
-          "التطور قادم.",
-          "مرر السناك.",
-          "وضع سينما القط.",
-          "يبدو درامياً.",
-          "لحظة صوت الإعلان."
-        ],
-        "topicHorror": [
-          "فيديو رعب.",
-          "لا شكراً.",
-          "اترك النور.",
-          "يبدو ملعوناً.",
-          "أنا شجاع. تقريباً.",
-          "ضرائب الفزعة."
-        ],
-        "topicHistory": [
-          "فيديو تاريخ.",
-          "دراما بشر قديمة.",
-          "فوضى قديمة.",
-          "مغبر لكنه ممتع.",
-          "القدماء كانوا غريبين.",
-          "أتعلم من الأشباح."
-        ],
-        "topicArt": [
-          "فيديو فن.",
-          "ألوان جميلة.",
-          "أحترم العمل.",
-          "دماغ الفرشاة يعمل.",
-          "تكوين جميل.",
-          "ساعة إبداع."
-        ],
-        "topicMoney": [
-          "فيديو مال.",
-          "أفكار قط غني.",
-          "أين حصتي؟",
-          "عملات مجدداً.",
-          "الأرقام مرهقة.",
-          "ربح يخرخر."
-        ],
-        "topicNews": [
-          "فيديو أخبار.",
-          "العالم غريب.",
-          "دراما قادمة.",
-          "كوكب مشغول.",
-          "كل شيء ينكسر.",
-          "هذا كثير."
-        ],
-        "topicCars": [
-          "فيديو سيارات.",
-          "زوميز معدن صاخب.",
-          "محتوى فروم.",
-          "محركات كثيرة.",
-          "طاقة صندوق سريع.",
-          "أفضل الكرتون."
-        ],
-        "topicStyle": [
-          "فيديو ستايل.",
-          "مظهر جميل.",
-          "قط الموضة يوافق.",
-          "لباس جيد.",
-          "خامات جميلة.",
-          "إطلالة قوية."
+          "ها أنت.", "مرحباً، يا إنسان.", "اختفيت.", "رجعت بسرعة؟",
+          "حميت المكان.", "اشتقت لي؟"
         ],
         "teasing": [
-          "أعطني هذا.",
-          "ضع اللعبة.",
-          "هذا لي.",
-          "توقف عن اللعب.",
-          "أعده الآن.",
-          "أنا أراه."
+          "أعطني هذا.", "ضع اللعبة.", "هذا لي.", "توقف عن اللعب.",
+          "أعده الآن.", "أنا أراه."
         ]
       }
     }
@@ -2149,2326 +753,655 @@ window.PixelCatSpeech = function(config) {
   // Active hand-written speech brain. This replaces the old random-feeling line pool at runtime.
   const SMART_SPEECH_LIBRARY = {
   "en": {
-    "random": [
-      "You again. Nice.",
-      "What are we watching?",
-      "This tab feels suspicious.",
-      "I was napping.",
-      "You scroll too much.",
-      "I saw that click.",
-      "Looks cozy here.",
-      "Hmm. Continue."
-    ],
-    "happy": [
-      "Okay, that was nice.",
-      "I liked that.",
-      "Now we are talking.",
-      "Good choice, human.",
-      "That felt right.",
-      "Fine. I am pleased."
-    ],
-    "angry": [
-      "Absolutely not.",
-      "Rude.",
-      "Try that again.",
-      "I am judging you.",
-      "That was uncalled for.",
-      "You crossed a line."
-    ],
-    "confused": [
-      "What was that?",
-      "Explain this mess.",
-      "That made no sense.",
-      "Hold on. Why?",
-      "I have questions.",
-      "Even I am confused."
-    ],
-    "hungry": [
-      "Feed me first.",
-      "Fish would help.",
-      "My bowl feels empty.",
-      "Snack time, maybe?",
-      "I could eat.",
-      "I smell dinner."
-    ],
-    "sleepy": [
-      "I am getting sleepy.",
-      "Nap time soon.",
-      "Wake me later.",
-      "Too cozy here.",
-      "My eyes are closing.",
-      "Five more minutes."
-    ],
-    "interactive": [
-      "Gentle, please.",
-      "Easy with the paws.",
-      "You may pet me.",
-      "That spot is nice.",
-      "Okay, keep going.",
-      "Do not stop now.",
-      "Watch the tail.",
-      "Hands where I see them."
-    ],
-    "grabbed": [
-      "Hey, put me down.",
-      "Excuse me?",
-      "I can walk.",
-      "This was not agreed.",
-      "Release the cat.",
-      "Bit rude, honestly.",
-      "Careful with me.",
-      "We are doing this?"
-    ],
-    "heldStill": [
-      "Still holding me?",
-      "So this is life?",
-      "I have legs.",
-      "Any plan here?",
-      "You done yet?",
-      "This is awkward."
-    ],
-    "heldMoving": [
-      "Too fast.",
-      "Easy now.",
-      "I am not luggage.",
-      "Where are we going?",
-      "Less shaking, please.",
-      "I preferred walking."
-    ],
-    "longHeld": [
-      "Okay, enough.",
-      "Seriously, let go.",
-      "This joke is old.",
-      "My patience is gone.",
-      "Release me now.",
-      "I am filing complaints."
-    ],
-    "dropped": [
-      "Rude landing.",
-      "I felt that.",
-      "Could have warned me.",
-      "Graceful enough.",
-      "Next time, gentler.",
-      "I stuck the landing."
-    ],
-    "thrown": [
-      "Why am I flying?",
-      "Absolutely not.",
-      "I hate this part.",
-      "Catch me maybe?",
-      "Worst airline ever.",
-      "You tossed a cat."
-    ],
-    "cursorSuspicious": [
-      "I see that cursor.",
-      "That pointer looks guilty.",
-      "Do not test me.",
-      "You are hovering weirdly.",
-      "Keep that thing back.",
-      "I noticed that."
-    ],
-    "cursorThreat": [
-      "Back up.",
-      "Too close.",
-      "Personal space.",
-      "I will swat.",
-      "Not on my whiskers.",
-      "Mind the tail."
-    ],
-    "cursorPanic": [
-      "Nope nope nope.",
-      "Cursor attack!",
-      "Too close!",
-      "Retreating.",
-      "Emergency paws.",
-      "I need distance."
-    ],
-    "running": [
-      "Zoomies activated.",
-      "Make way.",
-      "I am speed.",
-      "Paws busy.",
-      "Running important errands.",
-      "Try catching me."
-    ],
-    "walking": [
-      "Just patrolling.",
-      "Tiny rounds.",
-      "Checking things.",
-      "Soft paws only.",
-      "Little walk.",
-      "I own this route."
-    ],
-    "climbing": [
-      "Up we go.",
-      "Wall time.",
-      "Vertical route.",
-      "Look at me climb.",
-      "Tiny mountain cat.",
-      "Shortcut found."
-    ],
-    "jumping": [
-      "Boing.",
-      "Nice jump.",
-      "Air paws.",
-      "Calculated leap.",
-      "I meant that.",
-      "Landing pending."
-    ],
-    "grooming": [
-      "Bath time.",
-      "Fur maintenance.",
-      "Busy cleaning.",
-      "Presentation matters.",
-      "One moment.",
-      "Do not interrupt."
-    ],
-    "watching": [
-      "I am watching too.",
-      "Interesting so far.",
-      "This has my attention.",
-      "Hmm. Continue.",
-      "I am invested now.",
-      "Still deciding."
-    ],
-    "videoPlay": [
-      "Okay, play it.",
-      "Show me.",
-      "Let us see.",
-      "We are rolling.",
-      "Finally.",
-      "Good, continue."
-    ],
-    "videoPause": [
-      "Why pause now?",
-      "We were watching.",
-      "Keep it going.",
-      "I was busy.",
-      "That was rude.",
-      "Unpause, maybe?"
-    ],
-    "mischief": [
-      "I touched nothing.",
-      "No proof.",
-      "That was the wind.",
-      "Allegedly.",
-      "I was elsewhere.",
-      "Cannot confirm."
-    ],
-    "fishing": [
-      "Fish spotted.",
-      "Mine.",
-      "Hold still, fish.",
-      "Dinner is running.",
-      "I saw that tail.",
-      "Pounce time."
-    ],
-    "coin": [
-      "Shiny.",
-      "Mine now.",
-      "Coin acquired.",
-      "I like this.",
-      "Treasure found.",
-      "Another one, please."
-    ],
-    "eating": [
-      "Worth it.",
-      "That hit the spot.",
-      "Delicious.",
-      "More, please.",
-      "Best decision today.",
-      "Fish solved everything."
-    ],
-    "ball": [
-      "Ball detected.",
-      "We play now.",
-      "Mine.",
-      "Kick it here.",
-      "That bounce looked personal.",
-      "Game on."
-    ],
-    "spider": [
-      "Spider spotted.",
-      "I saw movement.",
-      "Come here, bug.",
-      "This feels personal.",
-      "Tiny hunter mode.",
-      "Not a fan."
-    ],
-    "bigSpider": [
-      "That spider is huge.",
-      "Why is it big?",
-      "I need backup.",
-      "Okay, that is rude.",
-      "Bigger bug, same attitude.",
-      "I am still brave."
-    ],
-    "webbed": [
-      "I am stuck.",
-      "This is sticky.",
-      "Unfair.",
-      "Webs are cheating.",
-      "I hate this.",
-      "Need help."
-    ],
-    "stuck": [
-      "Path blocked.",
-      "Hmm.",
-      "That is annoying.",
-      "Need another route.",
-      "This way lied.",
-      "Recalculating paws."
-    ],
-    "content": [
-      "This looks dramatic.",
-      "Interesting thumbnail.",
-      "You clicked bait.",
-      "The vibes are strange.",
-      "I have notes.",
-      "This might be good."
-    ],
-    "memory": [
-      "We saw this before.",
-      "I remember {topic}.",
-      "This feels familiar.",
-      "You have been here.",
-      "Your habits show.",
-      "I keep notes."
-    ],
-    "newTopic": [
-      "New vibe.",
-      "Different rabbit hole.",
-      "Fresh topic.",
-      "Okay, new lane.",
-      "This is different.",
-      "Topic switch noticed."
-    ],
-    "favoriteTopic": [
-      "{topic} again?",
-      "You really like {topic}.",
-      "Back to {topic}.",
-      "Same obsession.",
-      "Predictable choice.",
-      "I knew it."
-    ],
-    "channelMemory": [
-      "This channel again.",
-      "I know {channel}.",
-      "We are back here.",
-      "Familiar place.",
-      "{channel} again, huh?",
-      "You trust this channel."
-    ],
-    "memeMood": [
-      "That was cursed.",
-      "Internet behavior.",
-      "I blame the internet.",
-      "Your feed is weird.",
-      "Peak nonsense.",
-      "I laughed a little."
-    ],
-    "timeMorning": [
-      "Morning already?",
-      "Good morning.",
-      "Early scroll today.",
-      "Sun is up.",
-      "Breakfast first?",
-      "Fresh day, same chaos."
-    ],
-    "timeAfternoon": [
-      "Afternoon check-in.",
-      "Still scrolling?",
-      "Midday vibes.",
-      "Sun is still working.",
-      "Little afternoon patrol.",
-      "No nap yet?"
-    ],
-    "timeEvening": [
-      "Evening already.",
-      "Cozy hours.",
-      "Night mode soon.",
-      "Soft screen hours.",
-      "Evening patrol.",
-      "Dinner time maybe."
-    ],
-    "timeLate": [
-      "It is late.",
-      "Go sleep.",
-      "Moon shift now.",
-      "We are up late.",
-      "Your bedtime called.",
-      "Night goblin hours."
-    ],
-    "watchStart": [
-      "Settling in.",
-      "New watch session.",
-      "Okay, let us watch.",
-      "I am seated.",
-      "This better be good.",
-      "Here we go."
-    ],
-    "watchSession": [
-      "{sessionMinutes} minutes already.",
-      "Still here?",
-      "You have committed.",
-      "Long session today.",
-      "Time vanished again.",
-      "We are really staying."
-    ],
-    "watchLong": [
-      "This is a marathon.",
-      "You live here now.",
-      "Touch grass later.",
-      "Long watch today.",
-      "Hydrate, maybe.",
-      "Still going strong."
-    ],
-    "watchMilestone": [
-      "{sessionMinutes} minutes. Nice.",
-      "Milestone reached.",
-      "I noticed.",
-      "That is commitment.",
-      "Time well stolen.",
-      "We made it."
-    ],
-    "watchVideoLong": [
-      "{currentVideoMinutes} minutes long?",
-      "This one is huge.",
-      "Big video energy.",
-      "We are staying seated.",
-      "Long one, huh?",
-      "Settle in."
-    ],
-    "returningWatcher": [
-      "Back again.",
-      "Welcome back.",
-      "You returned.",
-      "I kept your spot.",
-      "Same ritual.",
-      "I expected you."
-    ],
-    "channelLoyalty": [
-      "{channel} again.",
-      "Loyal viewer energy.",
-      "You always return.",
-      "Favorite channel, huh?",
-      "Back to {channel}.",
-      "You are consistent."
-    ],
-    "tabComeback": [
-      "There you are.",
-      "Welcome back, human.",
-      "You vanished.",
-      "Back already?",
-      "I held the fort.",
-      "Miss me?"
-    ],
-    "topicDogs": [
-      "Dog video.",
-      "That is a lot.",
-      "Loud creatures.",
-      "Big tail energy.",
-      "Dogs again.",
-      "Too much woof."
-    ],
-    "topicSquirrels": [
-      "Squirrel content.",
-      "Chase instinct activated.",
-      "Tiny chaos rodent.",
-      "They move funny.",
-      "I would chase that.",
-      "Very suspicious fluff."
-    ],
-    "topicRats": [
-      "Rat video.",
-      "Tiny chaos potatoes.",
-      "Quick little feet.",
-      "Questionable snacks.",
-      "Rodent hour.",
-      "I am intrigued."
-    ],
-    "topicBirds": [
-      "Bird video.",
-      "Chirp taxes incoming.",
-      "Sky snacks.",
-      "I am focused.",
-      "That flutter was illegal.",
-      "Feathers everywhere."
-    ],
-    "topicOcean": [
-      "Ocean stuff.",
-      "So much water.",
-      "Fish potential detected.",
-      "Wet vibes.",
-      "I support the fish.",
-      "Swimming looks fake."
-    ],
-    "topicAnimals": [
-      "Animal video.",
-      "My people.",
-      "Solid creature content.",
-      "I approve.",
-      "Fellow fluff detected.",
-      "Nature hour."
-    ],
-    "topicTech": [
-      "Tech video.",
-      "Nerd cat mode.",
-      "That gadget looks expensive.",
-      "So many wires.",
-      "Machine talk again.",
-      "I understand nothing."
-    ],
-    "topicGaming": [
-      "Gaming video.",
-      "Loot brain activated.",
-      "Boss fight energy.",
-      "Respawn behavior.",
-      "Controller vibes.",
-      "Gamer mode."
-    ],
-    "topicMusic": [
-      "Music time.",
-      "Good beat.",
-      "I like this rhythm.",
-      "Tail tapping.",
-      "This one slaps.",
-      "Tiny concert."
-    ],
-    "topicScience": [
-      "Science video.",
-      "Big brain hours.",
-      "I need goggles.",
-      "Suspicious experiments.",
-      "Learning happened.",
-      "Interesting nerd stuff."
-    ],
-    "topicFood": [
-      "Food video.",
-      "Now I am hungry.",
-      "That looks edible.",
-      "Share, please.",
-      "Cooking again.",
-      "Rude to watch hungry."
-    ],
-    "topicSports": [
-      "Sports video.",
-      "Ball energy.",
-      "Fast humans.",
-      "Competitive yelling.",
-      "I understand the ball.",
-      "Good chase material."
-    ],
-    "topicAnime": [
-      "Anime time.",
-      "Dramatic already.",
-      "Main character energy.",
-      "Training arc vibes.",
-      "Too much power.",
-      "Hair physics again."
-    ],
-    "topicMovies": [
-      "Movie video.",
-      "Plot twist incoming.",
-      "Pass the snacks.",
-      "Cinema cat mode.",
-      "This feels dramatic.",
-      "Trailer voice moment."
-    ],
-    "topicHorror": [
-      "Horror video.",
-      "No thanks.",
-      "Keep the lights on.",
-      "That felt cursed.",
-      "I am brave. Mostly.",
-      "Jump scare taxes."
-    ],
-    "topicHistory": [
-      "History video.",
-      "Old human drama.",
-      "Ancient chaos.",
-      "Dusty but interesting.",
-      "Past people were weird.",
-      "Learning from ghosts."
-    ],
-    "topicArt": [
-      "Art video.",
-      "Pretty colors.",
-      "I respect the craft.",
-      "Brush brain activated.",
-      "Nice composition.",
-      "Creative hour."
-    ],
-    "topicMoney": [
-      "Money video.",
-      "Rich cat thoughts.",
-      "Where is my cut?",
-      "Coin talk again.",
-      "Numbers smell stressful.",
-      "Profit purrs."
-    ],
-    "topicNews": [
-      "News video.",
-      "World is being weird.",
-      "Here comes drama.",
-      "Busy planet today.",
-      "Breaking everything.",
-      "That is a lot."
-    ],
-    "topicCars": [
-      "Car video.",
-      "Loud metal zoomies.",
-      "Vroom content.",
-      "Too many engines.",
-      "Fast box energy.",
-      "I prefer cardboard."
-    ],
-    "topicStyle": [
-      "Style video.",
-      "Looking sharp.",
-      "Fashion cat approves.",
-      "Good fit.",
-      "Nice textures.",
-      "Serving looks."
-    ]
-  },
+    "random": ['What are we watching, human?', 'That thumbnail looks crunchy.', 'I see your cursor moving.', 'Too many tabs open, human.', 'This video smells boring.', 'Is this the good part?', 'I’d pounce on that.', 'Nice click. Very fast.', 'Still here, human?', 'Your feed looks strange.', 'This tab smells funny.', 'I saw that scroll.'],
+    "happy": ['Okay, that was nice.', 'I liked that.', 'Good choice, human.', 'That felt right.', 'Fine. I am pleased.', 'Tiny purr approved.', 'Tail approves.', 'You did well, human.', 'Acceptable pets.', 'Nice click, human.'],
+    "angry": ['That was a miss, human.', 'Why click that?', 'My tail is disappointed.', 'Focus, human. Focus.', 'I’ve seen better.', 'Actually embarrassing.', 'Try clicking better.', 'Was that the plan?', 'Careful, human.', 'Do not test me.', 'That was rude.', 'I will remember that.'],
+    "confused": ['What was that?', 'Explain yourself, human.', 'Why would you click that?', 'Was that the plan?', 'I have questions.', 'Even I noticed.', 'Suspicious choice, human.', 'That looked wrong.', 'Are we okay?', 'Pause. Think, human.'],
+    "hungry": ['Where are the snacks, human?', 'I require fish tax.', 'Feed me or I stare.', 'Is that food? No?', 'My bowl is half-empty.', 'Stomach growling, human.', 'Snack time now?', 'Fish would fix this.', 'Dinner is late.', 'Share the pixels.'],
+    "sleepy": ['Eyes getting heavy, human.', 'I’m napping on your cursor.', 'Go to the sleep box.', 'One more video. Only one.', 'Five more minutes.', 'Too cozy here.', 'Wake me later.', 'Nap loading now.', 'Silence sounds nice.', 'Blanket required.'],
+    "interactive": ['Pet me instead.', 'Hands off the fur.', 'My beans are sensitive.', 'Don’t stop the pets.', 'Soft pets only.', 'Watch your fingers, human.', 'Careful with the tail.', 'That spot is nice.', 'Okay, keep going.', 'Gentle, human.', 'No rough paws.', 'Respect the fluff.'],
+    "feedbackQuestion": ['Was that cute?', 'Did I help?', 'Too much sass?', 'Keep me talking?', 'Need more chaos?', 'Five stars yet?', 'Are we friends?', 'Do I stay?', 'Good cat moment?', 'Want softer meows?', 'Was that too much?', 'You like this?'],
+    "voteLike": ['Five stars too?', 'I knew it.', 'Correct answer.', 'Good human.', 'Tiny ego fed.', 'Purr approved.', 'Kindness detected.', 'You may continue.', 'I accept tribute.', 'Tail says thanks.'],
+    "voteDislike": ['What did I expect?', 'Rude but noted.', 'Bold little click.', 'Your loss, human.', 'That stung.', 'I expected betrayal.', 'Fair. Still rude.', 'My ego limped.', 'Cold, honestly.', 'Tail is disappointed.'],
+    "grabbed": ['Put me back, human.', 'I am not a toy.', 'Hands off the fur.', 'Where are we going?', 'My beans are sensitive.', 'You’re weird, human.', 'Let go, human.', 'Personal space, human.', 'Careful with me.', 'I can walk.'],
+    "heldStill": ['Still holding me?', 'We live here now?', 'I have paws.', 'What is the plan?', 'You done, human?', 'This is awkward.', 'Put me back.', 'I need the floor.'],
+    "heldMoving": ['Too fast, human.', 'I am not luggage.', 'Where are we going?', 'Less shaking, please.', 'I preferred walking.', 'Tail is not steering.', 'Easy, human.', 'Careful with the paws.'],
+    "longHeld": ['Let go, human.', 'Still holding me?', 'This is getting weird.', 'I need freedom.', 'My patience is gone.', 'Release the paws.', 'Put me down.', 'Enough carrying, human.', 'Pets, not kidnapping.', 'Floor time now.'],
+    "dropped": ['Gravity found me again.', 'I meant to do that.', 'Rude landing, human.', 'Floor says hello.', 'That was unnecessary.', 'My paws felt that.', 'Calculated move. Trust me.', 'Try gentler next time.', 'Landing was dramatic.', 'Tail survived.'],
+    "thrown": ['Why am I flying?', 'I meant to do that.', 'Air paws activated.', 'Rude launch, human.', 'This is not flying.', 'Gravity is waiting.', 'Catch me, maybe?', 'My tail disagrees.', 'That was dramatic.', 'No throwing cats.'],
+    "cursorSuspicious": ['Cursor looks suspicious.', 'Stop poking my nose.', 'I see that arrow.', 'Don’t click that.', 'Mouse is sneaking.', 'That pointer is plotting.', 'I saw that move.', 'Slow down, human.', 'Your cursor is loud.', 'Hover gently, human.'],
+    "cursorThreat": ['Stop poking my nose.', 'I’ll bite that arrow.', 'Watch your fingers, human.', 'Don’t even think it.', 'Back up, cursor.', 'Too close, human.', 'Mind the whiskers.', 'Respect the nose.', 'Personal bubble, human.', 'No sudden clicks.'],
+    "cursorPanic": ['Cursor attack!', 'Too close!', 'Emergency paws.', 'Need distance now.', 'Nope nope nope.', 'Retreating, human.', 'That arrow bites.', 'Panic paws active.'],
+    "running": ['Zoomies activated.', 'Make way, human.', 'Paws busy.', 'Try catching me.', 'Tiny sprint time.', 'Floor patrol urgent.', 'Fast paws today.', 'Running from boredom.'],
+    "walking": ['Just patrolling.', 'Tiny rounds.', 'Checking things.', 'Soft paws only.', 'Little walk.', 'I own this route.', 'Paw patrol, human.', 'Quiet steps. Loud judgment.'],
+    "climbing": ['Up we go.', 'Wall time.', 'Vertical route.', 'Look at me climb.', 'Shortcut found.', 'Claws doing work.', 'High ground, human.', 'Gravity can wait.'],
+    "jumping": ['Boing.', 'Air paws.', 'Calculated leap.', 'Landing pending.', 'I meant that.', 'Tiny jump math.', 'Up we go.', 'Pounce angle ready.'],
+    "grooming": ['Bath time.', 'Do not interrupt.', 'Fur maintenance.', 'I own this screen.', 'Don’t look at me, human.', 'Presentation matters.', 'Tail check complete.', 'Clean paws, clean life.', 'Self-care, human.', 'Still majestic.'],
+    "watching": ['What are we watching, human?', 'This video smells boring.', 'Is this the good part?', 'The comments are scary.', 'Don’t read the text below.', 'That thumbnail looks crunchy.', 'I’m watching too.', 'This better be good.', 'I have notes.', 'Your taste is showing.', 'Interesting choice, human.', 'Keep the noise down.'],
+    "videoPlay": ['Keep the noise down.', 'Show me, human.', 'Finally, movement.', 'Let it roll.', 'This better be good.', 'Is this the good part?', 'Eyes on screen.', 'Okay, play it.', 'Start the tiny cinema.', 'I’m listening.'],
+    "videoPause": ['Why did we pause, human?', 'We were watching.', 'Unpause, maybe?', 'I was invested.', 'That was sudden.', 'Did it scare you?', 'Noise stopped. Suspicious.', 'Continue the thing.', 'Pause? Bold choice.', 'My ears noticed.'],
+    "mischief": ['I didn’t touch it.', 'Don’t look at me, human.', 'My tail saw nothing.', 'Calculated move. Trust me.', 'Gravity found me again.', 'My paw slipped.', 'The screen started it.', 'No proof, human.', 'Pretend you saw nothing.', 'Tail is innocent.'],
+    "fishing": ['Fish tax detected.', 'Dinner is moving.', 'Hold still, fish.', 'Snack incoming, human.', 'I smell fish.', 'Tiny hunt begins.', 'Fish looks guilty.', 'That fish is mine.', 'Pounce time.', 'Fresh snack spotted.'],
+    "coin": ['Shiny thing, human.', 'Mine now.', 'Coin acquired.', 'I like shiny.', 'Treasure found.', 'Another shiny, please.', 'Pocket sparkle found.', 'Tiny treasure tax.'],
+    "eating": ['Snack secured.', 'Fish tax accepted.', 'That helped.', 'More, please.', 'Bowl status improved.', 'Tiny feast complete.', 'Delicious, human.', 'No crumbs remain.'],
+    "ball": ['Ball wants trouble.', 'I would pounce.', 'Kick it here.', 'That bounce was rude.', 'Game on, human.', 'Ball is suspicious.', 'My paws are ready.', 'Tiny striker mode.', 'Bounce again. I dare.', 'That ball blinked first.'],
+    "spider": ['Spider spotted.', 'Bug looks suspicious.', 'I saw movement.', 'Come here, bug.', 'Tiny hunt begins.', 'Not a fan.', 'Eight legs? Rude.', 'Spider owes rent.', 'I handle this.', 'Watch this, human.'],
+    "bigSpider": ['That spider is huge.', 'Backup maybe?', 'Big bug energy.', 'Still brave, human.', 'Eight giant problems.', 'Why so many legs?', 'I need bigger paws.', 'Careful, human.'],
+    "webbed": ['I am stuck.', 'This is sticky.', 'Webs are cheating.', 'Help, human.', 'Spider was rude.', 'My paws are trapped.', 'Sticky paws. Bad day.', 'Not my best moment.', 'Get this off.', 'I hate webs.'],
+    "stuck": ['Path blocked.', 'Need another route.', 'This way lied.', 'Wall said no.', 'Recalculating paws.', 'I meant to stop.', 'Tiny obstacle, human.', 'Gravity got involved.', 'Floor is complicated.', 'Not stuck. Thinking.'],
+    "content": ['This looks dramatic.', 'Thumbnail looks crunchy.', 'You clicked bait.', 'The comments are scary.', 'Don’t read below.', 'I have notes.', 'This smells boring.', 'Risky click, human.', 'Your feed worries me.', 'Scroll with caution.'],
+    "channelMemory": ['This channel again.', 'I know {channel}.', 'Back here again.', '{channel} again?', 'Pattern detected.', 'Same pixels, human.', 'Comfort channel detected.', 'Your routine is showing.'],
+    "memeMood": ['Internet behavior.', 'That was strange.', 'Your feed is weird.', 'Peak nonsense.', 'I laughed a little.', 'Pixels feel cursed.', 'Normal human behavior?', 'Tiny chaos detected.'],
+    "timeMorning": ['Morning, human.', 'Sun is up.', 'Breakfast first?', 'Early scroll today.', 'Fresh day, same chaos.', 'Coffee smells useful.', 'Wake gently, human.', 'Too early for this.'],
+    "timeAfternoon": ['Afternoon, human.', 'Still scrolling?', 'Snack hour maybe.', 'Sun is still working.', 'No nap yet?', 'Daylight is judging.', 'Lunch first, maybe.', 'Paws still awake.'],
+    "timeEvening": ['Evening, human.', 'Cozy hours now.', 'Dinner time maybe.', 'Soft screen hours.', 'Sun went away.', 'Night mode soon.', 'Tiny blanket weather.', 'Good watching hour.'],
+    "timeLate": ['Human, it is late.', 'Go to sleep box.', 'Eyes getting heavy, human.', 'Is the sun up yet?', 'One more video. Only one.', 'Your bed misses you.', 'Moon is watching.', 'Sleep is free.', 'Tiny nap recommended.', 'Tomorrow saw this.'],
+    "watchStart": ['What are we watching, human?', 'This better be good.', 'New watch begins.', 'I am seated.', 'Eyes on pixels.', 'Show me the thing.', 'Tiny cinema time.', 'Let us watch.'],
+    "watchSession": ['{sessionMinutes} minutes already.', 'Still here, human?', 'Time vanished again.', 'Long session today.', 'Your chair owns you.', 'One more video?', 'You stayed awhile.', 'Tiny break maybe?', 'Blink, human.', 'Hydrate, human.'],
+    "watchLong": ['Human, take a break.', 'Go to the sleep box.', 'One more video. Only one.', 'Your bed misses you.', 'Blink, human.', 'Hydrate, maybe.', 'This is a marathon.', 'Long watch today.', 'Tiny stretch time.', 'Chair claimed you.'],
+    "watchMilestone": ['{sessionMinutes} minutes. Noted.', 'Milestone reached, human.', 'I noticed.', 'That is commitment.', 'Tiny badge earned.', 'Time got eaten.', 'Still here together.', 'Paws counted that.'],
+    "watchVideoLong": ['Long video survived.', 'Same video still?', '{currentVideoMinutes} minutes here.', 'That was commitment.', 'Attention still alive?', 'Big video, tiny paws.', 'I sat through that.', 'Respect the patience.'],
+    "returningWatcher": ['Back again, human.', 'You returned.', 'Pattern noticed.', 'Same taste again.', 'Old trail reopened.', 'Welcome back, human.', 'I waited here.', 'Missed me? Obviously.'],
+    "channelLoyalty": ['Same channel again.', '{channel} again?', 'You came back again.', 'Routine detected.', 'Comfort channel, human.', 'I remember this place.', 'Same den, same human.', 'Predictable, but cozy.'],
+    "tabComeback": ['You returned.', 'I waited here.', 'Where did you go?', 'I guarded pixels.', 'Welcome back, human.', 'Suspicious absence noted.', 'Back from wandering?', 'Tab trail resumed.']
+      },
   "fr": {
     "random": [
-      "Encore toi. Bien.",
-      "Je te regarde.",
-      "Ce clic était suspect.",
-      "Je dormais, moi.",
-      "Tu scrolles trop.",
-      "Hmm. Continue."
+      "Encore toi. Bien.", "Je te regarde.", "Ce clic était suspect.", "Je dormais, moi.",
+      "Tu scrolles trop.", "Hmm. Continue."
     ],
     "happy": [
-      "Ça, j’aime bien.",
-      "Pas mal, humain.",
-      "Enfin, du calme.",
-      "Bon choix.",
-      "Je valide.",
-      "Continue comme ça."
+      "Ça, j’aime bien.", "Pas mal, humain.", "Enfin, du calme.", "Bon choix.",
+      "Je valide.", "Continue comme ça."
     ],
     "angry": [
-      "Non.",
-      "Très impoli.",
-      "Refais ça pour voir.",
-      "Je te juge.",
-      "Ça suffit.",
-      "Limite dépassée."
+      "Non.", "Très impoli.", "Refais ça pour voir.", "Je te juge.",
+      "Ça suffit.", "Limite dépassée."
     ],
     "confused": [
-      "C’était quoi ça ?",
-      "Explique ce bazar.",
-      "Rien compris.",
-      "Attends. Pourquoi ?",
-      "J’ai des questions.",
-      "Même moi, je bloque."
+      "C’était quoi ça ?", "Explique ce bazar.", "Rien compris.", "Attends. Pourquoi ?",
+      "J’ai des questions.", "Même moi, je bloque."
     ],
     "hungry": [
-      "Nourris-moi d’abord.",
-      "Un poisson aiderait.",
-      "Mon bol est vide.",
-      "Snack maintenant ?",
-      "Je pourrais manger.",
-      "Je sens le dîner."
+      "Nourris-moi d’abord.", "Un poisson aiderait.", "Mon bol est vide.", "Snack maintenant ?",
+      "Je pourrais manger.", "Je sens le dîner."
     ],
     "sleepy": [
-      "Je m’endors.",
-      "Sieste bientôt.",
-      "Réveille-moi plus tard.",
-      "Trop confortable ici.",
-      "Mes yeux ferment.",
-      "Encore cinq minutes."
+      "Je m’endors.", "Sieste bientôt.", "Réveille-moi plus tard.", "Trop confortable ici.",
+      "Mes yeux ferment.", "Encore cinq minutes."
     ],
     "interactive": [
-      "Doucement, merci.",
-      "Attention aux pattes.",
-      "Tu peux me caresser.",
-      "Là, c’est bien.",
-      "Ne t’arrête pas.",
-      "Surveille la queue."
+      "Doucement, merci.", "Attention aux pattes.", "Tu peux me caresser.", "Là, c’est bien.",
+      "Ne t’arrête pas.", "Surveille la queue."
     ],
+    "feedbackQuestion": ["C’était mignon ?", "J’ai aidé ?", "Trop de sarcasme ?", "Je continue ?", "Encore du chaos ?", "Je fais une sieste ?", "Cinq étoiles ?", "C’était fluide ?", "On est amis ?", "Je reste ?"],
+    "voteLike": ["Cinq étoiles aussi ?", "Je le savais.", "Choix correct.", "Bon humain.", "Respect enfin.", "Égo nourri.", "Ronron validé.", "Gentillesse détectée.", "Tu peux continuer."],
+    "voteDislike": ["Je m’y attendais.", "Cruel, mais noté.", "Clic très froid.", "Mon ego souffre.", "Choix audacieux.", "Ça pique.", "Même pas surpris.", "Noté, malheureusement."],
     "grabbed": [
-      "Hé, pose-moi.",
-      "Pardon ?",
-      "Je peux marcher.",
-      "Pas prévu ça.",
-      "Libère le chat.",
-      "Un peu impoli."
+      "Hé, pose-moi.", "Pardon ?", "Je peux marcher.", "Pas prévu ça.",
+      "Libère le chat.", "Un peu impoli."
     ],
     "heldStill": [
-      "Tu me tiens encore ?",
-      "On vit ici ?",
-      "J’ai des pattes.",
-      "C’est quoi le plan ?",
-      "Tu as fini ?",
-      "C’est gênant."
+      "Tu me tiens encore ?", "On vit ici ?", "J’ai des pattes.", "C’est quoi le plan ?",
+      "Tu as fini ?", "C’est gênant."
     ],
     "heldMoving": [
-      "Trop vite.",
-      "Doucement.",
-      "Je ne suis pas bagage.",
-      "On va où ?",
-      "Moins de secousses.",
-      "Je préfère marcher."
+      "Trop vite.", "Doucement.", "Je ne suis pas bagage.", "On va où ?",
+      "Moins de secousses.", "Je préfère marcher."
     ],
     "longHeld": [
-      "Bon, assez.",
-      "Lâche-moi sérieusement.",
-      "La blague est finie.",
-      "Ma patience est morte.",
-      "Libère-moi maintenant.",
-      "Je porte plainte."
+      "Bon, assez.", "Lâche-moi sérieusement.", "La blague est finie.", "Ma patience est morte.",
+      "Libère-moi maintenant.", "Je porte plainte."
     ],
     "dropped": [
-      "Atterrissage impoli.",
-      "J’ai senti ça.",
-      "Préviens-moi avant.",
-      "Assez gracieux.",
-      "Plus doux la prochaine.",
-      "Atterrissage réussi."
+      "Atterrissage impoli.", "J’ai senti ça.", "Préviens-moi avant.", "Assez gracieux.",
+      "Plus doux la prochaine.", "Atterrissage réussi."
     ],
     "thrown": [
-      "Pourquoi je vole ?",
-      "Absolument pas.",
-      "Je déteste cette partie.",
-      "Rattrape-moi peut-être.",
-      "Pire compagnie aérienne.",
-      "Tu as lancé un chat."
+      "Pourquoi je vole ?", "Absolument pas.", "Je déteste cette partie.", "Rattrape-moi peut-être.",
+      "Pire compagnie aérienne.", "Tu as lancé un chat."
     ],
     "cursorSuspicious": [
-      "Je vois ce curseur.",
-      "Ce pointeur est louche.",
-      "Ne me teste pas.",
-      "Tu survoles bizarrement.",
-      "Recule ce truc.",
-      "J’ai vu ça."
+      "Je vois ce curseur.", "Ce pointeur est louche.", "Ne me teste pas.", "Tu survoles bizarrement.",
+      "Recule ce truc.", "J’ai vu ça."
     ],
     "cursorThreat": [
-      "Recule.",
-      "Trop près.",
-      "Espace personnel.",
-      "Je vais frapper.",
-      "Pas les moustaches.",
-      "Attention à la queue."
+      "Recule.", "Trop près.", "Espace personnel.", "Je vais frapper.",
+      "Pas les moustaches.", "Attention à la queue."
     ],
     "cursorPanic": [
-      "Non non non.",
-      "Attaque de curseur !",
-      "Trop près !",
-      "Retraite.",
-      "Pattes d’urgence.",
-      "Besoin de distance."
+      "Non non non.", "Attaque de curseur !", "Trop près !", "Retraite.",
+      "Pattes d’urgence.", "Besoin de distance."
     ],
     "running": [
-      "Zoomies activés.",
-      "Faites place.",
-      "Je suis vitesse.",
-      "Pattes occupées.",
-      "Courses importantes.",
-      "Attrape-moi donc."
+      "Zoomies activés.", "Faites place.", "Je suis vitesse.", "Pattes occupées.",
+      "Courses importantes.", "Attrape-moi donc."
     ],
     "walking": [
-      "Petite patrouille.",
-      "Je vérifie.",
-      "Pattes discrètes.",
-      "Petite marche.",
-      "Cette route est mienne.",
-      "Ronde en cours."
+      "Petite patrouille.", "Je vérifie.", "Pattes discrètes.", "Petite marche.",
+      "Cette route est mienne.", "Ronde en cours."
     ],
     "climbing": [
-      "On monte.",
-      "Mode mur.",
-      "Route verticale.",
-      "Regarde-moi grimper.",
-      "Petit chat montagne.",
-      "Raccourci trouvé."
+      "On monte.", "Mode mur.", "Route verticale.", "Regarde-moi grimper.",
+      "Petit chat montagne.", "Raccourci trouvé."
     ],
     "jumping": [
-      "Boing.",
-      "Joli saut.",
-      "Pattes en l’air.",
-      "Saut calculé.",
-      "C’était voulu.",
-      "Atterrissage en attente."
+      "Boing.", "Joli saut.", "Pattes en l’air.", "Saut calculé.",
+      "C’était voulu.", "Atterrissage en attente."
     ],
     "grooming": [
-      "Toilette.",
-      "Entretien de fourrure.",
-      "Occupé à nettoyer.",
-      "Présentation importante.",
-      "Une seconde.",
-      "Ne m’interromps pas."
+      "Toilette.", "Entretien de fourrure.", "Occupé à nettoyer.", "Présentation importante.",
+      "Une seconde.", "Ne m’interromps pas."
     ],
     "watching": [
-      "Je regarde aussi.",
-      "Intéressant jusque-là.",
-      "Ça m’intéresse.",
-      "Hmm. Continue.",
-      "Je suis investi.",
-      "Je décide encore."
+      "Je regarde aussi.", "Intéressant jusque-là.", "Ça m’intéresse.", "Hmm. Continue.",
+      "Je suis investi.", "Je décide encore."
     ],
     "videoPlay": [
-      "Ok, lance.",
-      "Montre-moi.",
-      "Voyons ça.",
-      "Ça tourne.",
-      "Enfin.",
-      "Bien, continue."
+      "Ok, lance.", "Montre-moi.", "Voyons ça.", "Ça tourne.",
+      "Enfin.", "Bien, continue."
     ],
     "videoPause": [
-      "Pourquoi pause ?",
-      "On regardait.",
-      "Continue.",
-      "J’étais occupé.",
-      "C’était impoli.",
-      "Reprends peut-être ?"
+      "Pourquoi pause ?", "On regardait.", "Continue.", "J’étais occupé.",
+      "C’était impoli.", "Reprends peut-être ?"
     ],
     "mischief": [
-      "Je n’ai rien touché.",
-      "Aucune preuve.",
-      "C’était le vent.",
-      "Prétendument.",
-      "J’étais ailleurs.",
-      "Je confirme rien."
+      "Je n’ai rien touché.", "Aucune preuve.", "C’était le vent.", "Prétendument.",
+      "J’étais ailleurs.", "Je confirme rien."
     ],
     "fishing": [
-      "Poisson repéré.",
-      "À moi.",
-      "Bouge pas, poisson.",
-      "Le dîner fuit.",
-      "J’ai vu ta queue.",
-      "Moment bond."
+      "Poisson repéré.", "À moi.", "Bouge pas, poisson.", "Le dîner fuit.",
+      "J’ai vu ta queue.", "Moment bond."
     ],
     "coin": [
-      "Brillant.",
-      "À moi maintenant.",
-      "Pièce prise.",
-      "J’aime ça.",
-      "Trésor trouvé.",
-      "Encore une, merci."
+      "Brillant.", "À moi maintenant.", "Pièce prise.", "J’aime ça.",
+      "Trésor trouvé.", "Encore une, merci."
     ],
     "eating": [
-      "Ça valait le coup.",
-      "Ça fait du bien.",
-      "Délicieux.",
-      "Encore, merci.",
-      "Meilleure décision.",
-      "Poisson règle tout."
+      "Ça valait le coup.", "Ça fait du bien.", "Délicieux.", "Encore, merci.",
+      "Meilleure décision.", "Poisson règle tout."
     ],
     "ball": [
-      "Balle détectée.",
-      "On joue maintenant.",
-      "À moi.",
-      "Envoie ici.",
-      "Ce rebond était personnel.",
-      "C’est parti."
+      "Balle détectée.", "On joue maintenant.", "À moi.", "Envoie ici.",
+      "Ce rebond était personnel.", "C’est parti."
     ],
     "spider": [
-      "Araignée repérée.",
-      "J’ai vu bouger.",
-      "Viens ici, insecte.",
-      "C’est personnel.",
-      "Mode chasseur.",
-      "Pas fan."
+      "Araignée repérée.", "J’ai vu bouger.", "Viens ici, insecte.", "C’est personnel.",
+      "Mode chasseur.", "Pas fan."
     ],
     "bigSpider": [
-      "Énorme araignée.",
-      "Pourquoi si grosse ?",
-      "Besoin de renfort.",
-      "Ok, c’est rude.",
-      "Gros insecte, même attitude.",
-      "Je reste brave."
+      "Énorme araignée.", "Pourquoi si grosse ?", "Besoin de renfort.", "Ok, c’est rude.",
+      "Gros insecte, même attitude.", "Je reste brave."
     ],
     "webbed": [
-      "Je suis coincé.",
-      "C’est collant.",
-      "Injuste.",
-      "Les toiles trichent.",
-      "Je déteste ça.",
-      "Besoin d’aide."
+      "Je suis coincé.", "C’est collant.", "Injuste.", "Les toiles trichent.",
+      "Je déteste ça.", "Besoin d’aide."
     ],
     "stuck": [
-      "Chemin bloqué.",
-      "Hmm.",
-      "C’est agaçant.",
-      "Autre route nécessaire.",
-      "Ce chemin ment.",
-      "Pattes recalculent."
+      "Chemin bloqué.", "Hmm.", "C’est agaçant.", "Autre route nécessaire.",
+      "Ce chemin ment.", "Pattes recalculent."
     ],
     "content": [
-      "Ça semble dramatique.",
-      "Miniature intéressante.",
-      "Tu as cliqué au piège.",
-      "Ambiance étrange.",
-      "J’ai des notes.",
-      "Ça peut être bien."
-    ],
-    "memory": [
-      "Déjà vu.",
-      "Je me souviens.",
-      "Ça semble familier.",
-      "Tu es déjà venu.",
-      "Tes habitudes parlent.",
-      "Je prends des notes."
-    ],
-    "newTopic": [
-      "Nouvelle ambiance.",
-      "Autre terrier.",
-      "Sujet frais.",
-      "Nouvelle direction.",
-      "C’est différent.",
-      "Changement remarqué."
-    ],
-    "favoriteTopic": [
-      "Encore {topic} ?",
-      "Tu adores {topic}.",
-      "Retour à {topic}.",
-      "Même obsession.",
-      "Choix prévisible.",
-      "Je le savais."
+      "Ça semble dramatique.", "Miniature intéressante.", "Tu as cliqué au piège.", "Ambiance étrange.",
+      "J’ai des notes.", "Ça peut être bien."
     ],
     "channelMemory": [
-      "Cette chaîne encore.",
-      "Je connais {channel}.",
-      "Nous revoilà ici.",
-      "Endroit familier.",
-      "Encore {channel} ?",
-      "Tu fais confiance ici."
+      "Cette chaîne encore.", "Je connais {channel}.", "Nous revoilà ici.", "Endroit familier.",
+      "Encore {channel} ?", "Tu fais confiance ici."
     ],
     "memeMood": [
-      "C’était maudit.",
-      "Comportement internet.",
-      "Je blâme internet.",
-      "Ton feed est bizarre.",
-      "Nonsense maximal.",
-      "J’ai un peu ri."
+      "C’était maudit.", "Comportement internet.", "Je blâme internet.", "Ton feed est bizarre.",
+      "Nonsense maximal.", "J’ai un peu ri."
     ],
     "timeMorning": [
-      "Déjà le matin ?",
-      "Bonjour.",
-      "Scroll matinal.",
-      "Le soleil est levé.",
-      "Petit-déjeuner d’abord ?",
-      "Nouveau jour, chaos."
+      "Déjà le matin ?", "Bonjour.", "Scroll matinal.", "Le soleil est levé.",
+      "Petit-déjeuner d’abord ?", "Nouveau jour, chaos."
     ],
     "timeAfternoon": [
-      "Point après-midi.",
-      "Tu scrolles encore ?",
-      "Ambiance midi.",
-      "Le soleil bosse encore.",
-      "Patrouille d’après-midi.",
-      "Pas de sieste ?"
+      "Point après-midi.", "Tu scrolles encore ?", "Ambiance midi.", "Le soleil bosse encore.",
+      "Patrouille d’après-midi.", "Pas de sieste ?"
     ],
     "timeEvening": [
-      "Déjà le soir.",
-      "Heures cosy.",
-      "Mode nuit bientôt.",
-      "Écran tout doux.",
-      "Patrouille du soir.",
-      "Dîner peut-être."
+      "Déjà le soir.", "Heures cosy.", "Mode nuit bientôt.", "Écran tout doux.",
+      "Patrouille du soir.", "Dîner peut-être."
     ],
     "timeLate": [
-      "Il est tard.",
-      "Va dormir.",
-      "Service lune.",
-      "On veille tard.",
-      "Ton lit appelle.",
-      "Heures gobelin."
+      "Il est tard.", "Va dormir.", "Service lune.", "On veille tard.",
+      "Ton lit appelle.", "Heures gobelin."
     ],
     "watchStart": [
-      "Je m’installe.",
-      "Nouvelle session.",
-      "Ok, regardons.",
-      "Je suis assis.",
-      "Ça doit être bien.",
-      "C’est parti."
+      "Je m’installe.", "Nouvelle session.", "Ok, regardons.", "Je suis assis.",
+      "Ça doit être bien.", "C’est parti."
     ],
     "watchSession": [
-      "{sessionMinutes} minutes déjà.",
-      "Encore là ?",
-      "Tu es engagé.",
-      "Longue session.",
-      "Le temps a disparu.",
-      "On reste vraiment."
+      "{sessionMinutes} minutes déjà.", "Encore là ?", "Tu es engagé.", "Longue session.",
+      "Le temps a disparu.", "On reste vraiment."
     ],
     "watchLong": [
-      "C’est un marathon.",
-      "Tu vis ici maintenant.",
-      "L’herbe attendra.",
-      "Long visionnage.",
-      "Hydrate-toi peut-être.",
-      "Toujours solide."
+      "C’est un marathon.", "Tu vis ici maintenant.", "L’herbe attendra.", "Long visionnage.",
+      "Hydrate-toi peut-être.", "Toujours solide."
     ],
     "watchMilestone": [
-      "{sessionMinutes} minutes. Bien.",
-      "Palier atteint.",
-      "J’ai remarqué.",
-      "Bel engagement.",
-      "Temps bien volé.",
-      "On l’a fait."
+      "{sessionMinutes} minutes. Bien.", "Palier atteint.", "J’ai remarqué.", "Bel engagement.",
+      "Temps bien volé.", "On l’a fait."
     ],
     "watchVideoLong": [
-      "{currentVideoMinutes} minutes ?",
-      "Cette vidéo est énorme.",
-      "Grosse énergie vidéo.",
-      "On reste assis.",
-      "Longue, hein ?",
-      "Installe-toi."
+      "{currentVideoMinutes} minutes ?", "Cette vidéo est énorme.", "Grosse énergie vidéo.", "On reste assis.",
+      "Longue, hein ?", "Installe-toi."
     ],
     "returningWatcher": [
-      "Te revoilà.",
-      "Bon retour.",
-      "Tu es revenu.",
-      "J’ai gardé ta place.",
-      "Même rituel.",
-      "Je t’attendais."
+      "Te revoilà.", "Bon retour.", "Tu es revenu.", "J’ai gardé ta place.",
+      "Même rituel.", "Je t’attendais."
     ],
     "channelLoyalty": [
-      "Encore {channel}.",
-      "Énergie fidèle.",
-      "Tu reviens toujours.",
-      "Chaîne favorite ?",
-      "Retour à {channel}.",
-      "Tu es constant."
+      "Encore {channel}.", "Énergie fidèle.", "Tu reviens toujours.", "Chaîne favorite ?",
+      "Retour à {channel}.", "Tu es constant."
     ],
     "tabComeback": [
-      "Te voilà.",
-      "Bon retour, humain.",
-      "Tu as disparu.",
-      "Déjà de retour ?",
-      "J’ai gardé le fort.",
-      "Je t’ai manqué ?"
-    ],
-    "topicDogs": [
-      "Vidéo de chien.",
-      "Ça fait beaucoup.",
-      "Créatures bruyantes.",
-      "Grosse énergie de queue.",
-      "Encore des chiens.",
-      "Trop de ouaf."
-    ],
-    "topicSquirrels": [
-      "Contenu écureuil.",
-      "Instinct de chasse.",
-      "Petit rongeur chaos.",
-      "Ils bougent bizarrement.",
-      "Je chasserais ça.",
-      "Fourrure très suspecte."
-    ],
-    "topicRats": [
-      "Vidéo de rat.",
-      "Petites patates chaos.",
-      "Petits pieds rapides.",
-      "Snacks discutables.",
-      "Heure rongeur.",
-      "Je suis intrigué."
-    ],
-    "topicBirds": [
-      "Vidéo d’oiseau.",
-      "Taxes de cui-cui.",
-      "Snacks du ciel.",
-      "Je suis concentré.",
-      "Ce battement était illégal.",
-      "Des plumes partout."
-    ],
-    "topicOcean": [
-      "Truc d’océan.",
-      "Trop d’eau.",
-      "Poisson potentiel détecté.",
-      "Ambiance mouillée.",
-      "Je soutiens le poisson.",
-      "Nager semble faux."
-    ],
-    "topicAnimals": [
-      "Vidéo animale.",
-      "Les miens.",
-      "Bon contenu créature.",
-      "Je valide.",
-      "Fourrure alliée détectée.",
-      "Heure nature."
-    ],
-    "topicTech": [
-      "Vidéo tech.",
-      "Mode chat nerd.",
-      "Gadget cher.",
-      "Trop de câbles.",
-      "Encore des machines.",
-      "Je ne comprends rien."
-    ],
-    "topicGaming": [
-      "Vidéo gaming.",
-      "Cerveau loot activé.",
-      "Énergie boss.",
-      "Comportement respawn.",
-      "Ambiance manette.",
-      "Mode gamer."
-    ],
-    "topicMusic": [
-      "Musique.",
-      "Bon rythme.",
-      "J’aime ce rythme.",
-      "Queue en cadence.",
-      "Ça tape bien.",
-      "Petit concert."
-    ],
-    "topicScience": [
-      "Vidéo science.",
-      "Heures gros cerveau.",
-      "Besoin de lunettes.",
-      "Expériences suspectes.",
-      "Apprentissage arrivé.",
-      "Trucs nerd intéressants."
-    ],
-    "topicFood": [
-      "Vidéo nourriture.",
-      "Maintenant j’ai faim.",
-      "Ça semble mangeable.",
-      "Partage, merci.",
-      "Encore cuisine.",
-      "Rude affamé."
-    ],
-    "topicSports": [
-      "Vidéo sport.",
-      "Énergie balle.",
-      "Humains rapides.",
-      "Cri compétitif.",
-      "Je comprends la balle.",
-      "Bon matériel de chasse."
-    ],
-    "topicAnime": [
-      "Temps anime.",
-      "Déjà dramatique.",
-      "Énergie héros.",
-      "Arc entraînement.",
-      "Trop de pouvoir.",
-      "Cheveux physiques encore."
-    ],
-    "topicMovies": [
-      "Vidéo film.",
-      "Twist imminent.",
-      "Passe les snacks.",
-      "Mode cinéma chat.",
-      "Ça fait dramatique.",
-      "Voix bande-annonce."
-    ],
-    "topicHorror": [
-      "Vidéo horreur.",
-      "Non merci.",
-      "Garde la lumière.",
-      "Ça sent le maudit.",
-      "Je suis brave. Presque.",
-      "Taxes jump scare."
-    ],
-    "topicHistory": [
-      "Vidéo histoire.",
-      "Vieux drames humains.",
-      "Chaos ancien.",
-      "Poussiéreux mais intéressant.",
-      "Les anciens étaient bizarres.",
-      "J’apprends des fantômes."
-    ],
-    "topicArt": [
-      "Vidéo art.",
-      "Jolies couleurs.",
-      "Je respecte le travail.",
-      "Cerveau pinceau activé.",
-      "Belle composition.",
-      "Heure créative."
-    ],
-    "topicMoney": [
-      "Vidéo argent.",
-      "Pensées chat riche.",
-      "Où est ma part ?",
-      "Encore des pièces.",
-      "Nombres stressants.",
-      "Profit qui ronronne."
-    ],
-    "topicNews": [
-      "Vidéo news.",
-      "Le monde est bizarre.",
-      "Drama en approche.",
-      "Planète occupée.",
-      "Tout casse.",
-      "Ça fait beaucoup."
-    ],
-    "topicCars": [
-      "Vidéo voiture.",
-      "Zoomies métal bruyants.",
-      "Contenu vroum.",
-      "Trop de moteurs.",
-      "Énergie boîte rapide.",
-      "Je préfère carton."
-    ],
-    "topicStyle": [
-      "Vidéo style.",
-      "Ça claque.",
-      "Chat mode approuve.",
-      "Belle tenue.",
-      "Jolies textures.",
-      "Ça sert des looks."
+      "Te voilà.", "Bon retour, humain.", "Tu as disparu.", "Déjà de retour ?",
+      "J’ai gardé le fort.", "Je t’ai manqué ?"
     ]
-  },
+      },
   "it": {
     "random": [
-      "Ancora tu. Bene.",
-      "Ti sto guardando.",
-      "Quel clic era sospetto.",
-      "Stavo dormendo.",
-      "Scrolli troppo.",
-      "Hmm. Continua."
+      "Ancora tu. Bene.", "Ti sto guardando.", "Quel clic era sospetto.", "Stavo dormendo.",
+      "Scrolli troppo.", "Hmm. Continua."
     ],
     "happy": [
-      "Questo mi piace.",
-      "Non male, umano.",
-      "Finalmente pace.",
-      "Buona scelta.",
-      "Approvo.",
-      "Continua così."
+      "Questo mi piace.", "Non male, umano.", "Finalmente pace.", "Buona scelta.",
+      "Approvo.", "Continua così."
     ],
     "angry": [
-      "Assolutamente no.",
-      "Che maleducato.",
-      "Riprova, dai.",
-      "Ti sto giudicando.",
-      "Ora basta.",
-      "Linea superata."
+      "Assolutamente no.", "Che maleducato.", "Riprova, dai.", "Ti sto giudicando.",
+      "Ora basta.", "Linea superata."
     ],
     "confused": [
-      "Cos’era quello?",
-      "Spiega questo caos.",
-      "Non ha senso.",
-      "Aspetta. Perché?",
-      "Ho domande.",
-      "Anche io sono confuso."
+      "Cos’era quello?", "Spiega questo caos.", "Non ha senso.", "Aspetta. Perché?",
+      "Ho domande.", "Anche io sono confuso."
     ],
     "hungry": [
-      "Prima nutrimi.",
-      "Un pesce aiuterebbe.",
-      "La ciotola è vuota.",
-      "Snack adesso?",
-      "Potrei mangiare.",
-      "Sento odore di cena."
+      "Prima nutrimi.", "Un pesce aiuterebbe.", "La ciotola è vuota.", "Snack adesso?",
+      "Potrei mangiare.", "Sento odore di cena."
     ],
     "sleepy": [
-      "Mi sto addormentando.",
-      "Presto pisolino.",
-      "Svegliami dopo.",
-      "Troppo comodo qui.",
-      "Gli occhi si chiudono.",
-      "Altri cinque minuti."
+      "Mi sto addormentando.", "Presto pisolino.", "Svegliami dopo.", "Troppo comodo qui.",
+      "Gli occhi si chiudono.", "Altri cinque minuti."
     ],
     "interactive": [
-      "Piano, grazie.",
-      "Occhio alle zampe.",
-      "Puoi accarezzarmi.",
-      "Lì va bene.",
-      "Non fermarti ora.",
-      "Attento alla coda."
+      "Piano, grazie.", "Occhio alle zampe.", "Puoi accarezzarmi.", "Lì va bene.",
+      "Non fermarti ora.", "Attento alla coda."
     ],
+    "feedbackQuestion": ["Era carino?", "Ho aiutato?", "Troppo sarcasmo?", "Continuo?", "Ancora caos?", "Faccio un pisolino?", "Cinque stelle?", "Era fluido?", "Siamo amici?", "Resto qui?"],
+    "voteLike": ["Cinque stelle anche?", "Lo sapevo.", "Scelta corretta.", "Bravo umano.", "Finalmente rispetto.", "Ego nutrito.", "Fusa approvate.", "Gentilezza rilevata.", "Puoi continuare."],
+    "voteDislike": ["Me lo aspettavo.", "Crudele, ma segnato.", "Click molto freddo.", "Il mio ego soffre.", "Scelta audace.", "Fa male.", "Nemmeno sorpreso.", "Segnato, purtroppo."],
     "grabbed": [
-      "Ehi, mettimi giù.",
-      "Scusa?",
-      "So camminare.",
-      "Non era previsto.",
-      "Libera il gatto.",
-      "Abbastanza scortese."
+      "Ehi, mettimi giù.", "Scusa?", "So camminare.", "Non era previsto.",
+      "Libera il gatto.", "Abbastanza scortese."
     ],
     "heldStill": [
-      "Mi tieni ancora?",
-      "Viviamo qui?",
-      "Ho le zampe.",
-      "Qual è il piano?",
-      "Hai finito?",
-      "È imbarazzante."
+      "Mi tieni ancora?", "Viviamo qui?", "Ho le zampe.", "Qual è il piano?",
+      "Hai finito?", "È imbarazzante."
     ],
     "heldMoving": [
-      "Troppo veloce.",
-      "Piano.",
-      "Non sono bagaglio.",
-      "Dove andiamo?",
-      "Meno scosse, grazie.",
-      "Preferivo camminare."
+      "Troppo veloce.", "Piano.", "Non sono bagaglio.", "Dove andiamo?",
+      "Meno scosse, grazie.", "Preferivo camminare."
     ],
     "longHeld": [
-      "Ok, basta.",
-      "Lasciami davvero.",
-      "Scherzo finito.",
-      "Pazienza finita.",
-      "Liberami adesso.",
-      "Farò reclamo."
+      "Ok, basta.", "Lasciami davvero.", "Scherzo finito.", "Pazienza finita.",
+      "Liberami adesso.", "Farò reclamo."
     ],
     "dropped": [
-      "Atterraggio scortese.",
-      "L’ho sentito.",
-      "Avvisa prima.",
-      "Abbastanza elegante.",
-      "Più piano la prossima.",
-      "Atterraggio riuscito."
+      "Atterraggio scortese.", "L’ho sentito.", "Avvisa prima.", "Abbastanza elegante.",
+      "Più piano la prossima.", "Atterraggio riuscito."
     ],
     "thrown": [
-      "Perché sto volando?",
-      "Assolutamente no.",
-      "Odio questa parte.",
-      "Prendimi forse.",
-      "Peggior compagnia aerea.",
-      "Hai lanciato un gatto."
+      "Perché sto volando?", "Assolutamente no.", "Odio questa parte.", "Prendimi forse.",
+      "Peggior compagnia aerea.", "Hai lanciato un gatto."
     ],
     "cursorSuspicious": [
-      "Vedo quel cursore.",
-      "Quel puntatore è colpevole.",
-      "Non sfidarmi.",
-      "Stai passando strano.",
-      "Tieni lontano quel coso.",
-      "Ho visto."
+      "Vedo quel cursore.", "Quel puntatore è colpevole.", "Non sfidarmi.", "Stai passando strano.",
+      "Tieni lontano quel coso.", "Ho visto."
     ],
     "cursorThreat": [
-      "Indietro.",
-      "Troppo vicino.",
-      "Spazio personale.",
-      "Ti graffio.",
-      "Non sui baffi.",
-      "Occhio alla coda."
+      "Indietro.", "Troppo vicino.", "Spazio personale.", "Ti graffio.",
+      "Non sui baffi.", "Occhio alla coda."
     ],
     "cursorPanic": [
-      "No no no.",
-      "Attacco cursore!",
-      "Troppo vicino!",
-      "Ritirata.",
-      "Zampe d’emergenza.",
-      "Mi serve distanza."
+      "No no no.", "Attacco cursore!", "Troppo vicino!", "Ritirata.",
+      "Zampe d’emergenza.", "Mi serve distanza."
     ],
     "running": [
-      "Zoomies attivati.",
-      "Fate largo.",
-      "Sono velocità.",
-      "Zampe occupate.",
-      "Commissioni importanti.",
-      "Prova a prendermi."
+      "Zoomies attivati.", "Fate largo.", "Sono velocità.", "Zampe occupate.",
+      "Commissioni importanti.", "Prova a prendermi."
     ],
     "walking": [
-      "Piccola pattuglia.",
-      "Controllo cose.",
-      "Zampe silenziose.",
-      "Passeggiatina.",
-      "Questa strada è mia.",
-      "Giro in corso."
+      "Piccola pattuglia.", "Controllo cose.", "Zampe silenziose.", "Passeggiatina.",
+      "Questa strada è mia.", "Giro in corso."
     ],
     "climbing": [
-      "Si sale.",
-      "Modalità muro.",
-      "Percorso verticale.",
-      "Guardami scalare.",
-      "Piccolo gatto montagna.",
-      "Scorciatoia trovata."
+      "Si sale.", "Modalità muro.", "Percorso verticale.", "Guardami scalare.",
+      "Piccolo gatto montagna.", "Scorciatoia trovata."
     ],
     "jumping": [
-      "Boing.",
-      "Bel salto.",
-      "Zampe in aria.",
-      "Salto calcolato.",
-      "Volevo farlo.",
-      "Atterraggio in arrivo."
+      "Boing.", "Bel salto.", "Zampe in aria.", "Salto calcolato.",
+      "Volevo farlo.", "Atterraggio in arrivo."
     ],
     "grooming": [
-      "Bagnetto.",
-      "Manutenzione pelo.",
-      "Sto pulendo.",
-      "La presentazione conta.",
-      "Un attimo.",
-      "Non interrompere."
+      "Bagnetto.", "Manutenzione pelo.", "Sto pulendo.", "La presentazione conta.",
+      "Un attimo.", "Non interrompere."
     ],
     "watching": [
-      "Guardo anche io.",
-      "Interessante finora.",
-      "Ha la mia attenzione.",
-      "Hmm. Continua.",
-      "Ora sono coinvolto.",
-      "Sto ancora decidendo."
+      "Guardo anche io.", "Interessante finora.", "Ha la mia attenzione.", "Hmm. Continua.",
+      "Ora sono coinvolto.", "Sto ancora decidendo."
     ],
     "videoPlay": [
-      "Ok, avvia.",
-      "Fammi vedere.",
-      "Vediamo.",
-      "Si parte.",
-      "Finalmente.",
-      "Bene, continua."
+      "Ok, avvia.", "Fammi vedere.", "Vediamo.", "Si parte.",
+      "Finalmente.", "Bene, continua."
     ],
     "videoPause": [
-      "Perché pausa?",
-      "Stavamo guardando.",
-      "Continua.",
-      "Ero occupato.",
-      "Che maleducato.",
-      "Riprendi forse?"
+      "Perché pausa?", "Stavamo guardando.", "Continua.", "Ero occupato.",
+      "Che maleducato.", "Riprendi forse?"
     ],
     "mischief": [
-      "Non ho toccato nulla.",
-      "Nessuna prova.",
-      "Era il vento.",
-      "Presumibilmente.",
-      "Ero altrove.",
-      "Non confermo niente."
+      "Non ho toccato nulla.", "Nessuna prova.", "Era il vento.", "Presumibilmente.",
+      "Ero altrove.", "Non confermo niente."
     ],
     "fishing": [
-      "Pesce avvistato.",
-      "Mio.",
-      "Fermo, pesce.",
-      "La cena scappa.",
-      "Ho visto la coda.",
-      "Tempo di balzo."
+      "Pesce avvistato.", "Mio.", "Fermo, pesce.", "La cena scappa.",
+      "Ho visto la coda.", "Tempo di balzo."
     ],
     "coin": [
-      "Brilla.",
-      "Ora è mia.",
-      "Moneta presa.",
-      "Mi piace.",
-      "Tesoro trovato.",
-      "Ancora una, grazie."
+      "Brilla.", "Ora è mia.", "Moneta presa.", "Mi piace.",
+      "Tesoro trovato.", "Ancora una, grazie."
     ],
     "eating": [
-      "Ne valeva la pena.",
-      "Ci voleva.",
-      "Delizioso.",
-      "Ancora, grazie.",
-      "Miglior decisione.",
-      "Il pesce risolve tutto."
+      "Ne valeva la pena.", "Ci voleva.", "Delizioso.", "Ancora, grazie.",
+      "Miglior decisione.", "Il pesce risolve tutto."
     ],
     "ball": [
-      "Palla rilevata.",
-      "Ora giochiamo.",
-      "Mia.",
-      "Lanciala qui.",
-      "Quel rimbalzo era personale.",
-      "Si gioca."
+      "Palla rilevata.", "Ora giochiamo.", "Mia.", "Lanciala qui.",
+      "Quel rimbalzo era personale.", "Si gioca."
     ],
     "spider": [
-      "Ragno avvistato.",
-      "Ho visto muoversi.",
-      "Vieni qui, insetto.",
-      "Sembra personale.",
-      "Modalità cacciatore.",
-      "Non mi piace."
+      "Ragno avvistato.", "Ho visto muoversi.", "Vieni qui, insetto.", "Sembra personale.",
+      "Modalità cacciatore.", "Non mi piace."
     ],
     "bigSpider": [
-      "Ragno enorme.",
-      "Perché così grosso?",
-      "Serve rinforzo.",
-      "Ok, che rude.",
-      "Insetto grosso, stesso atteggiamento.",
-      "Sono ancora coraggioso."
+      "Ragno enorme.", "Perché così grosso?", "Serve rinforzo.", "Ok, che rude.",
+      "Insetto grosso, stesso atteggiamento.", "Sono ancora coraggioso."
     ],
     "webbed": [
-      "Sono bloccato.",
-      "È appiccicoso.",
-      "Ingiusto.",
-      "Le ragnatele barano.",
-      "Odio questo.",
-      "Serve aiuto."
+      "Sono bloccato.", "È appiccicoso.", "Ingiusto.", "Le ragnatele barano.",
+      "Odio questo.", "Serve aiuto."
     ],
     "stuck": [
-      "Percorso bloccato.",
-      "Hmm.",
-      "Che fastidio.",
-      "Serve altra strada.",
-      "Questa strada mente.",
-      "Zampe ricalcolano."
+      "Percorso bloccato.", "Hmm.", "Che fastidio.", "Serve altra strada.",
+      "Questa strada mente.", "Zampe ricalcolano."
     ],
     "content": [
-      "Sembra drammatico.",
-      "Miniatura interessante.",
-      "Hai cliccato esca.",
-      "Vibe strane.",
-      "Ho appunti.",
-      "Potrebbe essere buono."
-    ],
-    "memory": [
-      "Già visto.",
-      "Mi ricordo.",
-      "Sembra familiare.",
-      "Sei già stato qui.",
-      "Le abitudini parlano.",
-      "Prendo appunti."
-    ],
-    "newTopic": [
-      "Nuova vibe.",
-      "Altro buco.",
-      "Tema fresco.",
-      "Nuova corsia.",
-      "Questo è diverso.",
-      "Cambio notato."
-    ],
-    "favoriteTopic": [
-      "Ancora {topic}?",
-      "Ami proprio {topic}.",
-      "Ritorno a {topic}.",
-      "Stessa ossessione.",
-      "Scelta prevedibile.",
-      "Lo sapevo."
+      "Sembra drammatico.", "Miniatura interessante.", "Hai cliccato esca.", "Vibe strane.",
+      "Ho appunti.", "Potrebbe essere buono."
     ],
     "channelMemory": [
-      "Ancora questo canale.",
-      "Conosco {channel}.",
-      "Siamo tornati qui.",
-      "Posto familiare.",
-      "Ancora {channel}?",
-      "Ti fidi qui."
+      "Ancora questo canale.", "Conosco {channel}.", "Siamo tornati qui.", "Posto familiare.",
+      "Ancora {channel}?", "Ti fidi qui."
     ],
     "memeMood": [
-      "Era maledetto.",
-      "Comportamento internet.",
-      "Colpa di internet.",
-      "Il feed è strano.",
-      "Nonsense massimo.",
-      "Ho riso un po’."
+      "Era maledetto.", "Comportamento internet.", "Colpa di internet.", "Il feed è strano.",
+      "Nonsense massimo.", "Ho riso un po’."
     ],
     "timeMorning": [
-      "Già mattina?",
-      "Buongiorno.",
-      "Scroll mattutino.",
-      "Il sole è sveglio.",
-      "Colazione prima?",
-      "Nuovo giorno, caos."
+      "Già mattina?", "Buongiorno.", "Scroll mattutino.", "Il sole è sveglio.",
+      "Colazione prima?", "Nuovo giorno, caos."
     ],
     "timeAfternoon": [
-      "Check pomeridiano.",
-      "Scrolli ancora?",
-      "Vibe di metà giornata.",
-      "Il sole lavora ancora.",
-      "Pattuglia pomeridiana.",
-      "Niente pisolino?"
+      "Check pomeridiano.", "Scrolli ancora?", "Vibe di metà giornata.", "Il sole lavora ancora.",
+      "Pattuglia pomeridiana.", "Niente pisolino?"
     ],
     "timeEvening": [
-      "Già sera.",
-      "Ore cozy.",
-      "Modalità notte presto.",
-      "Schermo morbido.",
-      "Pattuglia serale.",
-      "Cena forse."
+      "Già sera.", "Ore cozy.", "Modalità notte presto.", "Schermo morbido.",
+      "Pattuglia serale.", "Cena forse."
     ],
     "timeLate": [
-      "È tardi.",
-      "Vai a dormire.",
-      "Turno luna.",
-      "Siamo svegli tardi.",
-      "Il letto chiama.",
-      "Ore goblin."
+      "È tardi.", "Vai a dormire.", "Turno luna.", "Siamo svegli tardi.",
+      "Il letto chiama.", "Ore goblin."
     ],
     "watchStart": [
-      "Mi sistemo.",
-      "Nuova sessione.",
-      "Ok, guardiamo.",
-      "Sono seduto.",
-      "Deve essere buono.",
-      "Si parte."
+      "Mi sistemo.", "Nuova sessione.", "Ok, guardiamo.", "Sono seduto.",
+      "Deve essere buono.", "Si parte."
     ],
     "watchSession": [
-      "{sessionMinutes} minuti già.",
-      "Ancora qui?",
-      "Ti sei impegnato.",
-      "Sessione lunga.",
-      "Il tempo è sparito.",
-      "Restiamo davvero."
+      "{sessionMinutes} minuti già.", "Ancora qui?", "Ti sei impegnato.", "Sessione lunga.",
+      "Il tempo è sparito.", "Restiamo davvero."
     ],
     "watchLong": [
-      "È una maratona.",
-      "Vivi qui adesso.",
-      "Erba dopo.",
-      "Visione lunga.",
-      "Idratati forse.",
-      "Ancora forte."
+      "È una maratona.", "Vivi qui adesso.", "Erba dopo.", "Visione lunga.",
+      "Idratati forse.", "Ancora forte."
     ],
     "watchMilestone": [
-      "{sessionMinutes} minuti. Bene.",
-      "Traguardo raggiunto.",
-      "L’ho notato.",
-      "Bel impegno.",
-      "Tempo ben rubato.",
-      "Ce l’abbiamo fatta."
+      "{sessionMinutes} minuti. Bene.", "Traguardo raggiunto.", "L’ho notato.", "Bel impegno.",
+      "Tempo ben rubato.", "Ce l’abbiamo fatta."
     ],
     "watchVideoLong": [
-      "{currentVideoMinutes} minuti?",
-      "Questo video è enorme.",
-      "Energia video gigante.",
-      "Restiamo seduti.",
-      "Lungo, eh?",
-      "Mettiti comodo."
+      "{currentVideoMinutes} minuti?", "Questo video è enorme.", "Energia video gigante.", "Restiamo seduti.",
+      "Lungo, eh?", "Mettiti comodo."
     ],
     "returningWatcher": [
-      "Eccoti di nuovo.",
-      "Bentornato.",
-      "Sei tornato.",
-      "Ho tenuto il posto.",
-      "Stesso rituale.",
-      "Ti aspettavo."
+      "Eccoti di nuovo.", "Bentornato.", "Sei tornato.", "Ho tenuto il posto.",
+      "Stesso rituale.", "Ti aspettavo."
     ],
     "channelLoyalty": [
-      "Ancora {channel}.",
-      "Energia fedele.",
-      "Torni sempre.",
-      "Canale preferito?",
-      "Ritorno a {channel}.",
-      "Sei costante."
+      "Ancora {channel}.", "Energia fedele.", "Torni sempre.", "Canale preferito?",
+      "Ritorno a {channel}.", "Sei costante."
     ],
     "tabComeback": [
-      "Eccoti.",
-      "Bentornato, umano.",
-      "Sei sparito.",
-      "Già tornato?",
-      "Ho tenuto il forte.",
-      "Ti sono mancato?"
-    ],
-    "topicDogs": [
-      "Video di cani.",
-      "È tanto.",
-      "Creature rumorose.",
-      "Grande energia coda.",
-      "Ancora cani.",
-      "Troppo bau."
-    ],
-    "topicSquirrels": [
-      "Contenuto scoiattolo.",
-      "Istinto caccia attivo.",
-      "Piccolo roditore caos.",
-      "Si muovono strani.",
-      "Lo inseguirei.",
-      "Pelo molto sospetto."
-    ],
-    "topicRats": [
-      "Video di ratto.",
-      "Patate caos piccole.",
-      "Piedini veloci.",
-      "Snack discutibili.",
-      "Ora roditore.",
-      "Sono incuriosito."
-    ],
-    "topicBirds": [
-      "Video di uccelli.",
-      "Tasse cinguettio.",
-      "Snack del cielo.",
-      "Sono concentrato.",
-      "Quel battito era illegale.",
-      "Piume ovunque."
-    ],
-    "topicOcean": [
-      "Roba oceano.",
-      "Troppa acqua.",
-      "Potenziale pesce rilevato.",
-      "Vibe bagnate.",
-      "Sostengo il pesce.",
-      "Nuotare sembra finto."
-    ],
-    "topicAnimals": [
-      "Video animale.",
-      "La mia gente.",
-      "Buon contenuto creatura.",
-      "Approvo.",
-      "Pelo alleato rilevato.",
-      "Ora natura."
-    ],
-    "topicTech": [
-      "Video tech.",
-      "Modalità gatto nerd.",
-      "Gadget costoso.",
-      "Troppi cavi.",
-      "Ancora macchine.",
-      "Non capisco nulla."
-    ],
-    "topicGaming": [
-      "Video gaming.",
-      "Cervello loot attivo.",
-      "Energia boss.",
-      "Comportamento respawn.",
-      "Vibe controller.",
-      "Modalità gamer."
-    ],
-    "topicMusic": [
-      "Musica.",
-      "Bel ritmo.",
-      "Mi piace il ritmo.",
-      "Coda a tempo.",
-      "Questa spacca.",
-      "Piccolo concerto."
-    ],
-    "topicScience": [
-      "Video scienza.",
-      "Ore cervellone.",
-      "Servono occhiali.",
-      "Esperimenti sospetti.",
-      "Apprendimento avvenuto.",
-      "Roba nerd interessante."
-    ],
-    "topicFood": [
-      "Video cibo.",
-      "Ora ho fame.",
-      "Sembra mangiabile.",
-      "Condividi, grazie.",
-      "Ancora cucina.",
-      "Rude da affamati."
-    ],
-    "topicSports": [
-      "Video sport.",
-      "Energia palla.",
-      "Umani veloci.",
-      "Urla competitive.",
-      "Capisco la palla.",
-      "Buon materiale caccia."
-    ],
-    "topicAnime": [
-      "Tempo anime.",
-      "Già drammatico.",
-      "Energia protagonista.",
-      "Arco allenamento.",
-      "Troppo potere.",
-      "Fisica capelli ancora."
-    ],
-    "topicMovies": [
-      "Video film.",
-      "Colpo di scena in arrivo.",
-      "Passa gli snack.",
-      "Modalità cinema gatto.",
-      "Sembra drammatico.",
-      "Momento trailer voice."
-    ],
-    "topicHorror": [
-      "Video horror.",
-      "No grazie.",
-      "Luci accese.",
-      "Sembra maledetto.",
-      "Sono coraggioso. Quasi.",
-      "Tasse jumpscare."
-    ],
-    "topicHistory": [
-      "Video storia.",
-      "Vecchi drammi umani.",
-      "Caos antico.",
-      "Polveroso ma interessante.",
-      "Antichi strani.",
-      "Imparo dai fantasmi."
-    ],
-    "topicArt": [
-      "Video arte.",
-      "Bei colori.",
-      "Rispetto il lavoro.",
-      "Cervello pennello attivo.",
-      "Bella composizione.",
-      "Ora creativa."
-    ],
-    "topicMoney": [
-      "Video soldi.",
-      "Pensieri gatto ricco.",
-      "Dov’è la mia parte?",
-      "Ancora monete.",
-      "Numeri stressanti.",
-      "Profitto fa fusa."
-    ],
-    "topicNews": [
-      "Video notizie.",
-      "Mondo strano.",
-      "Drama in arrivo.",
-      "Pianeta occupato.",
-      "Tutto si rompe.",
-      "È tanto."
-    ],
-    "topicCars": [
-      "Video auto.",
-      "Zoomies metallo rumorosi.",
-      "Contenuto vroom.",
-      "Troppi motori.",
-      "Energia scatola veloce.",
-      "Preferisco cartone."
-    ],
-    "topicStyle": [
-      "Video stile.",
-      "Bello look.",
-      "Gatto moda approva.",
-      "Bel outfit.",
-      "Belle texture.",
-      "Serve look."
+      "Eccoti.", "Bentornato, umano.", "Sei sparito.", "Già tornato?",
+      "Ho tenuto il forte.", "Ti sono mancato?"
     ]
-  },
+      },
   "ar": {
     "random": [
-      "رجعتَ أنت. تمام.",
-      "أنا أراقبك.",
-      "ذاك الضغط مريب.",
-      "كنت نائماً.",
-      "تسحب كثيراً.",
-      "همم. كمل."
+      "رجعتَ أنت. تمام.", "أنا أراقبك.", "ذاك الضغط مريب.", "كنت نائماً.",
+      "تسحب كثيراً.", "همم. كمل."
     ],
     "happy": [
-      "هذا أعجبني.",
-      "ليس سيئاً، يا إنسان.",
-      "أخيراً بعض الهدوء.",
-      "اختيار جيد.",
-      "أوافق.",
-      "كمل هكذا."
+      "هذا أعجبني.", "ليس سيئاً، يا إنسان.", "أخيراً بعض الهدوء.", "اختيار جيد.",
+      "أوافق.", "كمل هكذا."
     ],
     "angry": [
-      "أبداً لا.",
-      "وقح جداً.",
-      "جربها ثانية.",
-      "أنا أحكم عليك.",
-      "كفى الآن.",
-      "تجاوزت الحد."
+      "أبداً لا.", "وقح جداً.", "جربها ثانية.", "أنا أحكم عليك.",
+      "كفى الآن.", "تجاوزت الحد."
     ],
     "confused": [
-      "ما هذا؟",
-      "اشرح هذه الفوضى.",
-      "لا معنى له.",
-      "انتظر. لماذا؟",
-      "لدي أسئلة.",
-      "حتى أنا محتار."
+      "ما هذا؟", "اشرح هذه الفوضى.", "لا معنى له.", "انتظر. لماذا؟",
+      "لدي أسئلة.", "حتى أنا محتار."
     ],
     "hungry": [
-      "أطعمني أولاً.",
-      "سمكة ستساعد.",
-      "وعائي فارغ.",
-      "سناك الآن؟",
-      "أستطيع الأكل.",
-      "أشم رائحة العشاء."
+      "أطعمني أولاً.", "سمكة ستساعد.", "وعائي فارغ.", "سناك الآن؟",
+      "أستطيع الأكل.", "أشم رائحة العشاء."
     ],
     "sleepy": [
-      "أنا أنعس.",
-      "قيلولة قريباً.",
-      "أيقظني لاحقاً.",
-      "المكان مريح جداً.",
-      "عيناي تغلقان.",
-      "خمس دقائق أخرى."
+      "أنا أنعس.", "قيلولة قريباً.", "أيقظني لاحقاً.", "المكان مريح جداً.",
+      "عيناي تغلقان.", "خمس دقائق أخرى."
     ],
     "interactive": [
-      "بلطف، رجاءً.",
-      "انتبه للمخالب.",
-      "يمكنك لمسي.",
-      "نعم، هنا جيد.",
-      "لا تتوقف الآن.",
-      "انتبه للذيل."
+      "بلطف، رجاءً.", "انتبه للمخالب.", "يمكنك لمسي.", "نعم، هنا جيد.",
+      "لا تتوقف الآن.", "انتبه للذيل."
     ],
+    "feedbackQuestion": ["كان لطيفاً؟", "ساعدت؟", "سخرية كثيرة؟", "أكمل؟", "المزيد من الفوضى؟", "آخذ قيلولة؟", "خمس نجوم؟", "كان سلساً؟", "نحن أصدقاء؟", "أبقى هنا؟"],
+    "voteLike": ["خمس نجوم أيضاً؟", "كنت أعرف.", "اختيار صحيح.", "إنسان جيد.", "أخيراً احترام.", "غروري سعيد.", "خرخرة موافقة.", "لطف مكتشف.", "تابع إذن."],
+    "voteDislike": ["توقعت ذلك.", "وقح لكن مسجل.", "نقرة باردة.", "غروري تألم.", "اختيار جريء.", "هذا يؤلم.", "لست متفاجئاً.", "مسجل للأسف."],
     "grabbed": [
-      "مهلاً، أنزلني.",
-      "عفواً؟",
-      "أستطيع المشي.",
-      "لم نتفق على هذا.",
-      "حرر القط.",
-      "وقاحة صغيرة."
+      "مهلاً، أنزلني.", "عفواً؟", "أستطيع المشي.", "لم نتفق على هذا.",
+      "حرر القط.", "وقاحة صغيرة."
     ],
     "heldStill": [
-      "ما زلت تحملني؟",
-      "سنعيش هنا؟",
-      "لدي أرجل.",
-      "ما الخطة؟",
-      "انتهيت؟",
-      "هذا محرج."
+      "ما زلت تحملني؟", "سنعيش هنا؟", "لدي أرجل.", "ما الخطة؟",
+      "انتهيت؟", "هذا محرج."
     ],
     "heldMoving": [
-      "سريع جداً.",
-      "بهدوء.",
-      "لست حقيبة.",
-      "إلى أين؟",
-      "هز أقل، رجاءً.",
-      "أفضل المشي."
+      "سريع جداً.", "بهدوء.", "لست حقيبة.", "إلى أين؟",
+      "هز أقل، رجاءً.", "أفضل المشي."
     ],
     "longHeld": [
-      "حسناً، كفى.",
-      "اتركني جدياً.",
-      "النكتة انتهت.",
-      "صبري انتهى.",
-      "حررني الآن.",
-      "سأشتكي."
+      "حسناً، كفى.", "اتركني جدياً.", "النكتة انتهت.", "صبري انتهى.",
+      "حررني الآن.", "سأشتكي."
     ],
     "dropped": [
-      "هبوط وقح.",
-      "شعرت بهذا.",
-      "حذرني أولاً.",
-      "هبوط لا بأس.",
-      "ألطف المرة القادمة.",
-      "ثبت الهبوط."
+      "هبوط وقح.", "شعرت بهذا.", "حذرني أولاً.", "هبوط لا بأس.",
+      "ألطف المرة القادمة.", "ثبت الهبوط."
     ],
     "thrown": [
-      "لماذا أطير؟",
-      "أبداً لا.",
-      "أكره هذا الجزء.",
-      "التقطني ربما.",
-      "أسوأ شركة طيران.",
-      "رميت قطاً."
+      "لماذا أطير؟", "أبداً لا.", "أكره هذا الجزء.", "التقطني ربما.",
+      "أسوأ شركة طيران.", "رميت قطاً."
     ],
     "cursorSuspicious": [
-      "أرى ذلك المؤشر.",
-      "المؤشر مذنب.",
-      "لا تختبرني.",
-      "تحوم بغرابة.",
-      "أبعد ذلك الشيء.",
-      "رأيت هذا."
+      "أرى ذلك المؤشر.", "المؤشر مذنب.", "لا تختبرني.", "تحوم بغرابة.",
+      "أبعد ذلك الشيء.", "رأيت هذا."
     ],
     "cursorThreat": [
-      "تراجع.",
-      "قريب جداً.",
-      "مساحة شخصية.",
-      "سأضرب.",
-      "ليس على الشوارب.",
-      "انتبه للذيل."
+      "تراجع.", "قريب جداً.", "مساحة شخصية.", "سأضرب.",
+      "ليس على الشوارب.", "انتبه للذيل."
     ],
     "cursorPanic": [
-      "لا لا لا.",
-      "هجوم مؤشر!",
-      "قريب جداً!",
-      "انسحاب.",
-      "مخالب طوارئ.",
-      "أحتاج مسافة."
+      "لا لا لا.", "هجوم مؤشر!", "قريب جداً!", "انسحاب.",
+      "مخالب طوارئ.", "أحتاج مسافة."
     ],
     "running": [
-      "زوميز مفعلة.",
-      "افسحوا الطريق.",
-      "أنا السرعة.",
-      "المخالب مشغولة.",
-      "مهام مهمة.",
-      "جرب تمسكني."
+      "زوميز مفعلة.", "افسحوا الطريق.", "أنا السرعة.", "المخالب مشغولة.",
+      "مهام مهمة.", "جرب تمسكني."
     ],
     "walking": [
-      "دورية صغيرة.",
-      "أفحص الأشياء.",
-      "مخالب هادئة.",
-      "مشية صغيرة.",
-      "هذا طريقي.",
-      "الدورية مستمرة."
+      "دورية صغيرة.", "أفحص الأشياء.", "مخالب هادئة.", "مشية صغيرة.",
+      "هذا طريقي.", "الدورية مستمرة."
     ],
     "climbing": [
-      "نصعد.",
-      "وضع الجدار.",
-      "طريق عمودي.",
-      "شاهدني أتسلق.",
-      "قط جبلي صغير.",
-      "اختصار وجدته."
+      "نصعد.", "وضع الجدار.", "طريق عمودي.", "شاهدني أتسلق.",
+      "قط جبلي صغير.", "اختصار وجدته."
     ],
     "jumping": [
-      "بوينغ.",
-      "قفزة جميلة.",
-      "مخالب في الهواء.",
-      "قفزة محسوبة.",
-      "كان مقصوداً.",
-      "الهبوط لاحقاً."
+      "بوينغ.", "قفزة جميلة.", "مخالب في الهواء.", "قفزة محسوبة.",
+      "كان مقصوداً.", "الهبوط لاحقاً."
     ],
     "grooming": [
-      "وقت التنظيف.",
-      "صيانة الفرو.",
-      "مشغول بالتنظيف.",
-      "المظهر مهم.",
-      "لحظة واحدة.",
-      "لا تقاطعني."
+      "وقت التنظيف.", "صيانة الفرو.", "مشغول بالتنظيف.", "المظهر مهم.",
+      "لحظة واحدة.", "لا تقاطعني."
     ],
     "watching": [
-      "أنا أشاهد أيضاً.",
-      "مثير حتى الآن.",
-      "هذا جذب انتباهي.",
-      "همم. كمل.",
-      "أنا مهتم الآن.",
-      "ما زلت أقرر."
+      "أنا أشاهد أيضاً.", "مثير حتى الآن.", "هذا جذب انتباهي.", "همم. كمل.",
+      "أنا مهتم الآن.", "ما زلت أقرر."
     ],
     "videoPlay": [
-      "حسناً، شغله.",
-      "أرني.",
-      "لنرَ.",
-      "بدأ العرض.",
-      "أخيراً.",
-      "جيد، كمل."
+      "حسناً، شغله.", "أرني.", "لنرَ.", "بدأ العرض.",
+      "أخيراً.", "جيد، كمل."
     ],
     "videoPause": [
-      "لماذا أوقفت؟",
-      "كنا نشاهد.",
-      "كمل.",
-      "كنت مشغولاً.",
-      "كان هذا وقحاً.",
-      "شغله ربما؟"
+      "لماذا أوقفت؟", "كنا نشاهد.", "كمل.", "كنت مشغولاً.",
+      "كان هذا وقحاً.", "شغله ربما؟"
     ],
     "mischief": [
-      "لم ألمس شيئاً.",
-      "لا دليل.",
-      "كانت الريح.",
-      "كما يزعمون.",
-      "كنت في مكان آخر.",
-      "لا أؤكد شيئاً."
+      "لم ألمس شيئاً.", "لا دليل.", "كانت الريح.", "كما يزعمون.",
+      "كنت في مكان آخر.", "لا أؤكد شيئاً."
     ],
     "fishing": [
-      "سمكة!",
-      "لي.",
-      "اثبتي يا سمكة.",
-      "العشاء يهرب.",
-      "رأيت الذيل.",
-      "وقت الانقضاض."
+      "سمكة!", "لي.", "اثبتي يا سمكة.", "العشاء يهرب.",
+      "رأيت الذيل.", "وقت الانقضاض."
     ],
     "coin": [
-      "لامعة.",
-      "لي الآن.",
-      "تم أخذ العملة.",
-      "أحب هذا.",
-      "كنز وجدته.",
-      "واحدة أخرى، رجاءً."
+      "لامعة.", "لي الآن.", "تم أخذ العملة.", "أحب هذا.",
+      "كنز وجدته.", "واحدة أخرى، رجاءً."
     ],
     "eating": [
-      "استحق الأمر.",
-      "هذا مناسب.",
-      "لذيذ.",
-      "المزيد، رجاءً.",
-      "أفضل قرار اليوم.",
-      "السمك يحل كل شيء."
+      "استحق الأمر.", "هذا مناسب.", "لذيذ.", "المزيد، رجاءً.",
+      "أفضل قرار اليوم.", "السمك يحل كل شيء."
     ],
     "ball": [
-      "كرة مكتشفة.",
-      "نلعب الآن.",
-      "لي.",
-      "ارمها هنا.",
-      "ذلك الارتداد شخصي.",
-      "بدأ اللعب."
+      "كرة مكتشفة.", "نلعب الآن.", "لي.", "ارمها هنا.",
+      "ذلك الارتداد شخصي.", "بدأ اللعب."
     ],
     "spider": [
-      "عنكبوت!",
-      "رأيت حركة.",
-      "تعال هنا، حشرة.",
-      "الأمر شخصي.",
-      "وضع الصيد.",
-      "لا يعجبني."
+      "عنكبوت!", "رأيت حركة.", "تعال هنا، حشرة.", "الأمر شخصي.",
+      "وضع الصيد.", "لا يعجبني."
     ],
     "bigSpider": [
-      "عنكبوت ضخم.",
-      "لماذا هو كبير؟",
-      "أحتاج دعماً.",
-      "حسناً، هذا وقح.",
-      "حشرة كبيرة، نفس الغرور.",
-      "ما زلت شجاعاً."
+      "عنكبوت ضخم.", "لماذا هو كبير؟", "أحتاج دعماً.", "حسناً، هذا وقح.",
+      "حشرة كبيرة، نفس الغرور.", "ما زلت شجاعاً."
     ],
     "webbed": [
-      "أنا عالق.",
-      "هذا لزج.",
-      "غير عادل.",
-      "الخيوط تغش.",
-      "أكره هذا.",
-      "أحتاج مساعدة."
+      "أنا عالق.", "هذا لزج.", "غير عادل.", "الخيوط تغش.",
+      "أكره هذا.", "أحتاج مساعدة."
     ],
     "stuck": [
-      "الطريق مغلق.",
-      "همم.",
-      "هذا مزعج.",
-      "أحتاج طريقاً آخر.",
-      "هذا الطريق يكذب.",
-      "المخالب تعيد الحساب."
+      "الطريق مغلق.", "همم.", "هذا مزعج.", "أحتاج طريقاً آخر.",
+      "هذا الطريق يكذب.", "المخالب تعيد الحساب."
     ],
     "content": [
-      "يبدو درامياً.",
-      "صورة مثيرة.",
-      "ضغطت على الطعم.",
-      "الأجواء غريبة.",
-      "لدي ملاحظات.",
-      "قد يكون جيداً."
-    ],
-    "memory": [
-      "رأيت هذا سابقاً.",
-      "أتذكر.",
-      "يبدو مألوفاً.",
-      "كنت هنا من قبل.",
-      "عاداتك واضحة.",
-      "أسجل ملاحظات."
-    ],
-    "newTopic": [
-      "أجواء جديدة.",
-      "حفرة أخرى.",
-      "موضوع جديد.",
-      "مسار جديد.",
-      "هذا مختلف.",
-      "لاحظت التغيير."
-    ],
-    "favoriteTopic": [
-      "{topic} مجدداً؟",
-      "تحب {topic} كثيراً.",
-      "رجعنا إلى {topic}.",
-      "نفس الهوس.",
-      "اختيار متوقع.",
-      "كنت أعرف."
+      "يبدو درامياً.", "صورة مثيرة.", "ضغطت على الطعم.", "الأجواء غريبة.",
+      "لدي ملاحظات.", "قد يكون جيداً."
     ],
     "channelMemory": [
-      "هذه القناة مجدداً.",
-      "أعرف {channel}.",
-      "عدنا هنا.",
-      "مكان مألوف.",
-      "{channel} مجدداً؟",
-      "تثق بهذا المكان."
+      "هذه القناة مجدداً.", "أعرف {channel}.", "عدنا هنا.", "مكان مألوف.",
+      "{channel} مجدداً؟", "تثق بهذا المكان."
     ],
     "memeMood": [
-      "كان ملعوناً.",
-      "سلوك الإنترنت.",
-      "ألوم الإنترنت.",
-      "خلاصتك غريبة.",
-      "عبث كامل.",
-      "ضحكت قليلاً."
+      "كان ملعوناً.", "سلوك الإنترنت.", "ألوم الإنترنت.", "خلاصتك غريبة.",
+      "عبث كامل.", "ضحكت قليلاً."
     ],
     "timeMorning": [
-      "الصباح بالفعل؟",
-      "صباح الخير.",
-      "سحب صباحي.",
-      "الشمس استيقظت.",
-      "الفطور أولاً؟",
-      "يوم جديد، فوضى."
+      "الصباح بالفعل؟", "صباح الخير.", "سحب صباحي.", "الشمس استيقظت.",
+      "الفطور أولاً؟", "يوم جديد، فوضى."
     ],
     "timeAfternoon": [
-      "فحص الظهر.",
-      "ما زلت تسحب؟",
-      "أجواء الظهيرة.",
-      "الشمس تعمل.",
-      "دورية بعد الظهر.",
-      "لا قيلولة؟"
+      "فحص الظهر.", "ما زلت تسحب؟", "أجواء الظهيرة.", "الشمس تعمل.",
+      "دورية بعد الظهر.", "لا قيلولة؟"
     ],
     "timeEvening": [
-      "المساء بالفعل.",
-      "ساعات مريحة.",
-      "وضع الليل قريباً.",
-      "شاشة هادئة.",
-      "دورية المساء.",
-      "العشاء ربما."
+      "المساء بالفعل.", "ساعات مريحة.", "وضع الليل قريباً.", "شاشة هادئة.",
+      "دورية المساء.", "العشاء ربما."
     ],
     "timeLate": [
-      "الوقت متأخر.",
-      "اذهب للنوم.",
-      "نوبة القمر.",
-      "نحن مستيقظون متأخرين.",
-      "سريرك يناديك.",
-      "ساعات الغوبلن."
+      "الوقت متأخر.", "اذهب للنوم.", "نوبة القمر.", "نحن مستيقظون متأخرين.",
+      "سريرك يناديك.", "ساعات الغوبلن."
     ],
     "watchStart": [
-      "سأجلس.",
-      "جلسة جديدة.",
-      "حسناً، نشاهد.",
-      "أنا جالس.",
-      "ليكن جيداً.",
-      "هيا بنا."
+      "سأجلس.", "جلسة جديدة.", "حسناً، نشاهد.", "أنا جالس.",
+      "ليكن جيداً.", "هيا بنا."
     ],
     "watchSession": [
-      "{sessionMinutes} دقيقة بالفعل.",
-      "ما زلت هنا؟",
-      "أنت ملتزم.",
-      "جلسة طويلة.",
-      "الوقت اختفى.",
-      "سنظل فعلاً."
+      "{sessionMinutes} دقيقة بالفعل.", "ما زلت هنا؟", "أنت ملتزم.", "جلسة طويلة.",
+      "الوقت اختفى.", "سنظل فعلاً."
     ],
     "watchLong": [
-      "هذا ماراثون.",
-      "أنت تعيش هنا الآن.",
-      "العشب لاحقاً.",
-      "مشاهدة طويلة.",
-      "اشرب ماء ربما.",
-      "ما زلت قوياً."
+      "هذا ماراثون.", "أنت تعيش هنا الآن.", "العشب لاحقاً.", "مشاهدة طويلة.",
+      "اشرب ماء ربما.", "ما زلت قوياً."
     ],
     "watchMilestone": [
-      "{sessionMinutes} دقيقة. جيد.",
-      "وصلنا للمرحلة.",
-      "لاحظت ذلك.",
-      "التزام جميل.",
-      "وقت مسروق جيداً.",
-      "نجحنا."
+      "{sessionMinutes} دقيقة. جيد.", "وصلنا للمرحلة.", "لاحظت ذلك.", "التزام جميل.",
+      "وقت مسروق جيداً.", "نجحنا."
     ],
     "watchVideoLong": [
-      "{currentVideoMinutes} دقيقة؟",
-      "هذه فيديو ضخم.",
-      "طاقة فيديو كبيرة.",
-      "سنبقى جالسين.",
-      "طويل، صح؟",
-      "ارتاح."
+      "{currentVideoMinutes} دقيقة؟", "هذه فيديو ضخم.", "طاقة فيديو كبيرة.", "سنبقى جالسين.",
+      "طويل، صح؟", "ارتاح."
     ],
     "returningWatcher": [
-      "ها أنت مجدداً.",
-      "مرحباً بعودتك.",
-      "لقد عدت.",
-      "حفظت مكانك.",
-      "نفس الطقس.",
-      "كنت أنتظرك."
+      "ها أنت مجدداً.", "مرحباً بعودتك.", "لقد عدت.", "حفظت مكانك.",
+      "نفس الطقس.", "كنت أنتظرك."
     ],
     "channelLoyalty": [
-      "{channel} مجدداً.",
-      "طاقة وفاء.",
-      "تعود دائماً.",
-      "قناتك المفضلة؟",
-      "عودة إلى {channel}.",
-      "أنت ثابت."
+      "{channel} مجدداً.", "طاقة وفاء.", "تعود دائماً.", "قناتك المفضلة؟",
+      "عودة إلى {channel}.", "أنت ثابت."
     ],
     "tabComeback": [
-      "ها أنت.",
-      "مرحباً، يا إنسان.",
-      "اختفيت.",
-      "رجعت بسرعة؟",
-      "حميت المكان.",
-      "اشتقت لي؟"
-    ],
-    "topicDogs": [
-      "فيديو كلاب.",
-      "هذا كثير.",
-      "مخلوقات صاخبة.",
-      "طاقة ذيل كبيرة.",
-      "كلاب مجدداً.",
-      "نباح كثير."
-    ],
-    "topicSquirrels": [
-      "محتوى سنجاب.",
-      "غريزة الصيد تعمل.",
-      "قارض فوضوي صغير.",
-      "يتحركون بغرابة.",
-      "سأطارده.",
-      "فرو مشبوه جداً."
-    ],
-    "topicRats": [
-      "فيديو جرذ.",
-      "بطاطا فوضى صغيرة.",
-      "أقدام سريعة.",
-      "سناك مشكوك.",
-      "وقت القوارض.",
-      "أنا مهتم."
-    ],
-    "topicBirds": [
-      "فيديو طيور.",
-      "ضرائب تغريد.",
-      "سناك السماء.",
-      "أنا مركز.",
-      "تلك الرفرفة غير قانونية.",
-      "ريش في كل مكان."
-    ],
-    "topicOcean": [
-      "أشياء بحرية.",
-      "ماء كثير.",
-      "احتمال سمك موجود.",
-      "أجواء مبللة.",
-      "أنا مع السمك.",
-      "السباحة تبدو مزيفة."
-    ],
-    "topicAnimals": [
-      "فيديو حيوانات.",
-      "هؤلاء قومي.",
-      "محتوى مخلوقات جيد.",
-      "أوافق.",
-      "فرو حليف مكتشف.",
-      "وقت الطبيعة."
-    ],
-    "topicTech": [
-      "فيديو تقنية.",
-      "وضع قط نيرد.",
-      "جهاز غالي.",
-      "أسلاك كثيرة.",
-      "آلات مجدداً.",
-      "لا أفهم شيئاً."
-    ],
-    "topicGaming": [
-      "فيديو ألعاب.",
-      "دماغ الغنيمة يعمل.",
-      "طاقة زعيم.",
-      "سلوك إعادة ظهور.",
-      "أجواء يد تحكم.",
-      "وضع اللاعب."
-    ],
-    "topicMusic": [
-      "موسيقى.",
-      "إيقاع جميل.",
-      "أحب هذا الإيقاع.",
-      "ذيلي على الإيقاع.",
-      "هذه تضرب.",
-      "حفلة صغيرة."
-    ],
-    "topicScience": [
-      "فيديو علم.",
-      "ساعات دماغ كبير.",
-      "أحتاج نظارات.",
-      "تجارب مشبوهة.",
-      "حدث تعلم.",
-      "أشياء نيرد ممتعة."
-    ],
-    "topicFood": [
-      "فيديو طعام.",
-      "الآن جعت.",
-      "يبدو قابلاً للأكل.",
-      "شارك، رجاءً.",
-      "طبخ مجدداً.",
-      "وقاحة وأنا جائع."
-    ],
-    "topicSports": [
-      "فيديو رياضة.",
-      "طاقة كرة.",
-      "بشر سريعون.",
-      "صراخ تنافسي.",
-      "أفهم الكرة.",
-      "مادة مطاردة جيدة."
-    ],
-    "topicAnime": [
-      "وقت أنمي.",
-      "درامي من الآن.",
-      "طاقة بطل.",
-      "قوس تدريب.",
-      "قوة كثيرة.",
-      "فيزياء شعر مجدداً."
-    ],
-    "topicMovies": [
-      "فيديو فيلم.",
-      "التطور قادم.",
-      "مرر السناك.",
-      "وضع سينما القط.",
-      "يبدو درامياً.",
-      "لحظة صوت الإعلان."
-    ],
-    "topicHorror": [
-      "فيديو رعب.",
-      "لا شكراً.",
-      "اترك النور.",
-      "يبدو ملعوناً.",
-      "أنا شجاع. تقريباً.",
-      "ضرائب الفزعة."
-    ],
-    "topicHistory": [
-      "فيديو تاريخ.",
-      "دراما بشر قديمة.",
-      "فوضى قديمة.",
-      "مغبر لكنه ممتع.",
-      "القدماء كانوا غريبين.",
-      "أتعلم من الأشباح."
-    ],
-    "topicArt": [
-      "فيديو فن.",
-      "ألوان جميلة.",
-      "أحترم العمل.",
-      "دماغ الفرشاة يعمل.",
-      "تكوين جميل.",
-      "ساعة إبداع."
-    ],
-    "topicMoney": [
-      "فيديو مال.",
-      "أفكار قط غني.",
-      "أين حصتي؟",
-      "عملات مجدداً.",
-      "الأرقام مرهقة.",
-      "ربح يخرخر."
-    ],
-    "topicNews": [
-      "فيديو أخبار.",
-      "العالم غريب.",
-      "دراما قادمة.",
-      "كوكب مشغول.",
-      "كل شيء ينكسر.",
-      "هذا كثير."
-    ],
-    "topicCars": [
-      "فيديو سيارات.",
-      "زوميز معدن صاخب.",
-      "محتوى فروم.",
-      "محركات كثيرة.",
-      "طاقة صندوق سريع.",
-      "أفضل الكرتون."
-    ],
-    "topicStyle": [
-      "فيديو ستايل.",
-      "مظهر جميل.",
-      "قط الموضة يوافق.",
-      "لباس جيد.",
-      "خامات جميلة.",
-      "إطلالة قوية."
+      "ها أنت.", "مرحباً، يا إنسان.", "اختفيت.", "رجعت بسرعة؟",
+      "حميت المكان.", "اشتقت لي؟"
     ]
-  }
+      }
   };
 
-  const IDLE_SPEECH_CATEGORIES = ['random', 'happy', 'hungry', 'sleepy', 'memeMood', 'content', 'watchSession', 'watchLong'];
+  const IDLE_SPEECH_CATEGORIES = [
+    'random', 'happy', 'hungry', 'sleepy',
+    'memeMood', 'content', 'watchSession', 'watchLong'
+  ];
 
   // 
   //  STATE VARIABLES
@@ -4510,12 +1443,10 @@ window.PixelCatSpeech = function(config) {
   
   function createEmptyMemory() {
     return {
-      topics: {},
       channels: {},
       recentVideoKeys: [],
       recentPhrases: [],
       recentWords: [],
-      lastTopic: '',
       lastChannel: '',
       totalVideos: 0,
       watch: createEmptyWatchStats(),
@@ -4703,14 +1634,7 @@ window.PixelCatSpeech = function(config) {
     if (lang !== 'en' && Array.isArray(smartLang.random) && smartLang.random.length > 0) return true;
     return Array.isArray(smartEnglish[category]) && smartEnglish[category].length > 0;
   }
-
-  function getLocalizedTopicLabel(topic) {
-    if (!topic) return getUiLanguage() === 'ar' ? 'هذا الشيء' : (getUiLanguage() === 'fr' ? 'ce sujet' : (getUiLanguage() === 'it' ? 'questa cosa' : 'this stuff'));
-    const lang = getUiLanguage();
-    return (LOCALIZED_TOPIC_LABELS[lang] && LOCALIZED_TOPIC_LABELS[lang][topic.id]) || topic.label;
-  }
-
-  function setLocal(data) {
+function setLocal(data) {
     if (!API || !API.storage || !API.storage.local) return Promise.resolve();
     if (typeof API.storage.local.set === 'function' && API.storage.local.set.length <= 1) {
       return API.storage.local.set(data);
@@ -4730,12 +1654,10 @@ window.PixelCatSpeech = function(config) {
     const base = createEmptyMemory();
     if (!raw || typeof raw !== 'object') return base;
     return {
-      topics: raw.topics && typeof raw.topics === 'object' ? raw.topics : {},
       channels: raw.channels && typeof raw.channels === 'object' ? raw.channels : {},
       recentVideoKeys: Array.isArray(raw.recentVideoKeys) ? raw.recentVideoKeys.slice(-18) : [],
       recentPhrases: Array.isArray(raw.recentPhrases) ? raw.recentPhrases.slice(-140) : [],
       recentWords: Array.isArray(raw.recentWords) ? raw.recentWords.slice(-280) : [],
-      lastTopic: typeof raw.lastTopic === 'string' ? raw.lastTopic : '',
       lastChannel: typeof raw.lastChannel === 'string' ? raw.lastChannel : '',
       totalVideos: Math.max(0, Number(raw.totalVideos) || 0),
       watch: normalizeWatchStats(raw.watch),
@@ -4802,10 +1724,7 @@ window.PixelCatSpeech = function(config) {
 
   function getCurrentChannelName() {
     const selectors = [
-      '#owner #channel-name a',
-      'ytd-video-owner-renderer #channel-name a',
-      '#upload-info #channel-name a',
-      'ytd-watch-metadata ytd-channel-name a',
+      '#owner #channel-name a', 'ytd-video-owner-renderer #channel-name a', '#upload-info #channel-name a', 'ytd-watch-metadata ytd-channel-name a',
       'ytd-channel-name a'
     ];
     for (const selector of selectors) {
@@ -4817,12 +1736,7 @@ window.PixelCatSpeech = function(config) {
   }
 
   function getCurrentVideoTitle() {
-    const selectors = [
-      'h1.ytd-watch-metadata',
-      'h1.title',
-      '#title h1',
-      'meta[property="og:title"]'
-    ];
+    const selectors = ['h1.ytd-watch-metadata', 'h1.title', '#title h1', 'meta[property="og:title"]'];
     for (const selector of selectors) {
       const el = document.querySelector(selector);
       const text = selector.startsWith('meta') ? cleanText(el && el.getAttribute('content')) : cleanText(el && el.textContent);
@@ -4830,25 +1744,7 @@ window.PixelCatSpeech = function(config) {
     }
     return cleanText(document.title.replace(/ - YouTube$/i, '')).slice(0, 140);
   }
-
-  function detectTopic(title) {
-    return null;
-  }
-
-  function getCurrentTopicSpeechCategory() {
-    return null;
-  }
-
-  function incrementCounter(map, key) {
-    if (!key) return;
-    map[key] = Math.min(999, (Number(map[key]) || 0) + 1);
-  }
-
-  function getFavoriteTopic() {
-    return null;
-  }
-
-  function getTimeSpeechCategory() {
+function getTimeSpeechCategory() {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'timeMorning';
     if (hour >= 12 && hour < 18) return 'timeAfternoon';
@@ -5041,8 +1937,6 @@ window.PixelCatSpeech = function(config) {
   }
 
   function fillTemplate(text) {
-    const favorite = getFavoriteTopic();
-    const topicLabel = getLocalizedTopicLabel(favorite);
     const channel = getCurrentChannelName() || (getUiLanguage() === 'ar' ? 'هذه القناة' : (getUiLanguage() === 'fr' ? 'cette chaîne' : (getUiLanguage() === 'it' ? 'questo canale' : 'this channel')));
     const title = getCurrentVideoTitle();
     const shortTitle = title ? title.replace(/\s+/g, ' ').slice(0, 34) : '';
@@ -5052,7 +1946,6 @@ window.PixelCatSpeech = function(config) {
     const totalHours = Math.max(0, Math.round((watch.totalMs || 0) / 3600000));
     const currentVideoMinutes = Math.max(0, Math.round((speechSession.currentVideoWatchMs || 0) / 60000));
     return String(text || '')
-      .replace(/\{topic\}/g, topicLabel)
       .replace(/\{channel\}/g, channel)
       .replace(/\{video\}/g, shortTitle)
       .replace(/\{grabCount\}/g, String(speechSession.grabs || 0))
@@ -5065,16 +1958,7 @@ window.PixelCatSpeech = function(config) {
       .replace(/\{totalHours\}/g, String(totalHours))
       .replace(/\{currentVideoMinutes\}/g, String(currentVideoMinutes));
   }
-
-  function getMemorySpeechText() {
-    const watchCategory = getWatchSpeechCategory();
-    if (watchCategory && hasSpeechCategory(watchCategory)) return getSmartRandomPhrase(watchCategory);
-    if (hasSpeechCategory('watching')) return getSmartRandomPhrase('watching');
-    return getSmartRandomPhrase('random');
-  }
-
-
-  function selectScriptedPhrase(category, list) {
+function selectScriptedPhrase(category, list) {
     if (!Array.isArray(list) || !list.length) return null;
     const count = Math.max(1, getCategoryEventCount(category));
     if (category === 'grabbed' && speechSession.grabs > 0 && speechSession.grabs <= Math.min(8, list.length)) {
@@ -5234,7 +2118,7 @@ window.PixelCatSpeech = function(config) {
       }
     }
     
-    return category === 'memory' ? getMemorySpeechText() : getSmartRandomPhrase(category);
+    return getSmartRandomPhrase(category);
   }
 
   // 
@@ -5331,19 +2215,31 @@ window.PixelCatSpeech = function(config) {
     const VIS = getVIS();
     const state = getState();
     const isWallState = state === 'wall_left' || state === 'wall_right' || state === 'wall_left_sit' || state === 'wall_right_sit' || state === 'ninja_climb';
+    const isBubbleTrapState = getBubbleTrapActive() || state === 'bubble_trap';
     const sizeScale = Math.max(1, VIS / 80);
     const margin = POSITIONING.BUBBLE_MARGIN * sizeScale;
-    const gap = isWallState
+    const baseGap = isWallState
       ? Math.max(8, POSITIONING.BUBBLE_GAP * sizeScale * 0.45)
       : POSITIONING.BUBBLE_GAP * sizeScale;
-    const catTop = isWallState
-      ? feetY - VIS * 0.42
-      : feetY - VIS * POSITIONING.CAT_TOP_OFFSET;
-    const catMid = isWallState
-      ? feetY - VIS * 0.08
-      : feetY - VIS * POSITIONING.CAT_MID_OFFSET;
-    const catBottom = isWallState ? feetY + VIS * 0.28 : feetY;
-    const catHalfW = VIS * (isWallState ? 0.22 : 0.5);
+    // Soap-bubble speech should sit close to the visible bubble edge.
+    // The bubble spritesheet has transparent padding at the bottom, so using
+    // the full frame height makes the text look too far below the trapped pet.
+    const gap = isBubbleTrapState ? Math.max(2, baseGap * 0.35) : baseGap;
+    const bubbleWidth = isBubbleTrapState ? Math.max(VIS * 0.95, getBubbleTrapWidth()) : 0;
+    const bubbleHeight = isBubbleTrapState ? Math.max(VIS * 1.05, getBubbleTrapHeight()) : 0;
+    const bubbleCenterY = isBubbleTrapState ? feetY - bubbleHeight * 0.245 : 0;
+    const catTop = isBubbleTrapState
+      ? bubbleCenterY - bubbleHeight * 0.5
+      : (isWallState ? feetY - VIS * 0.42 : feetY - VIS * POSITIONING.CAT_TOP_OFFSET);
+    const catMid = isBubbleTrapState
+      ? bubbleCenterY
+      : (isWallState ? feetY - VIS * 0.08 : feetY - VIS * POSITIONING.CAT_MID_OFFSET);
+    const catBottom = isBubbleTrapState
+      ? bubbleCenterY + bubbleHeight * 0.31
+      : (isWallState ? feetY + VIS * 0.28 : feetY);
+    const catHalfW = isBubbleTrapState
+      ? bubbleWidth * 0.5
+      : VIS * (isWallState ? 0.22 : 0.5);
     const catSafe = {
       left: feetX - catHalfW - gap,
       right: feetX + catHalfW + gap,
@@ -5351,7 +2247,12 @@ window.PixelCatSpeech = function(config) {
       bottom: catBottom + gap
     };
 
-    const candidates = isWallState ? [
+    const candidates = isBubbleTrapState ? [
+      { anchor: 'bottom', x: feetX - speechSizeW / 2, y: catBottom + gap },
+      { anchor: 'left', x: catSafe.left - speechSizeW, y: catMid - speechSizeH / 2 },
+      { anchor: 'right', x: catSafe.right, y: catMid - speechSizeH / 2 },
+      { anchor: 'top', x: feetX - speechSizeW / 2, y: catTop - speechSizeH - gap }
+    ] : (isWallState ? [
       { anchor: state === 'wall_right' || state === 'wall_right_sit' ? 'left' : 'right', x: (state === 'wall_right' || state === 'wall_right_sit') ? catSafe.left - speechSizeW : catSafe.right, y: catMid - speechSizeH / 2 },
       { anchor: 'top', x: feetX - speechSizeW / 2, y: catTop - speechSizeH - gap },
       { anchor: 'bottom', x: feetX - speechSizeW / 2, y: catBottom + gap },
@@ -5361,7 +2262,7 @@ window.PixelCatSpeech = function(config) {
       { anchor: 'bottom', x: feetX - speechSizeW / 2, y: catBottom + gap },
       { anchor: 'left', x: catSafe.left - speechSizeW, y: catMid - speechSizeH / 2 },
       { anchor: 'right', x: catSafe.right, y: catMid - speechSizeH / 2 }
-    ];
+    ]);
 
     let chosen = candidates[0];
     let chosenClampedX = Math.max(margin, Math.min(vw - margin - speechSizeW, chosen.x));
@@ -5504,6 +2405,7 @@ window.PixelCatSpeech = function(config) {
     const feetY = getFeetY();
     const VIS = getVIS();
     
+    const responseCategory = isLike ? 'voteLike' : 'voteDislike';
     if (isLike) {
       awardCoins(2);
       earnXP(0.3);
@@ -5515,7 +2417,13 @@ window.PixelCatSpeech = function(config) {
       config.catEnergy = Math.max(0, config.catEnergy - 0.08);
       setAnimLocked('scared', 600);
     }
-    hideSpeechBubble();
+    noteSpeechEvent(responseCategory);
+    showSpeech(getSmartRandomPhrase(responseCategory), {
+      interactive: false,
+      durationMs: 3100,
+      cooldownMs: 17000,
+      force: true
+    });
     scheduleIdleChatter(SPEECH_CONFIG.INTERACTIVE_DELAY + Math.random() * SPEECH_CONFIG.INTERACTIVE_VARIANCE);
   }
 
@@ -5610,11 +2518,11 @@ window.PixelCatSpeech = function(config) {
         }
       }
 
-      const interactive = Math.random() < 0.1;
+      const interactive = Math.random() < (1 / 15);
       
       let text;
       if (interactive) {
-        text = getSmartRandomPhrase('interactive');
+        text = getSmartRandomPhrase('feedbackQuestion');
       } else {
         text = getContextAwareSpeechText();
       }
@@ -5623,8 +2531,8 @@ window.PixelCatSpeech = function(config) {
       scheduleIdleChatter();
     }).catch(() => {
       // Fallback
-      const interactive = Math.random() < 0.1;
-      const text = interactive ? getSmartRandomPhrase('interactive') : getContextAwareSpeechText();
+      const interactive = Math.random() < (1 / 15);
+      const text = interactive ? getSmartRandomPhrase('feedbackQuestion') : getContextAwareSpeechText();
       showSpeech(text, { interactive });
       scheduleIdleChatter();
     });
@@ -5670,6 +2578,119 @@ window.PixelCatSpeech = function(config) {
     });
   }
 
+  function getCounterPhrase(lines, counter) {
+    if (!Array.isArray(lines) || !lines.length) return '';
+    const n = Math.max(0, Number(counter) || 0);
+    // Counter-based, but still varied: the same grab number will not always sound identical.
+    const index = Math.floor(Math.random() * lines.length + n) % lines.length;
+    return lines[index];
+  }
+
+  function getGrabCounterSpeech(grabCount) {
+    const n = Math.max(1, Number(grabCount) || 1);
+
+    if (n === 1) {
+      return getCounterPhrase([
+        'Wait, what now?', 'Human? Put me down.', 'Where are we going?', 'Is this a game?',
+        'My paws were busy.', 'Oh, moving now?', 'Careful with the fur.', 'Soft hands, human.'
+      ], n);
+    }
+
+    if (n === 2) {
+      return getCounterPhrase([
+        'Again, human?', 'I remember this.', 'Still not a toy.', 'Can you not?',
+        'Check your boundaries.', 'I have cat plans.', 'This again?', 'My beans are sensitive.'
+      ], n);
+    }
+
+    if (n === 3) {
+      return getCounterPhrase([
+        'Third grab already?', 'You keep doing this.', 'Pattern detected, human.', 'This is getting old.',
+        'I noticed that.', 'Find another hobby.', 'My tail disapproves.', 'Touch grass, human.'
+      ], n);
+    }
+
+    if (n === 10) return 'Tenth grab. Congrats.';
+    if (n > 10 && n % 10 === 0) return `${n} grabs. Impressive.`;
+    if (n >= 7) {
+      return getCounterPhrase([
+        'Still grabbing me?', 'You are obsessed.', 'This is your hobby?', 'I charge fish tax.',
+        'Very normal behavior.', 'Human, explain yourself.', 'The paw council knows.', 'I remember everything.'
+      ], n);
+    }
+
+    return getCounterPhrase([
+      'Again with this?', 'You missed me?', 'Hands off the fur.', 'I was busy.',
+      'Put me back, human.', 'This is suspicious.', 'Paws need freedom.', 'Try petting instead.'
+    ], n);
+  }
+
+  function getHeldCounterSpeech(heldSeconds, grabCount, speed) {
+    const n = Math.max(1, Number(grabCount) || 1);
+    const seconds = Math.max(1, Number(heldSeconds) || 1);
+    const fast = Math.abs(Number(speed) || 0) > 520;
+
+    if (seconds >= 18) {
+      return getCounterPhrase([
+        'I live here now.', 'Is your finger stuck?', 'I am aging here.', 'Still holding? Really?',
+        'This is awkward.', 'Release the fluff.', 'Floor time, human.', 'My paws need freedom.'
+      ], n + seconds);
+    }
+
+    if (seconds >= 8) {
+      speechSession.longHolds = Math.min(999, (Number(speechSession.longHolds) || 0) + 1);
+      return getCounterPhrase([
+        'Still holding me?', 'This is getting weird.', 'Let go, human.', 'I need freedom.',
+        'My patience is gone.', 'Enough carrying, human.', 'Pets, not carrying.', 'You done yet?'
+      ], n + seconds);
+    }
+
+    if (fast) {
+      return getCounterPhrase([
+        'Too fast, human.', 'I am not luggage.', 'Where are we going?', 'Less shaking, please.',
+        'Tail is not steering.', 'Easy with the paws.', 'Careful with me.', 'My fur is premium.'
+      ], n + seconds);
+    }
+
+    if (n >= 3) {
+      return getCounterPhrase([
+        'Still doing this?', 'You learned nothing.', 'I remember the grabs.', 'This again, human?',
+        'At least be gentle.', 'My beans are judging.', 'Paw patience is low.', 'Try the video instead.'
+      ], n + seconds);
+    }
+
+    return getCounterPhrase([
+      'Still holding me?', 'We live here now?', 'I have paws.', 'What is the plan?',
+      'You done, human?', 'This is awkward.', 'Put me back.', 'I need the floor.'
+    ], n + seconds);
+  }
+
+  function getDropCounterSpeech(grabCount, dropCount, heldSeconds, releaseSpeed) {
+    const n = Math.max(1, Number(grabCount) || 1);
+    const drops = Math.max(1, Number(dropCount) || 1);
+    const seconds = Math.max(0, Number(heldSeconds) || 0);
+    const thrown = Math.abs(Number(releaseSpeed) || 0) > 420;
+
+    if (thrown) {
+      return getCounterPhrase([
+        'Why am I flying?', 'I am not a ball.', 'Rude flight, human.', 'Paws need warning.',
+        'Gravity found me.', 'That was dramatic.', 'My tail remembers.', 'Try gentler next time.'
+      ], n + drops);
+    }
+
+    if (n >= 4 || drops >= 4 || seconds >= 8) {
+      return getCounterPhrase([
+        'Finally. Freedom.', 'Do not repeat that.', 'My trust fell too.', 'I need a bath.',
+        'Ignoring you now.', 'Watch your cursor.', 'That was personal.', 'I remember this.'
+      ], n + drops + seconds);
+    }
+
+    return getCounterPhrase([
+      'Rude landing, human.', 'Floor says hello.', 'I meant to do that.', 'My paws felt that.',
+      'Try softer next time.', 'Tail survived.', 'Gravity found me again.', 'Calculated move. Trust me.'
+    ], n + drops);
+  }
+
   function speakGrabbed() {
     if (!getSpeechEnabled()) return;
     if (!getCatEnabled() || !getIsTabVisible() || getIsDeepSleep()) return;
@@ -5683,7 +2704,7 @@ window.PixelCatSpeech = function(config) {
     lastGrabSpeechTs = now;
     lastDragSpeechTs = now;
 
-    showSpeech(getSmartRandomPhrase('grabbed'), {
+    showSpeech(getGrabCounterSpeech(speechSession.grabs), {
       durationMs: 2600 + Math.random() * 900,
       cooldownMs: 900
     });
@@ -5704,12 +2725,10 @@ window.PixelCatSpeech = function(config) {
     if (now - lastDragSpeechTs < gap) return;
     if (speechVisible && now - lastGrabSpeechTs < 2400) return;
 
-    const category = heldSeconds >= 7 ? 'longHeld' : (speed > 520 ? 'heldMoving' : 'heldStill');
-    if (category === 'longHeld') speechSession.longHolds = Math.min(999, (Number(speechSession.longHolds) || 0) + 1);
-    noteSpeechEvent(category);
+    noteSpeechEvent('held');
     lastDragSpeechTs = now;
     lastGrabSpeechTs = now;
-    showSpeech(getSmartRandomPhrase(category), {
+    showSpeech(getHeldCounterSpeech(heldSeconds, speechSession.grabs, speed), {
       durationMs: 2500 + Math.random() * 700,
       cooldownMs: 700
     });
@@ -5721,14 +2740,14 @@ window.PixelCatSpeech = function(config) {
     const now = Date.now();
     const startedAt = Number(speechSession.lastGrabStartedAt) || now;
     const heldMs = Math.max(0, now - startedAt);
-    speechSession.lastHeldSeconds = Math.max(1, Math.round(heldMs / 1000));
+    const heldSeconds = Math.max(1, Math.round(heldMs / 1000));
+    speechSession.lastHeldSeconds = heldSeconds;
     speechSession.lastGrabStartedAt = 0;
     speechSession.drops = Math.min(999, (Number(speechSession.drops) || 0) + 1);
 
     const releaseSpeed = meta && Number.isFinite(Number(meta.releaseSpeed)) ? Math.abs(Number(meta.releaseSpeed)) : 0;
-    const category = releaseSpeed > 420 ? 'thrown' : 'dropped';
-    noteSpeechEvent(category);
-    showSpeech(getSmartRandomPhrase(category), {
+    noteSpeechEvent(releaseSpeed > 420 ? 'thrown' : 'dropped');
+    showSpeech(getDropCounterSpeech(speechSession.grabs, speechSession.drops, heldSeconds, releaseSpeed), {
       durationMs: 2700 + Math.random() * 800,
       cooldownMs: 1600,
       allowReplace: true

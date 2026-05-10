@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'dailyQuestState';
   const STATS_KEY = 'dailyQuestStats';
-  const QUEST_VERSION = 3;
+  const QUEST_VERSION = 5;
 
   // minXP: quest only enters the pool once catXP >= this value
   const QUEST_DEFINITIONS = [
@@ -39,6 +39,32 @@
       minXP: 0,
       targets: [3, 5, 8],
       description: (t) => `Collect ${t} coin drop${t === 1 ? '' : 's'}.`
+    },
+
+    //  Google tab quests
+    {
+      type: 'google_visits',
+      icon: 'google',
+      title: 'Google Visit',
+      minXP: 0,
+      targets: [1, 2],
+      description: (t) => `Open or visit Google ${t} time${t === 1 ? '' : 's'}.`
+    },
+    {
+      type: 'google_searches',
+      icon: 'google',
+      title: 'Search Buddy',
+      minXP: 0,
+      targets: [1, 2, 3],
+      description: (t) => `Do ${t} Google search${t === 1 ? '' : 'es'} with your pet.`
+    },
+    {
+      type: 'google_active_seconds',
+      icon: 'google',
+      title: 'Google Patrol',
+      minXP: 0,
+      targets: [60, 120, 180],
+      description: (t) => `Stay with your pet on Google for ${formatDuration(t)}.`
     },
     //  Unlocked at XP 10 (ball) 
     {
@@ -149,6 +175,9 @@
       lifetimeFish:          clampInteger(stats.lifetimeFish),
       lifetimeCoins:         clampInteger(stats.lifetimeCoins),
       lifetimeBallCatches:   clampInteger(stats.lifetimeBallCatches),
+      lifetimeGoogleVisits:  clampInteger(stats.lifetimeGoogleVisits),
+      lifetimeGoogleSearches: clampInteger(stats.lifetimeGoogleSearches),
+      lifetimeGoogleSeconds: clampInteger(stats.lifetimeGoogleSeconds),
       perfectDays:           clampInteger(stats.perfectDays),
       lastPerfectDate:       typeof stats.lastPerfectDate === 'string' ? stats.lastPerfectDate : ''
     };
@@ -158,20 +187,103 @@
     return QUEST_DEFINITIONS.find((d) => d.type === type) || null;
   }
 
-  // Generate today's quests filtered by current XP level
-  function generateState(dateKey, catXP) {
-    const xp = Math.max(0, catXP || 0);
-    const random = mulberry32(seedFromString(`pixelcat:${dateKey}:quests`));
+  const TARGET_CAPS = Object.freeze({
+    pet_sessions: 8,
+    fish_served: 8,
+    watch_seconds: 900,
+    coins_collected: 16,
+    google_visits: 4,
+    google_searches: 5,
+    google_active_seconds: 600,
+    ball_catches: 10,
+    spiders_caught: 5
+  });
 
-    // Only pool quests whose minXP <= current XP
+  function getQuestDifficulty(stats, dailyStreak, catXP) {
+    const safeStats = normalizeStats(stats);
+    const perfectDays = clampInteger(safeStats.perfectDays);
+    const completedDays = Math.floor(clampInteger(safeStats.lifetimeCompleted) / 3);
+    const streakDays = clampInteger(dailyStreak);
+    const steadyDays = Math.max(perfectDays, completedDays, streakDays);
+    const xp = Math.max(0, Number(catXP) || 0);
+    const xpBonus = xp >= 175 ? 2 : (xp >= 100 ? 1 : 0);
+    return Math.min(8, Math.max(0, steadyDays + xpBonus));
+  }
+
+  function scaleQuestTarget(type, baseTarget, difficultyLevel) {
+    const base = clampInteger(baseTarget);
+    const level = clampInteger(difficultyLevel);
+    let next = base;
+
+    if (type === 'watch_seconds' || type === 'google_active_seconds') {
+      next = base + (level * 30);
+      return Math.min(TARGET_CAPS[type], next);
+    }
+
+    if (type === 'google_visits' || type === 'google_searches') {
+      next = base + Math.floor(level / 3);
+      return Math.min(TARGET_CAPS[type], next);
+    }
+
+    if (type === 'coins_collected') {
+      next = base + level;
+      return Math.min(TARGET_CAPS.coins_collected, next);
+    }
+
+    if (type === 'spiders_caught') {
+      next = base + Math.floor((level + 2) / 3);
+      return Math.min(TARGET_CAPS.spiders_caught, next);
+    }
+
+    if (type === 'ball_catches') {
+      next = base + Math.ceil(level / 2);
+      return Math.min(TARGET_CAPS.ball_catches, next);
+    }
+
+    next = base + Math.ceil(level / 2);
+    return Math.min(TARGET_CAPS[type] || next, next);
+  }
+
+  function isGoogleQuestType(type) {
+    return type === 'google_visits' || type === 'google_searches' || type === 'google_active_seconds';
+  }
+
+  // Generate today's quests filtered by current XP level.
+  // Difficulty rises slowly with daily streak/perfect quest days and XP, but is capped.
+  function generateState(dateKey, catXP, stats, dailyStreak) {
+    const xp = Math.max(0, catXP || 0);
+    const difficultyLevel = getQuestDifficulty(stats, dailyStreak, xp);
+    const random = mulberry32(seedFromString(`pixelcat:${dateKey}:quests:v${QUEST_VERSION}:${difficultyLevel}`));
+
+    // Only pool quests whose minXP <= current XP.
+    // Keep Google quests in the mix, but limit them to one daily slot so the list
+    // never becomes all-Google or annoying for users who mostly use YouTube.
     const pool = QUEST_DEFINITIONS.filter(d => xp >= d.minXP);
-    const chosen = shuffle(pool, random).slice(0, 3);
+    const googlePool = pool.filter(d => isGoogleQuestType(d.type));
+    const normalPool = pool.filter(d => !isGoogleQuestType(d.type));
+    const chosen = [];
+
+    if (googlePool.length) {
+      chosen.push(shuffle(googlePool, random)[0]);
+    }
+
+    shuffle(normalPool, random).forEach((definition) => {
+      if (chosen.length < 3) chosen.push(definition);
+    });
+
+    if (chosen.length < 3) {
+      shuffle(googlePool, random).forEach((definition) => {
+        if (chosen.length < 3 && !chosen.includes(definition)) chosen.push(definition);
+      });
+    }
 
     return {
       version: QUEST_VERSION,
       dateKey,
+      difficultyLevel,
       quests: chosen.map((definition, index) => {
-        const target = definition.targets[Math.floor(random() * definition.targets.length)];
+        const baseTarget = definition.targets[Math.floor(random() * definition.targets.length)];
+        const target = scaleQuestTarget(definition.type, baseTarget, difficultyLevel);
         return {
           id: `${dateKey}:${definition.type}:${index}`,
           type: definition.type,
@@ -197,19 +309,19 @@
     };
   }
 
-  function ensureState(rawState, dateKey, catXP) {
+  function ensureState(rawState, dateKey, catXP, stats, dailyStreak) {
     const normalizedDateKey = dateKey || getDateKey();
     const state = rawState && typeof rawState === 'object' ? rawState : null;
 
     if (!state || state.version !== QUEST_VERSION || state.dateKey !== normalizedDateKey || !Array.isArray(state.quests)) {
-      return { state: generateState(normalizedDateKey, catXP), changed: true };
+      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak), changed: true };
     }
 
     const quests = state.quests.map(normalizeQuest).filter(Boolean);
     const availableQuestCount = QUEST_DEFINITIONS.filter(d => Math.max(0, catXP || 0) >= d.minXP).length;
     const expectedQuestCount = Math.min(3, availableQuestCount);
     if (quests.length < expectedQuestCount) {
-      return { state: generateState(normalizedDateKey, catXP), changed: true };
+      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak), changed: true };
     }
 
     const changed = quests.length !== state.quests.length || quests.some((quest, index) => {
@@ -218,7 +330,7 @@
              quest.completed !== original.completed || quest.target !== original.target;
     });
 
-    return { state: { version: QUEST_VERSION, dateKey: normalizedDateKey, quests }, changed };
+    return { state: { version: QUEST_VERSION, dateKey: normalizedDateKey, difficultyLevel: clampInteger(state.difficultyLevel), quests }, changed };
   }
 
   function formatDuration(seconds) {
@@ -233,7 +345,7 @@
 
 
   function formatQuestProgress(quest) {
-    if (quest.type === 'watch_seconds') {
+    if (quest.type === 'watch_seconds' || quest.type === 'google_active_seconds') {
       return `${formatDuration(quest.progress)} / ${formatDuration(quest.target)}`;
     }
     return `${quest.progress} / ${quest.target}`;
@@ -264,6 +376,7 @@
       completedCount,
       totalCount,
       allComplete: totalCount > 0 && completedCount === totalCount,
+      difficultyLevel: clampInteger(state.difficultyLevel),
       stats,
       secondsUntilReset: getSecondsUntilReset()
     };
@@ -277,9 +390,9 @@
   }
 
   async function getSnapshot(storageArea) {
-    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0 });
-    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0);
+    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0 });
     const stats = normalizeStats(data[STATS_KEY]);
+    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0);
     if (ensured.changed) {
       await localSet(storageArea, { [STORAGE_KEY]: ensured.state, [STATS_KEY]: stats });
     }
@@ -297,10 +410,10 @@
     const increment = Math.max(0, Number(amount) || 0);
     if (!increment) return getSnapshot(storageArea);
 
-    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0 });
-    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0);
-    const state = ensured.state;
+    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0 });
     const stats = normalizeStats(data[STATS_KEY]);
+    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0);
+    const state = ensured.state;
     let stateChanged = ensured.changed;
     let statsChanged = false;
     let questsJustCompleted = 0;
@@ -311,6 +424,9 @@
     if (type === 'fish_served')     { stats.lifetimeFish += increment; statsChanged = true; }
     if (type === 'coins_collected') { stats.lifetimeCoins += increment; statsChanged = true; }
     if (type === 'ball_catches')    { stats.lifetimeBallCatches += increment; statsChanged = true; }
+    if (type === 'google_visits')   { stats.lifetimeGoogleVisits += increment; statsChanged = true; }
+    if (type === 'google_searches') { stats.lifetimeGoogleSearches += increment; statsChanged = true; }
+    if (type === 'google_active_seconds') { stats.lifetimeGoogleSeconds += increment; statsChanged = true; }
 
     state.quests.forEach((quest) => {
       if (quest.type !== type || quest.completed) return;

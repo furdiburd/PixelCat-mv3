@@ -14,6 +14,7 @@ body.pixelcat-hidden-fullscreen .pixel-spider,
 body.pixelcat-hidden-fullscreen .pixel-coin-drop,
 body.pixelcat-hidden-fullscreen .coin-popup,
 body.pixelcat-hidden-fullscreen .pixel-cat-bubble,
+body.pixelcat-hidden-fullscreen .pixelcat-trap-bubble,
 body.pixelcat-hidden-fullscreen .pixel-portal {
     display: none !important;
 }
@@ -50,6 +51,33 @@ body.pixelcat-hidden-fullscreen .pixel-portal {
 
 .youtube-pixel-cat.hidden {
     display: none !important;
+}
+
+.pixelcat-trap-bubble {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 82px;
+    height: 95px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-size: 1632px 95px;
+    z-index: 10000003;
+    pointer-events: auto;
+    cursor: pointer;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    transform-origin: center center;
+    contain: strict;
+    will-change: transform, background-position;
+    backface-visibility: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.pixelcat-trap-bubble:active {
+    cursor: crosshair;
 }
 
 .pixel-dust {
@@ -516,4 +544,152 @@ body.pixelcat-hidden-fullscreen .pixel-portal {
     width: 32px;
     height: 32px;
     /* The fox sheet is 32x32; runtime renderScale makes it cat-height on screen. */
+}
+
+/* Right-click quick spawn menu */
+.pixelcat-action-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: calc(3px * var(--pixelcat-size, 1));
+    padding: calc(4px * var(--pixelcat-size, 1)) calc(5px * var(--pixelcat-size, 1));
+    background: #f8f6f0;
+    color: #1b1b1b;
+    border: 2px solid #1b1b1b;
+    border-radius: 0;
+    box-shadow:
+        -1px -1px 0 1px #1b1b1b,
+        1px -1px 0 1px #1b1b1b,
+        -1px 1px 0 1px #1b1b1b,
+        1px 1px 0 1px #1b1b1b,
+        inset 1px 1px 0 0 #ffffff,
+        inset -1px -1px 0 0 rgba(0,0,0,0.1),
+        2px 2px 0 0 rgba(0,0,0,0.28);
+    z-index: 10000020;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    transform: translate3d(-9999px, -9999px, 0);
+    animation: pixelcatActionMenuIn 100ms steps(3, end) both;
+}
+
+.pixelcat-action-menu::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: calc(6px * var(--pixelcat-size, 1));
+    height: calc(6px * var(--pixelcat-size, 1));
+    background: #f8f6f0;
+    border: 2px solid #1b1b1b;
+    transform: translateX(-50%) rotate(45deg);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+}
+
+.pixelcat-action-menu[data-tail="bottom"]::before {
+    bottom: -5px;
+    border-top: none;
+    border-left: none;
+    box-shadow: 1px 1px 0 0 rgba(0,0,0,0.2);
+}
+
+.pixelcat-action-menu[data-tail="top"]::before {
+    top: -5px;
+    border-bottom: none;
+    border-right: none;
+    box-shadow: -1px -1px 0 0 rgba(0,0,0,0.2);
+}
+
+.pixelcat-action-menu-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: calc(24px * var(--pixelcat-size, 1));
+    height: calc(24px * var(--pixelcat-size, 1));
+    padding: 0;
+    border: 2px solid #1b1b1b;
+    border-radius: 0;
+    background: #e8e6dc;
+    box-shadow:
+        1px 1px 0 0 rgba(0,0,0,0.28),
+        inset 1px 1px 0 0 rgba(255,255,255,0.55);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.1s steps(2, end);
+}
+
+.pixelcat-action-menu-btn:hover:not(:disabled),
+.pixelcat-action-menu-btn:focus-visible:not(:disabled) {
+    transform: translate(-1px, -1px);
+    background: #f1efe7;
+    box-shadow:
+        2px 2px 0 0 rgba(0,0,0,0.35),
+        inset 1px 1px 0 0 rgba(255,255,255,0.7);
+}
+
+.pixelcat-action-menu-btn:active:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow:
+        0 0 0 0 rgba(0,0,0,0.25),
+        inset -1px -1px 0 0 rgba(0,0,0,0.14);
+}
+
+.pixelcat-action-menu-btn.is-disabled,
+.pixelcat-action-menu-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.25);
+}
+
+.pixelcat-action-menu-icon {
+    width: calc(16px * var(--pixelcat-size, 1));
+    height: calc(16px * var(--pixelcat-size, 1));
+    display: block;
+    background-image: var(--pixelcat-action-image);
+    background-repeat: no-repeat;
+    background-position: var(--pixelcat-action-position, center);
+    background-size: var(--pixelcat-action-size, contain);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    pointer-events: none;
+}
+
+.pixelcat-action-menu-lock {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    width: 7px;
+    height: 6px;
+    border: 1.5px solid #1b1b1b;
+    border-radius: 0;
+    background: rgba(248, 246, 240, 0.95);
+    box-shadow: 1px 1px 0 0 rgba(0,0,0,0.14);
+    pointer-events: none;
+}
+
+.pixelcat-action-menu-lock::before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: -5px;
+    width: 3px;
+    height: 4px;
+    border: 1.5px solid #1b1b1b;
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+}
+
+@keyframes pixelcatActionMenuIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+    to { opacity: 1; }
 }

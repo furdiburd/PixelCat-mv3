@@ -1,5 +1,5 @@
 const API = typeof browser !== 'undefined' ? browser : chrome;
-const YOUTUBE_URL_PATTERNS = ['*://www.youtube.com/*', '*://youtube.com/*'];
+const CONTENT_URL_PATTERNS = ['*://www.youtube.com/*', '*://youtube.com/*', '*://www.google.com/*', '*://google.com/*', '*://www.google.co.ma/*', '*://google.co.ma/*'];
 const ALLOWED_ACTIONS = new Set([
   'startCat',
   'stopCat',
@@ -29,6 +29,7 @@ const ALLOWED_SETTINGS = {
   catEnergyLevel: 'string',
   uiLanguage: 'string',
   catSkin: 'string',
+  foxSkin: 'string',
   activeBall: 'string',
   activePet: 'string',
   shopOwned: 'array',
@@ -67,6 +68,7 @@ function sanitizeSettings(settings) {
       if (key === 'catEnergyLevel' && ['sleepy', 'active', 'hyper'].includes(value)) clean[key] = value;
       else if (key === 'uiLanguage' && ['en', 'fr', 'it', 'ar'].includes(value)) clean[key] = value;
       else if (key === 'catSkin' && ['white', 'orange', 'rainbow'].includes(value)) clean[key] = value;
+      else if (key === 'foxSkin' && ['white', 'orange', 'rainbow'].includes(value)) clean[key] = value;
       else if (key === 'activeBall' && /^ball_[a-z0-9_]{1,40}$/.test(value)) clean[key] = value;
       else if (key === 'activePet' && ['pet_cat', 'pet_fox'].includes(value)) clean[key] = value;
       return;
@@ -149,7 +151,7 @@ API.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return;
     }
 
-    const tabs = await queryTabs({ url: YOUTUBE_URL_PATTERNS });
+    const tabs = await queryTabs({ url: CONTENT_URL_PATTERNS });
 
     const deliveries = await Promise.allSettled(
       tabs.map((tab) => sendMessageToTab(tab.id, safeMsg))
