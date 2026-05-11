@@ -14,7 +14,7 @@
 </p>
 <br/>
 
-> A pixel-art cat companion that lives on every YouTube page — with animations, collectibles, combat, quests, and a full progression system. Everything runs locally. Nothing leaves your browser.
+> A pixel-art pet companion for YouTube and Google, with cats, foxes, animations, collectibles, bubbles, quests, and a full progression system. More supported websites may be added over time. Everything runs locally. Nothing leaves your browser.
 
 <br/>
 
