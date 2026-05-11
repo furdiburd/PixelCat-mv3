@@ -72,12 +72,13 @@ Chrome:
 ```
 <br/>
 
-## ❯ `changelog_2.5`
+## ❯ `changelog_2.5.6`
 ```ts
-const Version_2_5 = {
-  added: ["Rainbow skin", "popup info buttons", "more speech reactions"],
-  fixed: ["quests", "stats", "auto-spawn overlap", "animation direction"],
-  improved: ["smoothness", "hyper mode", "local progress handling"]
+const Version_2_5_6 = {
+  added: ["Google support", "Google quests", "Fox companion", "Fox skins", "Right-click menu"],
+  fixed: ["progress reset", "XP saving", "Eco Mode restore", "bubble/menu issues", "Google movement"],
+  improved: ["popup performance", "badge size", "quest scaling", "fox behavior", "local progress safety"],
+  permissions: ["added <all_urls> for gradual multi-site support"]
 };
 ```
 <br/>
@@ -87,7 +88,7 @@ const Version_2_5 = {
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/Author-IMAD%20EL%20KHAIDER-blueviolet?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Version-2.5-blue?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Version-2.5.6-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge"/>
 </p>
