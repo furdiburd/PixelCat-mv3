@@ -2,14 +2,19 @@
   "manifest_version": 3,
   "name": "PixelCat",
   "version": "2.5.6",
-  "description": "Adds a playful pixel pet companion to YouTube and Google with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
+  "description": "Adds a playful pixel pet companion to YouTube & Google with animations, coins, fish, spiders, quests, achievements, and extras.",
 
   "permissions": [
     "storage"
   ],
 
   "host_permissions": [
-    "<all_urls>"
+    "*://www.youtube.com/*",
+    "*://youtube.com/*",
+    "*://www.google.com/*",
+    "*://google.com/*",
+    "*://www.google.co.ma/*",
+    "*://google.co.ma/*"
   ],
 
   "background": {
