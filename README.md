@@ -18,6 +18,12 @@
 
 <br/>
 
+| Browser   | Install from ... |
+| :-------: | ---------------- |
+| <img src="https://github.com/user-attachments/assets/b0136512-56a5-4856-8c50-4971c957a24f" alt="Get PixelCat for Firefox"> | <a href="https://addons.mozilla.org/hu/firefox/addon/pixelcat/">Firefox Add-ons</a> |
+| <img src="https://github.com/user-attachments/assets/5463ef88-873b-4516-8514-5277664cfde7" alt="Get PixelCat for Chromium"> | <a href="https://chromewebstore.google.com/detail/pixelcat/dldingneekoadmkonniioablbennibfa">Chrome Web Store</a> |
+
+
 ## ❯ `features.ts`
 ```ts
 const PixelCat = {
