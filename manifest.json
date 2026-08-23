@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PixelCat",
   "version": "2.6.7",
-  "description": "Adds a playful pixel pet companion to your browser with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
+  "description": "Adds a playful pixel pet companion to your browser with animations, coins, fish, spiders, quests, achievements, and extras.",
   "permissions": [
     "storage",
     "scripting"
