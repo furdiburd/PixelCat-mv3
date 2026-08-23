@@ -1,31 +1,47 @@
 {
   "manifest_version": 3,
   "name": "PixelCat",
-  "version": "2.5.6",
-  "description": "Adds a playful pixel pet companion to YouTube & Google with animations, coins, fish, spiders, quests, achievements, and extras.",
-
+  "version": "2.6.7",
+  "description": "Adds a playful pixel pet companion to your browser with animations, coins, fish, spiders, quests, achievements, and unlockable extras.",
   "permissions": [
-    "storage"
+    "storage",
+    "scripting"
   ],
-
-  "host_permissions": [
-    "*://www.youtube.com/*",
-    "*://youtube.com/*",
-    "*://www.google.com/*",
-    "*://google.com/*",
-    "*://www.google.co.ma/*",
-    "*://google.co.ma/*"
-  ],
-
   "background": {
     "service_worker": "src/background.js"
   },
-
   "icons": {
     "48": "assets/icons/icon48.png",
     "96": "assets/icons/icon96.png"
   },
-
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/owner-gate.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/icons/*.png",
+        "assets/animations/*.png",
+        "assets/animations/frog/*.png",
+        "assets/animations/*.gif",
+        "assets/fishes/*.png",
+        "assets/balls/*.png",
+        "assets/Cursor/light/*.png"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "action": {
     "default_popup": "ui/popup.html",
     "default_icon": {
@@ -35,51 +51,7 @@
       "96": "assets/icons/icon96.png"
     }
   },
-
-  "content_scripts": [
-    {
-      "matches": [
-        "*://www.youtube.com/*",
-        "*://youtube.com/*",
-        "*://www.google.com/*",
-        "*://google.com/*",
-        "*://www.google.co.ma/*",
-        "*://google.co.ma/*"
-      ],
-      "css": [
-        "ui/styles.css"
-      ],
-      "js": [
-        "src/quests.js",
-        "src/fairplay.js",
-        "src/cat-storage.js",
-        "src/cat-coins.js",
-        "src/cat-fish.js",
-        "src/cat-balls.js",
-        "src/cat-portals.js",
-        "src/cat-speech.js",
-        "src/content.js"
-      ],
-      "run_at": "document_end"
-    }
-  ],
-
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "assets/icons/*.png",
-        "assets/animations/*.png",
-        "assets/fishes/*.png",
-        "assets/balls/*.png"
-      ],
-      "matches": [
-        "*://www.youtube.com/*",
-        "*://youtube.com/*",
-        "*://www.google.com/*",
-        "*://google.com/*",
-        "*://www.google.co.ma/*",
-        "*://google.co.ma/*"
-      ]
-    }
+  "host_permissions": [
+    "<all_urls>"
   ]
 }

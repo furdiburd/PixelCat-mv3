@@ -38,7 +38,6 @@
       }
     }
 
-
     function getFairPlay() {
       return ctx.FairPlay || (typeof globalThis !== 'undefined' ? globalThis.PixelCatFairPlay : null);
     }
@@ -98,6 +97,7 @@
     }
 
     function hasShopBoost(id) {
+      if (ctx.freePlayMode || ctx.unlockAll) return true;
       return typeof ctx.getActiveShopBoosts === 'function'
         ? ctx.getActiveShopBoosts().has(id)
         : ctx.getOwnedShopItems().has(id);
@@ -107,20 +107,68 @@
       if (ctx.isCompanion) return Promise.resolve();
       if (xpLoadPromise) return xpLoadPromise;
       xpLoadPromise = getLocal({ catXP: 0, shopOwned: [], shopActiveBoosts: null }).then((data) => {
-        catXP = Math.min(MAX_LEVEL_XP, Math.max(0, data.catXP || 0));
+        const loadedXP = Math.min(MAX_LEVEL_XP, Math.max(0, data.catXP || 0));
+        catXP = Math.min(MAX_LEVEL_XP, loadedXP + pendingXPDelta);
         xpLoaded = true;
         const owned = Array.isArray(data.shopOwned) ? data.shopOwned : [];
         updateOwnedShopItems(owned);
         updateActiveShopBoosts(Array.isArray(data.shopActiveBoosts) ? data.shopActiveBoosts : owned);
       }).catch((error) => {
-        // Do NOT reset xpLoadPromise to null here. Resetting it would allow a
-        // concurrent call to start a second load which could overwrite the
-        // in-memory catXP value and lose any XP earned since the failed load.
-        // The promise stays rejected; callers that need a fresh load should
-        // explicitly reinitialise by calling loadXPAndShop() after a delay.
+        xpLoadPromise = null;
         throw error;
       });
       return xpLoadPromise;
+    }
+
+    function checkAchievements() {
+      if (ctx.isCompanion) return;
+      const storageArea = ctx.API.storage.local;
+      const getKeys = typeof storageArea.get === 'function' && storageArea.get.length <= 1
+        ? (keys) => storageArea.get(keys)
+        : (keys) => new Promise((r) => storageArea.get(keys, r));
+      getKeys({
+        pixelCatStats: null,
+        catXP: 0,
+        dailyStreak: 0,
+        unlockedAchievements: []
+      }).then(async (data) => {
+        const stats = data.pixelCatStats || {};
+        const xp = Math.min(MAX_LEVEL_XP, Math.max(0, data.catXP || 0));
+        const streak = Math.max(0, data.dailyStreak || 0);
+        const unlocked = Array.isArray(data.unlockedAchievements) ? data.unlockedAchievements : [];
+        const achievementDefinitions = [
+          { id: 'achievementFirstFriend',   name: 'First Friend',   unlocked: (stats.lifetimePets || 0) >= 1 || (stats.lifetimeFish || 0) >= 1 },
+          { id: 'achievementSpiderHunter',  name: 'Spider Hunter',  unlocked: (stats.lifetimeSpidersCaught || 0) >= 10 },
+          { id: 'achievement100Pets',       name: '100 Pets',       unlocked: (stats.lifetimePets || 0) >= 100 },
+          { id: 'achievement7DayStreak',    name: '7 Day Streak',   unlocked: streak >= 7 },
+          { id: 'achievementMasterMischief',name: 'Mischief',       unlocked: xp >= 100 },
+          { id: 'achievementGoldRush',      name: 'Gold Rush',      unlocked: (stats.lifetimeCoins || 0) >= 1000 },
+          { id: 'achievementSpiderHero',    name: 'Spider Hero',    unlocked: (stats.lifetimeSpidersCaught || 0) >= 50 },
+          { id: 'achievementSushiMaster',   name: 'Sushi Master',   unlocked: (stats.lifetimeFish || 0) >= 500 },
+          { id: 'achievementConsistent',    name: 'Consistent',    unlocked: streak >= 14 },
+          { id: 'achievementFishmonger',    name: 'Fishmonger',     unlocked: (stats.lifetimeFish || 0) >= 50 },
+          { id: 'achievementNightCrawler',  name: 'Night Crawler',  unlocked: (stats.lifetimeGoogleSeconds || 0) >= 3600 }
+        ];
+        const newlyUnlocked = [];
+        const nextUnlockedList = [...unlocked];
+        achievementDefinitions.forEach((ach) => {
+          if (ach.unlocked && !unlocked.includes(ach.id)) {
+            newlyUnlocked.push(ach.name);
+            nextUnlockedList.push(ach.id);
+          }
+        });
+        if (newlyUnlocked.length > 0) {
+          const setLocal = typeof storageArea.set === 'function' && storageArea.set.length <= 1
+            ? (obj) => storageArea.set(obj)
+            : (obj) => new Promise((r) => storageArea.set(obj, r));
+          await setLocal({ unlockedAchievements: nextUnlockedList });
+          if (typeof ctx.onAchievement === 'function') {
+            newlyUnlocked.forEach((name) => {
+              ctx.onAchievement(name);
+            });
+          }
+        }
+      }).catch(() => {});
     }
 
     function flushXP() {
@@ -131,7 +179,10 @@
       const pending = pendingXPDelta;
       if (!pending) return storageWriteQueue;
       pendingXPDelta = 0;
-      return mutateStoredNumber('catXP', pending, { defaultValue: 0, min: 0, max: MAX_LEVEL_XP });
+      return mutateStoredNumber('catXP', pending, { defaultValue: 0, min: 0, max: MAX_LEVEL_XP }).then((res) => {
+        checkAchievements();
+        return res;
+      });
     }
 
     function earnXP(amount) {
@@ -141,8 +192,6 @@
 
       const previousXP = catXP;
       const nextXP = Math.min(MAX_LEVEL_XP, catXP + delta);
-      // Only queue the amount that was actually gained — not the full requested
-      // delta — so flushXP never tries to write more XP than was earned.
       const actualGain = nextXP - catXP;
       catXP = nextXP;
       if (xpLoaded) notifyLevelUnlocks(previousXP, catXP);
@@ -156,9 +205,28 @@
     }
 
     function awardCoins(amount) {
-      if (ctx.isCompanion || amount <= 0) return;
+      if (ctx.isCompanion || ctx.freePlayMode || ctx.unlockAll || amount <= 0) return;
       const clampedAmount = Math.max(0, Math.floor(amount));
-      mutateStoredNumber('coins', clampedAmount, { defaultValue: 0, min: 0 });
+      
+      const COIN_MILESTONES = [50, 100, 250, 500, 1000, 2500, 5000];
+      const storageArea = ctx.API.storage.local;
+      const getCoins = typeof storageArea.get === 'function' && storageArea.get.length <= 1
+        ? () => storageArea.get({ coins: 0 })
+        : () => new Promise((r) => storageArea.get({ coins: 0 }, r));
+      getCoins().then((data) => {
+        const prev = Math.max(0, Number(data.coins) || 0);
+        const next = prev + clampedAmount;
+        for (let i = 0; i < COIN_MILESTONES.length; i++) {
+          const m = COIN_MILESTONES[i];
+          if (prev < m && next >= m && typeof ctx.onCoinMilestone === 'function') {
+            ctx.onCoinMilestone(m);
+            break; 
+          }
+        }
+      }).catch(() => {});
+      mutateStoredNumber('coins', clampedAmount, { defaultValue: 0, min: 0 }).then(() => {
+        checkAchievements();
+      });
     }
 
     function getQuestStorageArea() {
@@ -178,12 +246,19 @@
       ctx.QuestEngine.recordEvent(getQuestStorageArea(), type, amount).then((snapshot) => {
         if (snapshot.questsJustCompleted > 0) {
           awardCoins(snapshot.questsJustCompleted * 8);
-          earnXP(snapshot.questsJustCompleted * 1.0); // XP: +1 per quest completed
+          earnXP(snapshot.questsJustCompleted * 1.0); 
+          if (typeof ctx.onQuestComplete === 'function') {
+            ctx.onQuestComplete(snapshot.questsJustCompleted);
+          }
         }
         if (snapshot.perfectDayJustUnlocked) {
           awardCoins(15);
-          earnXP(3.0); // XP: +3 bonus for completing all 3/3 daily quests
+          earnXP(3.0);
+          if (typeof ctx.onPerfectDay === 'function') {
+            ctx.onPerfectDay();
+          }
         }
+        checkAchievements();
       }).catch(() => undefined);
     }
 

@@ -114,6 +114,7 @@
     }
 
     function spawnCoinDrop() {
+      if (ctx.freePlayMode || ctx.unlockAll) return false;
       if (!isVideoPlayingForCoinDrops()) return false;
       if (activeCoinDrops.length >= 1) return false;
       if (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup()) return false;
@@ -201,11 +202,20 @@
     }
 
     function updateCoinDrops(dt) {
+      if (ctx.freePlayMode || ctx.unlockAll) {
+        if (activeCoinDrops.length > 0) {
+          for (let i = activeCoinDrops.length - 1; i >= 0; i--) {
+            const c = activeCoinDrops[i];
+            if (c.el && c.el.isConnected) c.el.remove();
+            if (c.shadow && c.shadow.isConnected) c.shadow.remove();
+            releaseCoinDrop(c);
+          }
+          activeCoinDrops.length = 0;
+        }
+        return;
+      }
       const canSpawnCoinNow = ctx.catEnabled && !ctx.isCompanion && isVideoPlayingForCoinDrops();
 
-      // Coins are a watch-time reward: pause the drop timer while the YouTube
-      // video is paused, ended, buffering, hidden, or not available. Existing
-      // coins keep animating, but no new coin appears until playback resumes.
       const coinSpawnBlocked = activeCoinDrops.length > 0 || (typeof ctx.hasActivePickup === 'function' && ctx.hasActivePickup());
       if (coinSpawnBlocked) {
         coinTimerPausedForObject = true;

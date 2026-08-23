@@ -15,18 +15,22 @@
     'ball_football', 'ball_volleyball', 'ball_bowling'
   ]);
   const BOOST_IDS = new Set(['toy_feather', 'treat_gold', 'coin_magnet', 'lucky_charm']);
-  const PET_IDS = new Set(['pet_cat', 'pet_fox']);
-  const SHOP_IDS = new Set([...BALL_IDS, ...BOOST_IDS, ...PET_IDS]);
+  const PET_IDS = new Set(['pet_cat', 'pet_fox', 'pet_frog', 'pet_red_panda', 'pet_pigeon', 'pet_skeleton', 'pet_babycat', 'pet_penguin', 'pet_fairy', 'pet_clippy', 'pet_bat']);
+  const HAT_IDS = new Set(['hat_none', 'hat_clown', 'hat_cowboy', 'hat_pirate', 'hat_tophat', 'hat_viking', 'hat_funnyglasses']);
+  const SHOP_IDS = new Set([...BALL_IDS, ...BOOST_IDS, ...PET_IDS, ...HAT_IDS]);
   const QUEST_TYPES = new Set(['pet_sessions', 'fish_served', 'watch_seconds', 'coins_collected', 'ball_catches', 'spiders_caught', 'google_visits', 'google_searches', 'google_active_seconds']);
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   const PROTECTED_DEFAULTS = Object.freeze({
+    freePlayMode: false,
+    unlockAll: false,
     catXP: 0,
     coins: 0,
     shopOwned: [],
     shopActiveBoosts: [],
     activeBall: 'ball_baseball',
     activePet: 'pet_cat',
+    activeHat: 'hat_none',
     dailyStreak: 0,
     lastStreakDate: '',
     speechEnabled: false,
@@ -47,24 +51,65 @@
   PROTECTED_KEYS.add(SEAL_KEY);
   PROTECTED_KEYS.add(BACKUP_KEY);
 
-  function storageGet(storageArea, defaults) {
+  function isExtensionContextValid() {
     try {
-      const result = storageArea.get(defaults);
-      if (result && typeof result.then === 'function') return result;
-    } catch (error) {
-      return Promise.reject(error);
+      const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+      return !!(api && api.runtime && api.runtime.id);
+    } catch (_) {
+      return false;
     }
-    return new Promise((resolve) => storageArea.get(defaults, resolve));
+  }
+
+  function storageGet(storageArea, defaults) {
+    if (!isExtensionContextValid() || !storageArea) {
+      return Promise.resolve(defaults || {});
+    }
+    try {
+      const result = storageArea.get(defaults, (res) => {
+        if (API && API.runtime && API.runtime.lastError) {}
+      });
+      if (result && typeof result.then === 'function') {
+        return result.catch(() => Promise.resolve(defaults || {}));
+      }
+    } catch (error) {
+      return Promise.resolve(defaults || {});
+    }
+    return new Promise((resolve) => {
+      try {
+        storageArea.get(defaults, (res) => {
+          if (API && API.runtime && API.runtime.lastError) {}
+          resolve(res || defaults || {});
+        });
+      } catch (_) {
+        resolve(defaults || {});
+      }
+    });
   }
 
   function storageSet(storageArea, values) {
-    try {
-      const result = storageArea.set(values);
-      if (result && typeof result.then === 'function') return result;
-    } catch (error) {
-      return Promise.reject(error);
+    if (!isExtensionContextValid() || !storageArea) {
+      return Promise.resolve();
     }
-    return new Promise((resolve) => storageArea.set(values, resolve));
+    try {
+      const result = storageArea.set(values, () => {
+        if (API && API.runtime && API.runtime.lastError) {}
+      });
+      if (result && typeof result.then === 'function') {
+        return result.catch(() => Promise.resolve());
+      }
+    } catch (error) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      try {
+        storageArea.set(values, () => {
+          if (API && API.runtime && API.runtime.lastError) {}
+          resolve();
+        });
+      } catch (_) {
+        resolve();
+      }
+    });
   }
 
   function clampNumber(value, min, max, fallback) {
@@ -134,6 +179,7 @@
 
   function normalizeState(raw) {
     const source = raw && typeof raw === 'object' ? raw : {};
+    const isFreePlay = Boolean(source.freePlayMode || source.unlockAll);
     const xp = roundXP(source.catXP);
     const owned = uniqueValidStrings(source.shopOwned, SHOP_IDS, 50);
     const ownedSet = new Set(owned);
@@ -141,19 +187,24 @@
       ? source.shopActiveBoosts
       : owned.filter((id) => BOOST_IDS.has(id));
     const activeBoosts = uniqueValidStrings(boostSource, BOOST_IDS, 20)
-      .filter((id) => ownedSet.has(id));
+      .filter((id) => isFreePlay || ownedSet.has(id));
     let activeBall = typeof source.activeBall === 'string' && BALL_IDS.has(source.activeBall) ? source.activeBall : 'ball_baseball';
-    if (activeBall !== 'ball_baseball' && !ownedSet.has(activeBall)) activeBall = 'ball_baseball';
+    if (!isFreePlay && activeBall !== 'ball_baseball' && !ownedSet.has(activeBall)) activeBall = 'ball_baseball';
     let activePet = typeof source.activePet === 'string' && PET_IDS.has(source.activePet) ? source.activePet : 'pet_cat';
-    if (activePet !== 'pet_cat' && !ownedSet.has(activePet)) activePet = 'pet_cat';
+    if (!isFreePlay && activePet !== 'pet_cat' && !ownedSet.has(activePet)) activePet = 'pet_cat';
+    let activeHat = typeof source.activeHat === 'string' && HAT_IDS.has(source.activeHat) ? source.activeHat : 'hat_none';
+    if (!isFreePlay && activeHat !== 'hat_none' && !ownedSet.has(activeHat)) activeHat = 'hat_none';
 
     const state = {
+      freePlayMode: isFreePlay,
+      unlockAll: isFreePlay,
       catXP: xp,
       coins: clampInteger(source.coins, 0, MAX_COINS, 0),
       shopOwned: owned,
       shopActiveBoosts: activeBoosts,
       activeBall,
       activePet,
+      activeHat,
       dailyStreak: clampInteger(source.dailyStreak, 0, 3660, 0),
       lastStreakDate: typeof source.lastStreakDate === 'string' && DATE_RE.test(source.lastStreakDate) ? source.lastStreakDate : '',
       speechEnabled: Boolean(source.speechEnabled),
@@ -174,13 +225,13 @@
   }
 
   function applyLevelLocks(data) {
+    if (data && (data.freePlayMode || data.unlockAll)) return data;
     const xp = roundXP(data && data.catXP);
     if (xp < 10) {
       data.speechEnabled = false;
       data.ballEnabled = false;
     }
     if (xp < 25) data.spiderEnabled = false;
-    if (xp < 45) data.sizeMultiplier = 1.0;
     if (xp < 70) data.companionEnabled = false;
     if (xp < 100) data.uiMischiefEnabled = false;
     if (xp < 135) data.portalEnabled = false;
@@ -224,9 +275,6 @@
   }
 
   function createLegacySealPayload(state) {
-    // v2.5 saves were sealed before the pet system existed.
-    // In v2.5.1+, normalizeState adds activePet: 'pet_cat'.
-    // Accept the old payload so users updating from v2.5 keep their progress.
     if (!state || typeof state !== 'object' || Array.isArray(state)) return state;
     if (state.activePet !== 'pet_cat') return state;
     const legacyState = Object.assign({}, state);
@@ -239,7 +287,6 @@
   }
 
   function createSeal(state, installId) {
-    // Canonical v2.5.1+ seal: keep activePet in the payload.
     return createSealFromPayload(createSealPayload(state), installId);
   }
 
@@ -293,6 +340,7 @@
     if (Array.isArray(raw.shopActiveBoosts) && raw.shopActiveBoosts.length > 0) return true;
     if (typeof raw.activeBall === 'string' && raw.activeBall && raw.activeBall !== 'ball_baseball') return true;
     if (typeof raw.activePet === 'string' && raw.activePet && raw.activePet !== 'pet_cat') return true;
+    if (typeof raw.activeHat === 'string' && raw.activeHat && raw.activeHat !== 'hat_none') return true;
     if (typeof raw.lastStreakDate === 'string' && DATE_RE.test(raw.lastStreakDate)) return true;
     if (raw.dailyQuestState && typeof raw.dailyQuestState === 'object') return true;
     if (raw.dailyQuestStats && typeof raw.dailyQuestStats === 'object') return true;
@@ -312,9 +360,6 @@
       if (backupState) {
         state = backupState;
       } else if (hasMeaningfulProgress(raw)) {
-        // Last-resort migration safety: if a future update changes the protected
-        // save shape or an older seal can no longer be validated, keep the sane
-        // normalized progress instead of resetting the user to a brand-new save.
         state = normalizeState(raw);
       } else {
         state = normalizeState(PROTECTED_DEFAULTS);
@@ -398,11 +443,16 @@
       const state = normalizeState(Object.assign({}, progress || {}, { activePet: clean.activePet }));
       clean.activePet = state.activePet;
     }
-    if ('shopOwned' in clean || 'shopActiveBoosts' in clean || 'activePet' in clean) {
+    if ('activeHat' in clean) {
+      const state = normalizeState(Object.assign({}, progress || {}, { activeHat: clean.activeHat }));
+      clean.activeHat = state.activeHat;
+    }
+    if ('shopOwned' in clean || 'shopActiveBoosts' in clean || 'activePet' in clean || 'activeHat' in clean) {
       const state = normalizeState(Object.assign({}, progress || {}, clean));
       if ('shopOwned' in clean) clean.shopOwned = state.shopOwned;
       if ('shopActiveBoosts' in clean) clean.shopActiveBoosts = state.shopActiveBoosts;
       if ('activePet' in clean) clean.activePet = state.activePet;
+      if ('activeHat' in clean) clean.activeHat = state.activeHat;
     }
     return clean;
   }

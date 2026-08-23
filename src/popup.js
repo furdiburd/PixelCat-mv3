@@ -4,13 +4,17 @@
   const FairPlay = globalThis.PixelCatFairPlay || null;
 
   const defaultSettings = {
+    freePlayMode: false,
+    unlockAll: false,
     catEnabled: true,
     companionEnabled: false,
     loyalMode: false,
     aggressiveMode: true,
+    wallClimbEnabled: false,
     speedMultiplier: 1.0,
     catSkin: 'white',
     foxSkin: 'orange',
+    pigeonSkin: 'black',
     uiMischiefEnabled: false,
     speechEnabled: false,
     memoryEnabled: false,
@@ -18,6 +22,7 @@
     autoFishSpawnEnabled: false,
     lowPowerMode: false,
     hideInFullscreen: false,
+    showOnAllTabs: false,
     sizeMultiplier: 1.0,
     uiMischiefRate: 11,
     catEnergyLevel: 'active',
@@ -32,7 +37,13 @@
     lastStreakDate: '',
     activeBall: 'ball_baseball',
     activePet: 'pet_cat',
-    uiLanguage: 'en'
+    activeHat: 'hat_none',
+    uiLanguage: 'en',
+    disabledSites: 'none',
+    disabledSitesList: [],
+    petName: '',
+    petSex: '',
+    dragHandEnabled: false
   };
 
   const TRANSLATIONS = {
@@ -42,15 +53,17 @@
       level4needed: 'Level 4 needed', companion: 'Companion', loyalMode: 'Loyal Mode', catSkin: 'Pet Skin',
       quests: 'Quests', achievements: 'Achievements', dailyQuests: 'Daily Quests',
       energyLevel: 'Energy Level', affectsSpeed: 'Affects movement speed',
-      sleepy: 'Sleepy', active: 'Active', autoSpawn: 'Auto Spawn', aggressiveMode: 'Aggressive Mode',
+      sleepy: 'Sleepy', active: 'Active', autoSpawn: 'Auto Spawn', aggressiveMode: 'Aggressive Mode', walkOnWalls: 'Walk on Screen Sides',
       basic: 'Basic', advanced: 'Advanced', danger: 'Danger', speed: 'Speed',
       requiresLevel2: 'Requires Level 2', speechBubbles: 'Speech Bubbles', smartMemory: 'Smart Memory',
-      hideFullscreen: 'Hide in Fullscreen', language: 'Language', lowPowerMode: 'Low Power Mode',
+      hideFullscreen: 'Hide in Fullscreen', showOnAllTabs: 'Show on All Tabs', language: 'Language', lowPowerMode: 'Low Power Mode',
+      infoShowOnAllTabs: 'When enabled, pets show on all open tabs simultaneously. When disabled (default), pets only appear on the single active focused tab.',
       level5needed: 'Level 5 needed', pageMischief: 'Page Mischief', rareEvents: 'Rare Events',
       requiresLevel5: 'Requires Level 5', mischiefRate: 'Mischief Rate',
       size: 'Size', sizeWarning: 'This might cause unexpected behavior',
       clearMemory: 'Clear Memory', resetProgress: 'Reset Progress',
-      balls: 'Balls', boosts: 'Boosts', pets: 'Pets',
+      items: 'ITEMS', balls: 'BALLS', hats: 'HATS', boosts: 'Boosts', pets: 'Pets',
+      freePlayMode: 'Sandbox Mode'
     },
     fr: {
       coins: 'Pièces', xpHint: 'Nourrissez le chat ou jouez pour gagner de l\'XP',
@@ -61,12 +74,13 @@
       sleepy: 'Somnolent', active: 'Actif', autoSpawn: 'Invocation auto', aggressiveMode: 'Mode agressif',
       basic: 'Basique', advanced: 'Avancé', danger: 'Danger', speed: 'Vitesse',
       requiresLevel2: 'Niveau 2 requis', speechBubbles: 'Bulles de dialogue', smartMemory: 'Mémoire intelligente',
-      hideFullscreen: 'Masquer plein écran', language: 'Langue', lowPowerMode: 'Mode éco',
+      hideFullscreen: 'Masquer plein écran', showOnAllTabs: 'Afficher sur tous les onglets', language: 'Langue', lowPowerMode: 'Mode éco',
       level5needed: 'Niveau 5 requis', pageMischief: 'Espièglerie de page', rareEvents: 'Événements rares',
       requiresLevel5: 'Niveau 5 requis', mischiefRate: 'Taux de bêtises',
       size: 'Taille', sizeWarning: 'Risque de bug',
       clearMemory: 'Effacer la mémoire', resetProgress: 'Réinitialiser la progression',
-      balls: 'Balles', boosts: 'Boosts', pets: 'Animaux',
+      items: 'OBJETS', balls: 'BALLES', hats: 'CHAPEAUX', boosts: 'Bonus', pets: 'Animaux',
+      freePlayMode: 'Mode Sandbox'
     },
     it: {
       "coins": "Monete",
@@ -95,6 +109,7 @@
       "speechBubbles": "Fumetti",
       "smartMemory": "Memoria intelligente",
       "hideFullscreen": "Nascondi a schermo intero",
+      "showOnAllTabs": "Mostra su tutte le schede",
       "language": "Lingua",
       "lowPowerMode": "Modalità risparmio",
       "level5needed": "Livello 5 richiesto",
@@ -106,9 +121,12 @@
       "sizeWarning": "Potrebbe causare comportamenti strani",
       "clearMemory": "Cancella memoria",
       "resetProgress": "Reimposta progressi",
-      "balls": "Palle",
+      "items": "OGGETTI",
+      "balls": "PALLE",
+      "hats": "CAPPELLI",
       "boosts": "Boost",
-      "pets": "Animali"
+      "pets": "Animali",
+      "freePlayMode": "Modalità Sandbox"
     },
     ar: {
       coins: 'عملات', xpHint: 'أطعم القطة أو العب لكسب نقاط الخبرة',
@@ -119,17 +137,20 @@
       sleepy: 'نعسان', active: 'نشيط', autoSpawn: 'إنتاج تلقائي', aggressiveMode: 'الوضع العدواني',
       basic: 'أساسي', advanced: 'متقدم', danger: 'خطر', speed: 'السرعة',
       requiresLevel2: 'يتطلب المستوى 2', speechBubbles: 'فقاعات الكلام', smartMemory: 'الذاكرة الذكية',
-      hideFullscreen: 'إخفاء عند ملء الشاشة', language: 'اللغة', lowPowerMode: 'وضع توفير الطاقة',
+      hideFullscreen: 'إخفاء عند ملء الشاشة', showOnAllTabs: 'العرض على جميع علامات التبويب', language: 'اللغة', lowPowerMode: 'وضع توفير الطاقة',
       level5needed: 'المستوى 5 مطلوب', pageMischief: 'شقاوة الصفحة', rareEvents: 'أحداث نادرة',
       requiresLevel5: 'يتطلب المستوى 5', mischiefRate: 'معدل الشقاوة',
       size: 'الحجم', sizeWarning: 'قد يسبب خللاً',
       clearMemory: 'مسح الذاكرة', resetProgress: 'إعادة تعيين التقدم',
-      balls: 'كرات', boosts: 'مُعززات', pets: 'حيوانات',
+      items: 'عناصر', balls: 'كرات', hats: 'قبعات', boosts: 'مُعززات', pets: 'حيوانات',
+      freePlayMode: 'وضع Sandbox'
     }
   };
 
   const I18N_EXTRA = {
     en: {
+      donateBtnText: 'Donate',
+      disableOn: 'Disable on', siteNone: 'None', siteYouTube: 'YouTube', siteGoogle: 'Google', siteReddit: 'Reddit',
       disabled: 'Disabled', fish: 'Fish', ball: 'Ball', spider: 'Spider', portal: 'Portal', hyper: 'Hyper',
       about: 'About', stats: 'Stats', unavailable: 'Unavailable', objectivesUnavailable: 'Objectives are unavailable in this session.',
       remaining: '{time} remaining', streak: 'Streak: {count}', complete: 'Complete',
@@ -141,6 +162,7 @@
       unlockMischief: 'Reach Level 6 to unlock Page Mischief', unlockPortals: 'Reach Level 7 to unlock Portals',
       unlockHyper: 'Reach Level 8 to unlock Hyper Energy', level9Hint: 'Level 9 - Almost a master companion!',
       level10Hint: 'Level 10 - Max level reached!', maxLevel: 'Max Level! All features unlocked.',
+      sandboxUnlockedHint: 'Sandbox Mode — All features & items unlocked',
       showSkillsTree: 'Show Skills Tree', hideSkillsTree: 'Hide Skills Tree',
       aboutPixelCatTitle: 'What is PixelCat?', aboutPixelCatBody: 'A pixel pet for YouTube, made by IMAD. It roams, plays, and grows as you watch videos.',
       aboutLevelsTitle: 'How levels work', aboutLevelsBody: 'Earn XP by petting, feeding, and playing. Level up to unlock new features.',
@@ -158,14 +180,14 @@
       core: 'Core', speechBubble: 'Speech Bubble', fishHunt: 'Fish Hunt', wallNinja: 'Wall Ninja',
       sizeWeight: 'Size & Weight', petBond: 'Pet Bond', ballChaser: 'Ball Chaser', spiderHunter: 'Spider Hunter',
       companionMode: 'Companion Mode', portalTraveler: 'Portal Traveler', hyperEnergy: 'Hyper Energy', madeBy: 'Made by',
-      firstFriend: 'First Friend', hundredPets: '100 Pets', sevenDayStreak: '7 Day Streak', masterMischief: 'Master of Mischief',
+      firstFriend: 'First Friend', hundredPets: '100 Pets', sevenDayStreak: '7 Day Streak', masterMischief: 'Mischief',
       buyCoins: '{price} coins', activeItem: 'Active', setActive: 'Set Active', enable: 'Enable', disable: 'Disable',
       claimCoinsToday: 'Claim +{count} coins today', coinsAmount: '+{count} coins',
       ballBaseball: 'Baseball', ballTennis: 'Tennis Ball', ballGolf: 'Golf Ball', ballBasketball: 'Basketball',
       ballFootball: 'Football', ballVolleyball: 'Volleyball', ballBowling: 'Bowling Ball',
-      petCat: 'Cat', petFox: 'Fox',
+      petCat: 'Cat', petFox: 'Fox', petFrog: 'Frog', petPenguin: 'Penguin', petRedPanda: 'Red Panda', petSkeleton: 'Skeleton', petFairy: 'Fairy', petPigeon: 'Pigeon', petClippy: 'Clippy', petBat: 'Bat', upcoming: 'Upcoming', upcomingNote: 'In future updates',
       boostFeather: 'Feather Wand', boostFeatherDesc: '+2 coins per pet', boostTreat: 'Golden Treat',
-      boostTreatDesc: 'Double fish coins', boostMagnet: 'Coin Magnet', boostMagnetDesc: 'Pulls nearby coins to the cat',
+      boostTreatDesc: 'Double fish coins', boostMagnet: 'Coin Magnet', boostMagnetDesc: 'Attracts nearby coins',
       boostLucky: 'Lucky Charm', boostLuckyDesc: 'More frequent drops',
       questPet: 'Pet Session', questFish: 'Give Fish', questWatch: 'Watch Together', questCoins: 'Collect Coins',
       questFetch: 'Play Fetch', questSpiders: 'Catch Spiders', questGoogleVisit: 'Google Visit', questGoogleSearch: 'Search Buddy', questGooglePatrol: 'Google Patrol', questDoubleAffection: 'Double Affection',
@@ -174,16 +196,35 @@
       infoCompanion: 'Adds a second cat when unlocked.',
       infoLoyal: 'Makes the cat follow your cursor.',
       infoAggressive: 'Makes reactions and spider fights bolder.',
+      infoWalkOnWalls: 'Walk and climb screen edges.',
       infoSpeech: 'Lets the cat talk in speech bubbles.',
       infoMemory: 'Remembers simple moments for better reactions.',
       infoFullscreen: 'Hides PixelCat during fullscreen videos.',
+      infoShowOnAllTabs: 'When enabled, pets show on all open tabs simultaneously. When disabled (default), pets only appear on the single active focused tab.',
       infoLowPower: 'Less animation, smoother mode.',
       infoMischief: 'Allows small playful page interactions.',
-      infoRareEvents: 'Enables surprise events like bubble traps.',
+      infoRareEvents: 'Enables rare events like bubbles.',
+      infoFreePlay: 'Unlock all content without XP or coins.',
+      infoDragHand: 'Shows a hand icon when dragging the pet.',
       ecoBlockedInfo: 'Turn off Eco Mode first',
-      confirm: 'Confirm', cancel: 'Cancel', openInfo: 'Open info'
+      confirm: 'Confirm', cancel: 'Cancel', openInfo: 'Open info',
+      dragHand: 'Drag Hand', animals: 'Animals', characters: 'Characters',
+      walkOnWalls: 'Walk on Screen Sides', infoWalkOnWalls: 'Lets the cat walk and climb along the screen edges.',
+      petNameField: 'Pet Name', identityField: 'Identity', male: 'Male', female: 'Female',
+      onboardMeetTitle: 'Meet your companion!', onboardPick: 'Pick a name and identity.', onboardRename: 'Rename your companion', onboardPickNew: 'Pick a new name or identity.', onboardGive: 'Give your companion a name.', onboardQuick: 'One quick thing…', onboardSafeNote: '🛡️ Your progress is safe.', onboardCta: 'Let\'s go! 🐾',
+      newIn: 'New in',
+      reviewTitle: 'Give us a review!', reviewBonus: 'Claim +50 bonus coins',
+      websiteRules: 'Website Rules', manageWebsiteRules: 'Manage website rules (Allowlist / Blacklist)', backToSettings: '← Back to Settings', allowlistOnly: 'Allowlist Only', addWebsite: 'Add Website', addSitePlaceholder: 'e.g. github.com', addCurrentSite: '+ Add Current Site', allowlist: 'Allowlist', blacklist: 'Blacklist', noSitesAdded: 'No websites added yet.', helpAllowlistOnly: 'Show ONLY on listed sites', helpBlacklist: 'Hide on listed sites',
+      clippyAi: 'Clippy AI (Ollama)', manageOllama: 'Manage Ollama AI', enableAiChat: 'Enable AI Chat', ollamaEndpoint: 'Ollama Endpoint', ollamaUrlPlaceholder: 'e.g. http://localhost:11434', verifyOllama: 'Verify connection and fetch models', setup: 'Setup', help: 'Help', noModelsFound: 'No models found...', customModelPlaceholder: 'Type custom model name...', toggleModelInput: 'Toggle custom model input', sysPromptPlaceholder: 'System prompt for Clippy...', sysPromptDefault: 'You are Clippy, an overly enthusiastic AI assistant trapped in a retro operating system.', runPowerShell: 'Run this first in PowerShell:', copyCommands: 'Copy commands',
+      exportImport: 'Export / Import', exportSettings: 'Export Settings', importSettings: 'Import Settings',
+      reportGitHub: 'Found an issue? Report on GitHub',
+      goldRush: 'Gold Rush', spiderHero: 'Spider Hero', sushiMaster: 'Sushi Master', consistent: 'Consistent', fishmonger: 'Fishmonger', nightCrawler: 'Night Crawler',
+      hatsHint: 'Hats currently work for the Frog only',
+      importTitle: 'Import backup', importDesc: 'Restore your saved companion, coins, shop items, quests, and settings.', importSelect: 'Select backup file', importNoFile: 'No file selected', importBackup: 'Import backup',
+      petNamePlaceholder: 'e.g. Luna, Max, Pixel…', onboardImportInstead: 'Import from backup instead'
     },
     fr: {
+      disableOn: 'Désactiver sur', siteNone: 'Aucun', siteYouTube: 'YouTube', siteGoogle: 'Google', siteReddit: 'Reddit',
       coins: 'Pièces', xpHint: 'Poisson ou balle = XP',
       active: 'Actif', disabled: 'Désactivé', autoSpawn: 'Apparition auto', boosts: 'Bonus',
       fish: 'Poisson', ball: 'Balle', spider: 'Araignée', portal: 'Portail', hyper: 'Hyper',
@@ -197,6 +238,7 @@
       unlockMischief: 'Niv. 6 : bêtises', unlockPortals: 'Niv. 7 : portails',
       unlockHyper: 'Niv. 8 : hyper', level9Hint: 'Niv. 9 : presque maître !',
       level10Hint: 'Niv. 10 : défi final !', maxLevel: 'Niveau max ! Tout débloqué.',
+      sandboxUnlockedHint: 'Mode Sandbox — Tout est débloqué',
       showSkillsTree: 'Afficher l’arbre', hideSkillsTree: 'Masquer l’arbre',
       aboutPixelCatTitle: 'Qu’est-ce que PixelCat ?', aboutPixelCatBody: 'Un chat pixel pour YouTube, créé par IMAD.',
       aboutLevelsTitle: 'Niveaux', aboutLevelsBody: 'Gagnez de l’XP pour débloquer des fonctions.',
@@ -214,12 +256,12 @@
       core: 'Base', speechBubble: 'Bulle de dialogue', fishHunt: 'Chasse au poisson', wallNinja: 'Ninja mural',
       sizeWeight: 'Taille et poids', petBond: 'Lien affectif', ballChaser: 'Chasseur de balle', spiderHunter: 'Chasseur d’araignées',
       companionMode: 'Mode compagnon', portalTraveler: 'Voyageur de portails', hyperEnergy: 'Énergie hyper', madeBy: 'Créé par',
-      firstFriend: 'Premier ami', hundredPets: '100 caresses', sevenDayStreak: 'Série de 7 jours', masterMischief: 'Maître des bêtises',
+      firstFriend: 'Premier ami', hundredPets: '100 caresses', sevenDayStreak: 'Série de 7 jours', masterMischief: 'Bêtises',
       buyCoins: '{price} pièces', activeItem: 'Actif', setActive: 'Activer', enable: 'Activer', disable: 'Désactiver',
       claimCoinsToday: '+{count} pièces aujourd’hui', coinsAmount: '+{count} pièces',
       ballBaseball: 'Balle de baseball', ballTennis: 'Balle de tennis', ballGolf: 'Balle de golf', ballBasketball: 'Ballon de basket',
       ballFootball: 'Ballon de football', ballVolleyball: 'Ballon de volley', ballBowling: 'Boule de bowling',
-      petCat: 'Chat', petFox: 'Renard',
+      petCat: 'Chat', petFox: 'Renard', petFrog: 'Grenouille', petPenguin: 'Pingouin', petRedPanda: 'Panda Roux', petSkeleton: 'Squelette', petFairy: 'Fée', petPigeon: 'Pigeon', petClippy: 'Clippy', petBat: 'Chauve-souris', upcoming: 'A venir', upcomingNote: 'Prochaines MAJ',
       boostFeather: 'Baguette plume', boostFeatherDesc: '+2 pièces par caresse', boostTreat: 'Friandise dorée',
       boostTreatDesc: 'Pièces poisson x2', boostMagnet: 'Aimant à pièces', boostMagnetDesc: 'Attire les pièces',
       boostLucky: 'Porte-bonheur', boostLuckyDesc: 'Butins fréquents',
@@ -233,13 +275,31 @@
       infoSpeech: 'Active les bulles de dialogue du chat.',
       infoMemory: 'Retient de petits moments pour mieux réagir.',
       infoFullscreen: 'Cache PixelCat en plein écran.',
+      infoShowOnAllTabs: 'Afficher sur tous les onglets simultanément.',
       infoLowPower: 'Moins d’animations, plus fluide.',
       infoMischief: 'Autorise de petites interactions avec la page.',
-      infoRareEvents: 'Active les surprises comme les bulles.',
+      infoRareEvents: 'Active les événements surprises comme les bulles et OVNI.',
+      infoFreePlay: 'Débloque tout le contenu sans XP ou pièces.',
+      infoDragHand: 'Affiche une main lors du glisser-déposer du pet.',
       ecoBlockedInfo: 'Turn off Eco Mode first',
-      confirm: 'Confirmer', cancel: 'Annuler', openInfo: 'Ouvrir les infos'
+      confirm: 'Confirmer', cancel: 'Annuler', openInfo: 'Ouvrir les infos',
+      dragHand: 'Main de drag', animals: 'Animaux', characters: 'Personnages',
+      walkOnWalls: 'Marcher sur les bords d\'écran', infoWalkOnWalls: 'Le chat peut marcher et grimper sur les bords de l\'écran.',
+      petNameField: 'Nom du compagnon', identityField: 'Identité', male: 'Mâle', female: 'Femelle',
+      onboardMeetTitle: 'Rencontrez votre compagnon !', onboardPick: 'Choisissez un nom et une identité.', onboardRename: 'Renommer votre compagnon', onboardPickNew: 'Choisissez un nouveau nom ou une nouvelle identité.', onboardGive: 'Donnez un nom à votre compagnon.', onboardQuick: 'Une petite chose…', onboardSafeNote: '🛡️ Votre progression est en sécurité.', onboardCta: 'C\'est parti ! 🐾',
+      newIn: 'Nouveau dans',
+      reviewTitle: 'Donnez-nous un avis !', reviewBonus: 'Gagnez +50 pièces bonus',
+      websiteRules: 'Règles des sites', manageWebsiteRules: 'Gérer les règles des sites (Autorisés / Exclus)', backToSettings: '← Retour aux paramètres', allowlistOnly: 'Autoriser uniquement les sites listés', addWebsite: 'Ajouter un site', addSitePlaceholder: 'ex. github.com', addCurrentSite: '+ Ajouter le site actuel', allowlist: 'Sites autorisés', blacklist: 'Sites bloqués', noSitesAdded: 'Aucun site ajouté pour le moment.', helpAllowlistOnly: 'Afficher SEULEMENT sur les sites listés', helpBlacklist: 'Masquer sur les sites listés',
+      clippyAi: 'Clippy IA (Ollama)', manageOllama: 'Gérer l\'IA Ollama', enableAiChat: 'Activer le chat IA', ollamaEndpoint: 'Point d\'accès Ollama', ollamaUrlPlaceholder: 'ex. http://localhost:11434', verifyOllama: 'Vérifier la connexion et charger les modèles', setup: 'Organiser', help: 'Aide', noModelsFound: 'Aucun modèle trouvé...', customModelPlaceholder: 'Entrez un nom de modèle personnalisé...', toggleModelInput: 'Basculer le champ modèle personnalisé', sysPromptPlaceholder: 'Instruction système pour Clippy...', sysPromptDefault: 'Vous êtes Clippy, un assistant IA trop enthousiaste piégé dans un système rétro.', runPowerShell: 'Exécutez ceci d\'abord dans PowerShell :', copyCommands: 'Copier les commandes',
+      exportImport: 'Exporter / Importer', exportSettings: 'Exporter les réglages', importSettings: 'Importer les réglages',
+      reportGitHub: 'Un problème ? Signalez-le sur GitHub',
+      goldRush: 'Ruée vers l\'or', spiderHero: 'Héros des araignées', sushiMaster: 'Maître sushi', consistent: 'Assidu', fishmonger: 'Poissonnier', nightCrawler: 'Rampant nocturne',
+      hatsHint: 'Les chapeaux fonctionnent pour le moment uniquement avec la Grenouille',
+      importTitle: 'Importer une sauvegarde', importDesc: 'Restaurer votre compagnon, vos pièces, objets du magasin, missions et réglages.', importSelect: 'Sélectionner un fichier de sauvegarde', importNoFile: 'Aucun fichier sélectionné', importBackup: 'Importer la sauvegarde',
+      petNamePlaceholder: 'ex. Luna, Max, Pixel…', onboardImportInstead: 'Importer depuis une sauvegarde à la place'
     },
     it: {
+      disableOn: 'Disabilita su', siteNone: 'Nessuno', siteYouTube: 'YouTube', siteGoogle: 'Google', siteReddit: 'Reddit',
       "disabled": "Disattivato",
       "fish": "Pesce",
       "ball": "Palla",
@@ -267,7 +327,8 @@
       "unlockHyper": "Raggiungi il livello 8 per sbloccare energia iper",
       "level9Hint": "Livello 9 - Quasi un compagno maestro!",
       "level10Hint": "Livello 10 - Livello massimo raggiunto!",
-      "maxLevel": "Livello massimo! Tutte le funzioni sbloccate.",
+      "maxLevel": "Livello massimo! Tutte le funzionalità sbloccate.",
+      "sandboxUnlockedHint": "Modalità Sandbox — Tutto sbloccato",
       "showSkillsTree": "Mostra albero abilità",
       "hideSkillsTree": "Nascondi albero abilità",
       "aboutPixelCatTitle": "Che cos è PixelCat?",
@@ -314,7 +375,7 @@
       "firstFriend": "Primo amico",
       "hundredPets": "100 carezze",
       "sevenDayStreak": "Serie 7 giorni",
-      "masterMischief": "Maestro dei dispetti",
+      "masterMischief": "Dispetti",
       "buyCoins": "{price} monete",
       "activeItem": "Attivo",
       "setActive": "Rendi attivo",
@@ -331,6 +392,16 @@
       "ballBowling": "Palla da bowling",
       "petCat": "Gatto",
       "petFox": "Volpe",
+      "petFrog": "Rana",
+      "petPenguin": "Pinguino",
+      "petRedPanda": "Panda Rosso",
+      "petSkeleton": "Scheletro",
+      "petFairy": "Fata",
+      "petPigeon": "Piccione",
+      "petClippy": "Clippy",
+      "petBat": "Pipistrello",
+      "upcoming": "In arrivo",
+      "upcomingNote": "Nei prossimi aggiornamenti",
       "boostFeather": "Bacchetta piuma",
       "boostFeatherDesc": "+2 monete per carezza",
       "boostTreat": "Dolcetto dorato",
@@ -359,15 +430,33 @@
       "infoSpeech": "Permette al gatto di parlare con i fumetti.",
       "infoMemory": "Ricorda piccoli momenti per reazioni migliori.",
       "infoFullscreen": "Nasconde PixelCat durante i video a schermo intero.",
+      "infoShowOnAllTabs": "Mostra su tutte le schede.",
       "infoLowPower": "Meno animazione, modalità più fluida.",
       "infoMischief": "Permette piccole interazioni giocose con la pagina.",
-      "infoRareEvents": "Attiva sorprese come bolle trappola.",
+      "infoRareEvents": "Attiva sorprese come le bolle.",
+      "infoFreePlay": "Sblocca tutti i contenuti senza XP o monete.",
+      "infoDragHand": "Mostra una mano durante il trascinamento del pet.",
       "ecoBlockedInfo": "Turn off Eco Mode first",
       "confirm": "Conferma",
       "cancel": "Annulla",
-      "openInfo": "Apri info"
+      "openInfo": "Apri info",
+      "dragHand": "Mano per il trascinamento", "animals": "Animali", "characters": "Personaggi",
+      "walkOnWalls": "Camminare sui bordi dello schermo", "infoWalkOnWalls": "Il gatto può camminare e arrampicarsi sui bordi dello schermo.",
+      "petNameField": "Nome del compagno", "identityField": "Identità", "male": "Maschio", "female": "Femmina",
+      "onboardMeetTitle": "Incontra il tuo compagno!", "onboardPick": "Scegli un nome e un'identità.", "onboardRename": "Rinomina il tuo compagno", "onboardPickNew": "Scegli un nuovo nome o una nuova identità.", "onboardGive": "Dai un nome al tuo compagno.", "onboardQuick": "Una cosa veloce…", "onboardSafeNote": "🛡️ I tuoi progressi sono al sicuro.", "onboardCta": "Andiamo! 🐾",
+      "newIn": "Novità in",
+      "reviewTitle": "Lascia una recensione!", "reviewBonus": "Ottieni +50 monete bonus",
+      "websiteRules": "Regole dei siti", "manageWebsiteRules": "Gestisci le regole dei siti (Consentiti / Bloccati)", "backToSettings": "← Indietro alle impostazioni", "allowlistOnly": "Solo siti consentiti", "addWebsite": "Aggiungi sito", "addSitePlaceholder": "es. github.com", "addCurrentSite": "+ Aggiungi sito attuale", "allowlist": "Consentiti", "blacklist": "Bloccati", "noSitesAdded": "Nessun sito aggiunto finora.", "helpAllowlistOnly": "Mostra SOLO sui siti elencati", "helpBlacklist": "Nascondi sui siti elencati",
+      "clippyAi": "Clippy IA (Ollama)", "manageOllama": "Gestisci Ollama IA", "enableAiChat": "Attiva chat IA", "ollamaEndpoint": "Endpoint Ollama", "ollamaUrlPlaceholder": "es. http://localhost:11434", "verifyOllama": "Verifica connessione e carica i modelli", "setup": "Imposta", "help": "Aiuto", "noModelsFound": "Nessun modello trovato...", "customModelPlaceholder": "Digita un nome di modello personalizzato...", "toggleModelInput": "Mostra/nascondi campo modello personalizzato", "sysPromptPlaceholder": "Istruzione di sistema per Clippy...", "sysPromptDefault": "Sei Clippy, un assistente IA fin troppo entusiasta intrappolato in un sistema d'epoca.", "runPowerShell": "Esegui prima questo in PowerShell:", "copyCommands": "Copia comandi",
+      "exportImport": "Esporta / Importa", "exportSettings": "Esporta impostazioni", "importSettings": "Importa impostazioni",
+      "reportGitHub": "Un problema? Segnalalo su GitHub",
+      "goldRush": "Corsa all'oro", "spiderHero": "Eroe dei ragni", "sushiMaster": "Maestro sushi", "consistent": "Costante", "fishmonger": "Pesciolino", "nightCrawler": "Nottambulo",
+      "hatsHint": "I cappelli per ora funzionano solo con la Rana",
+      "importTitle": "Importa un backup", "importDesc": "Ripristina compagno, monete, oggetti, missioni e impostazioni.", "importSelect": "Seleziona file di backup", "importNoFile": "Nessun file selezionato", "importBackup": "Importa backup",
+      "petNamePlaceholder": "es. Luna, Max, Pixel…", "onboardImportInstead": "Importa da un backup invece"
     },
     ar: {
+      disableOn: 'تعطيل على', siteNone: 'لا شيء', siteYouTube: 'يوتيوب', siteGoogle: 'جوجل', siteReddit: 'ريديت',
       coins: 'عملات', xpHint: 'أطعم السمك أو العب بالكرة لكسب الخبرة',
       active: 'نشط', disabled: 'متوقف', autoSpawn: 'ظهور تلقائي', boosts: 'تعزيزات',
       fish: 'سمك', ball: 'كرة', spider: 'عنكبوت', portal: 'بوابة', hyper: 'فائق',
@@ -381,6 +470,7 @@
       unlockMischief: 'مستوى 6: العبث', unlockPortals: 'مستوى 7: البوابات',
       unlockHyper: 'مستوى 8: طاقة فائقة', level9Hint: 'مستوى 9: اقتربت!',
       level10Hint: 'مستوى 10: التحدي الأخير!', maxLevel: 'المستوى الأقصى! الكل مفتوح.',
+      sandboxUnlockedHint: 'وضع Sandbox — كل شيء مفتوح',
       showSkillsTree: 'إظهار شجرة المهارات', hideSkillsTree: 'إخفاء شجرة المهارات',
       aboutPixelCatTitle: 'ما هو PixelCat؟', aboutPixelCatBody: 'قط بكسل ليوتيوب، صنعه IMAD.',
       aboutLevelsTitle: 'المستويات', aboutLevelsBody: 'اكسب الخبرة لفتح ميزات جديدة.',
@@ -398,12 +488,12 @@
       core: 'أساسي', speechBubble: 'فقاعة الكلام', fishHunt: 'صيد السمك', wallNinja: 'نينجا الجدار',
       sizeWeight: 'الحجم والوزن', petBond: 'رابطة المداعبة', ballChaser: 'مطارد الكرة', spiderHunter: 'صياد العناكب',
       companionMode: 'وضع الرفيق', portalTraveler: 'مسافر البوابات', hyperEnergy: 'طاقة فائقة', madeBy: 'صنع بواسطة',
-      firstFriend: 'أول صديق', hundredPets: '100 مداعبة', sevenDayStreak: 'سلسلة 7 أيام', masterMischief: 'سيد العبث',
+      firstFriend: 'أول صديق', hundredPets: '100 مداعبة', sevenDayStreak: 'سلسلة 7 أيام', masterMischief: 'العبث',
       buyCoins: '{price} عملات', activeItem: 'نشط', setActive: 'اجعله نشطاً', enable: 'تفعيل', disable: 'تعطيل',
       claimCoinsToday: '+{count} عملات اليوم', coinsAmount: '+{count} عملات',
       ballBaseball: 'كرة بيسبول', ballTennis: 'كرة تنس', ballGolf: 'كرة غولف', ballBasketball: 'كرة سلة',
       ballFootball: 'كرة قدم', ballVolleyball: 'كرة طائرة', ballBowling: 'كرة بولينغ',
-      petCat: 'قطة', petFox: 'ثعلب',
+      petCat: 'قطة', petFox: 'ثعلب', petFrog: 'ضفدع', petPenguin: 'بطريق', petRedPanda: 'باندا أحمر', petSkeleton: 'هيكل عظمي', petFairy: 'جنية', petPigeon: 'حمام', petClippy: 'Clippy', petBat: 'خفاش', upcoming: 'قريباً', upcomingNote: 'في التحديثات القادمة',
       boostFeather: 'عصا الريشة', boostFeatherDesc: '+2 عملات لكل مداعبة', boostTreat: 'حلوى ذهبية',
       boostTreatDesc: 'عملات السمك x2', boostMagnet: 'مغناطيس العملات', boostMagnetDesc: 'يجذب العملات',
       boostLucky: 'تميمة الحظ', boostLuckyDesc: 'إسقاطات أكثر',
@@ -417,11 +507,28 @@
       infoSpeech: 'يفعّل فقاعات كلام القط.',
       infoMemory: 'يتذكر لحظات بسيطة لتحسين التفاعل.',
       infoFullscreen: 'يخفي PixelCat في وضع ملء الشاشة.',
+      infoShowOnAllTabs: 'العرض على جميع علامات التبويب.',
       infoLowPower: 'حركات أقل، أداء أفضل.',
       infoMischief: 'يسمح بتفاعلات صغيرة مع الصفحة.',
-      infoRareEvents: 'يفعّل مفاجآت مثل فقاعات الفخ.',
+      infoRareEvents: 'يفعّل الأحداث المفاجئة مثل الفقاعات.',
+      infoFreePlay: 'فتح جميع المحتويات بدون الحاجة إلى نقاط خبرة أو عملات.',
+      infoDragHand: 'يظهر أيقونة يد عند سحب الحيوان الأليف.',
       ecoBlockedInfo: 'Turn off Eco Mode first',
-      confirm: 'تأكيد', cancel: 'إلغاء', openInfo: 'فتح المعلومات'
+      confirm: 'تأكيد', cancel: 'إلغاء', openInfo: 'فتح المعلومات',
+      dragHand: 'يد السحب', animals: 'الحيوانات', characters: 'الشخصيات',
+      walkOnWalls: 'المشي على حواف الشاشة', infoWalkOnWalls: 'يستطيع القط المشي والتسلق على حواف الشاشة.',
+      petNameField: 'اسم الحيوان الأليف', identityField: 'الهوية', male: 'ذكر', female: 'أنثى',
+      onboardMeetTitle: 'قابل رفيقك!', onboardPick: 'اختر اسماً وهوية.', onboardRename: 'إعادة تسمية رفيقك', onboardPickNew: 'اختر اسماً وهوية جديدة.', onboardGive: 'أعطِ رفيقك اسماً.', onboardQuick: 'شيء واحد سريع…', onboardSafeNote: '🛡️ تقدمك في أمان.', onboardCta: 'هيا بنا! 🐾',
+      newIn: 'الجديد في',
+      reviewTitle: 'قيّمنا!', reviewBonus: 'احصل على +50 عملة مكافأة',
+      websiteRules: 'قواعد المواقع', manageWebsiteRules: 'إدارة قواعد المواقع (قائمة مسموح بها / محظورة)', backToSettings: '← عودة إلى الإعدادات', allowlistOnly: 'المواقع المسموحة فقط', addWebsite: 'إضافة موقع', addSitePlaceholder: 'مثال: github.com', addCurrentSite: '+ إضافة الموقع الحالي', allowlist: 'مسموح', blacklist: 'محظور', noSitesAdded: 'لا توجد مواقع مضافة بعد.', helpAllowlistOnly: 'العرض حصرياً على المواقع المدرجة', helpBlacklist: 'الإخفاء على المواقع المدرجة',
+      clippyAi: 'كليبي الذكي (Ollama)', manageOllama: 'إدارة Ollama الذكاء الصناعي', enableAiChat: 'تفعيل الدردشة الذكية', ollamaEndpoint: 'نقطة الوصول Ollama', ollamaUrlPlaceholder: 'مثال: http://localhost:11434', verifyOllama: 'تحقق من الاتصال وجلب النماذج', setup: 'إعداد', help: 'مساعدة', noModelsFound: 'لا توجد نماذج...', customModelPlaceholder: 'اكتب اسم نموذج مخصص...', toggleModelInput: 'إظهار/إخفاء حقل النموذج المخصص', sysPromptPlaceholder: 'تلميح النظام لـ Clippy...', sysPromptDefault: 'أنت Clippy، مساعد ذكي متحمس بشكل مفرط عالق في نظام رجعي.', runPowerShell: 'شغّل هذا أولاً في PowerShell:', copyCommands: 'نسخ الأوامر',
+      exportImport: 'تصدير / استيراد', exportSettings: 'تصدير الإعدادات', importSettings: 'استيراد الإعدادات',
+      reportGitHub: 'وجدت مشكلة؟ أبلغ عنها على GitHub',
+      goldRush: 'اندفاع الذهب', spiderHero: 'بطل العناكب', sushiMaster: 'سيد السوشي', consistent: 'منتظم', fishmonger: 'بائع السمك', nightCrawler: 'جالس الليل',
+      hatsHint: 'القبعات تعمل حالياً مع الضفدع فقط',
+      importTitle: 'استيراد نسخة احتياطية', importDesc: 'استعادة رفيقك والعملات وأغراض المتجر والمهام والإعدادات.', importSelect: 'اختر ملف النسخة الاحتياطية', importNoFile: 'لم يتم اختيار أي ملف', importBackup: 'استيراد النسخة الاحتياطية',
+      petNamePlaceholder: 'مثال: لونا، ماكس، بيكسل…', onboardImportInstead: 'الاستيراد من نسخة احتياطية بدلاً من ذلك'
     }
   };
 
@@ -450,7 +557,15 @@
       const key = el.getAttribute('data-i18n');
       if (dict[key]) el.textContent = dict[key];
     });
-    // RTL support for Arabic
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      if (dict[key]) el.setAttribute('title', dict[key]);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) el.setAttribute('placeholder', dict[key]);
+    });
+    
     document.documentElement.setAttribute('dir', currentLanguage === 'ar' ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', currentLanguage);
     document.body.classList.toggle('rtl-ui', currentLanguage === 'ar');
@@ -459,9 +574,8 @@
     if (xpBarFill && xpValue && xpHint) applyXpUI(latestXP, false);
   }
 
-  //  SHOP CATALOG 
   const SHOP_ITEMS = [
-    // - BALLS -
+    
     { id: 'ball_baseball',  imgFile: 'baseball.png',  name: 'Baseball',    nameKey: 'ballBaseball',   price: 0,   type: 'ball', free: true },
     { id: 'ball_tennis',    imgFile: 'tennis.png',    name: 'Tennis Ball', nameKey: 'ballTennis',     price: 15,  type: 'ball' },
     { id: 'ball_golf',      imgFile: 'golf.png',      name: 'Golf Ball',   nameKey: 'ballGolf',       price: 15,  type: 'ball' },
@@ -469,26 +583,60 @@
     { id: 'ball_football',  imgFile: 'football.png',  name: 'Football',    nameKey: 'ballFootball',   price: 20,  type: 'ball' },
     { id: 'ball_volleyball',imgFile: 'valleyball.png',name: 'Volleyball',  nameKey: 'ballVolleyball', price: 25,  type: 'ball' },
     { id: 'ball_bowling',   imgFile: 'bowling.png',   name: 'Bowling Ball',nameKey: 'ballBowling',    price: 30,  type: 'ball' },
-    // - PETS -
-    { id: 'pet_cat', imgFile: 'cat_icon.png', name: 'Cat', nameKey: 'petCat', price: 0, type: 'pet', free: true },
-    { id: 'pet_fox', imgFile: 'fox_icon.png', name: 'Fox', nameKey: 'petFox', price: 50, type: 'pet' },
-    // - BOOSTS -
-    { id: 'toy_feather',  emoji: '✨', name: 'Feather Wand',  nameKey: 'boostFeather', desc: '+2 coins per pet',        descKey: 'boostFeatherDesc', price: 30,  type: 'boost', effect: 'petCoins' },
-    { id: 'treat_gold',   emoji: '🍖', name: 'Golden Treat',  nameKey: 'boostTreat',   desc: 'Double fish coins',       descKey: 'boostTreatDesc',   price: 50,  type: 'boost', effect: 'fishCoins' },
-    { id: 'coin_magnet',  emoji: '🧲', name: 'Coin Magnet',   nameKey: 'boostMagnet',  desc: 'Pulls nearby coins to the cat', descKey: 'boostMagnetDesc', price: 80,  type: 'boost', effect: 'coinMagnet' },
-    { id: 'lucky_charm',  emoji: '🍀', name: 'Lucky Charm',   nameKey: 'boostLucky',   desc: 'More frequent drops',     descKey: 'boostLuckyDesc',   price: 100, type: 'boost', effect: 'luckyDrops' },
+    { id: 'ball_upcoming_1', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'ball', upcoming: true },
+    { id: 'ball_upcoming_2', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'ball', upcoming: true },
+    { id: 'ball_upcoming_3', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'ball', upcoming: true },
+    { id: 'ball_upcoming_4', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'ball', upcoming: true },
+    { id: 'ball_upcoming_5', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'ball', upcoming: true },
+    
+    { id: 'hat_none',         emoji: '🚫', name: 'No Hat',        nameKey: 'hatNone',        price: 0,   type: 'hat', free: true },
+    { id: 'hat_clown',        hatClass: 'hat-clown', name: 'Clown Hat',      price: 15,  type: 'hat' },
+    { id: 'hat_cowboy',       hatClass: 'hat-cowboy', name: 'Cowboy Hat',    price: 30,  type: 'hat' },
+    { id: 'hat_pirate',       hatClass: 'hat-pirate', name: 'Pirate Hat',    price: 45,  type: 'hat' },
+    { id: 'hat_tophat',       hatClass: 'hat-tophat', name: 'Top Hat',       price: 35,  type: 'hat' },
+    { id: 'hat_viking',       hatClass: 'hat-viking', name: 'Viking Hat',    price: 40,  type: 'hat' },
+    { id: 'hat_funnyglasses', hatClass: 'hat-funnyglasses', name: 'Funny Glasses', price: 25, type: 'hat' },
+    { id: 'hat_upcoming_1', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'hat', upcoming: true },
+    { id: 'hat_upcoming_2', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'hat', upcoming: true },
+    { id: 'hat_upcoming_3', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'hat', upcoming: true },
+    { id: 'hat_upcoming_4', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'hat', upcoming: true },
+    { id: 'hat_upcoming_5', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'hat', upcoming: true },
+    
+    { id: 'pet_cat',       imgFile: 'cat_icon.gif',       name: 'Cat',       nameKey: 'petCat',      price: 0,  type: 'pet', subType: 'animal', free: true },
+    { id: 'pet_fox',       imgFile: 'fox_icon.gif',       name: 'Fox',       nameKey: 'petFox',      price: 50, type: 'pet', subType: 'animal' },
+    { id: 'pet_frog',      imgFile: 'frog_icon.gif',       name: 'Frog',      nameKey: 'petFrog',     price: 60, type: 'pet', subType: 'animal' },
+    { id: 'pet_penguin',   imgFile: 'penguin_icon.gif',    name: 'Penguin',   nameKey: 'petPenguin',  price: 65, type: 'pet', subType: 'animal' },
+    { id: 'pet_pigeon',    imgFile: 'pigeon_icon.gif',     name: 'Pigeon',    nameKey: 'petPigeon',   price: 70, type: 'pet', subType: 'animal' },
+    { id: 'pet_red_panda', imgFile: 'red_panda_icon.gif',  name: 'Red Panda', nameKey: 'petRedPanda', price: 80, type: 'pet', subType: 'animal' },
+    { id: 'pet_bat',       imgFile: 'bat_icon.gif',    name: 'Bat',      nameKey: 'petBat',      price: 90, type: 'pet', subType: 'animal' },
+    { id: 'pet_upcoming_2', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'animal', upcoming: true },
+    { id: 'pet_upcoming_3', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'animal', upcoming: true },
+    { id: 'pet_upcoming_4', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'animal', upcoming: true },
+    { id: 'pet_upcoming_5', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'animal', upcoming: true },
+    { id: 'pet_upcoming_6', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'animal', upcoming: true },
+    
+    { id: 'pet_skeleton',  imgFile: 'skeleton_icon.gif', name: 'Skeleton',  nameKey: 'petSkeleton', price: 75, type: 'pet', subType: 'character' },
+    { id: 'pet_fairy',     imgFile: 'fairy_icon.gif',    name: 'Fairy',     nameKey: 'petFairy',    price: 85, type: 'pet', subType: 'character' },
+    { id: 'pet_clippy',    imgFile: 'clippy_icon.gif',   name: 'Clippy',    nameKey: 'petClippy',   price: 100, type: 'pet', subType: 'character' },
+    { id: 'char_upcoming_3', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'character', upcoming: true },
+    { id: 'char_upcoming_4', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'character', upcoming: true },
+    { id: 'char_upcoming_5', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'pet', subType: 'character', upcoming: true },
+    
+    { id: 'toy_feather',  emoji: '✨', name: 'Feather Wand',  nameKey: 'boostFeather', desc: '+2 coins/pet',   price: 30,  type: 'boost', effect: 'petCoins' },
+    { id: 'treat_gold',   emoji: '🍖', name: 'Golden Treat',  nameKey: 'boostTreat',   desc: '2x fish coins',  price: 50,  type: 'boost', effect: 'fishCoins' },
+    { id: 'coin_magnet',  emoji: '🧲', name: 'Coin Magnet',   nameKey: 'boostMagnet',  desc: 'Attracts coins', price: 80,  type: 'boost', effect: 'coinMagnet' },
+    { id: 'lucky_charm',  emoji: '🍀', name: 'Lucky Charm',   nameKey: 'boostLucky',   desc: 'More drops',     price: 100, type: 'boost', effect: 'luckyDrops' },
+    { id: 'boost_upcoming_1', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'boost', upcoming: true },
+    { id: 'boost_upcoming_2', emoji: '🔒', name: 'Upcoming', nameKey: 'upcoming', type: 'boost', upcoming: true },
   ];
 
-  //  LEVEL / XP MILESTONE DEFINITIONS  (10-level system)
-  // Per-level XP to earn: 10, 15, 20, 25, 30, 35, 40, 45, 50
-  // Cumulative totals:     0, 10, 25, 45, 70, 100, 135, 175, 220, 270
   const MAX_LEVEL_XP = 270;
   const MILESTONES = {
     speech:          { xp: 10,  level: 2,  label: 'Level 2'  },
     ball:            { xp: 10,  level: 2,  label: 'Level 2'  },
     spider:          { xp: 25,  level: 3,  label: 'Level 3'  },
     rainbowSkin:     { xp: 25,  level: 3,  label: 'Level 3'  },
-    size:            { xp: 45,  level: 4,  label: 'Level 4'  },
+    size:            { xp: 0,   level: 1,  label: 'Level 1'  },
     companion:       { xp: 70,  level: 5,  label: 'Level 5'  },
     uiMischief:      { xp: 100, level: 6,  label: 'Level 6'  },
     mischiefRate:    { xp: 100, level: 6,  label: 'Level 6'  },
@@ -502,6 +650,7 @@
   const loyalToggle = document.getElementById('loyalToggle');
   const companionToggle = document.getElementById('companionToggle');
   const aggroToggle = document.getElementById('aggroToggle');
+  const wallClimbToggle = document.getElementById('wallClimbToggle');
   const aggroRow = aggroToggle ? aggroToggle.closest('.control-row') : null;
   const spiderSpawnBtn = document.getElementById('spiderSpawnBtn');
   const uiMischiefToggle = document.getElementById('uiMischiefToggle');
@@ -512,9 +661,8 @@
   const ballSpawnBtn = document.getElementById('ballSpawnBtn');
   const lowPowerToggle = document.getElementById('lowPowerToggle');
   const hideInFullscreenToggle = document.getElementById('hideInFullscreenToggle');
-  const speedMinus = document.getElementById('speedMinus');
-  const speedPlus = document.getElementById('speedPlus');
-  const speedVal = document.getElementById('speedVal');
+  const showOnAllTabsToggle = document.getElementById('showOnAllTabsToggle');
+
   const sizeMinus = document.getElementById('sizeMinus');
   const sizePlus = document.getElementById('sizePlus');
   const sizeVal = document.getElementById('sizeVal');
@@ -523,6 +671,8 @@
   const mischiefRateVal = document.getElementById('mischiefRateVal');
   const energyGroup = document.getElementById('energyGroup');
   const infoToggle = document.getElementById('infoToggle');
+  let _cameFromInfo = false;
+  let onboardingScreen = null;
   const tabButtons = document.querySelectorAll('.tab-button');
   const panels = document.querySelectorAll('.settings-panel');
   const subTabButtons = document.querySelectorAll('[data-subtab]');
@@ -541,7 +691,6 @@
   const questPerfectDaysValue = document.getElementById('questPerfectDaysValue');
   const questSummaryLine = document.getElementById('questSummaryLine');
 
-  // Level / XP UI elements
   const xpBarFill = document.getElementById('xpBarFill');
   const xpValue = document.getElementById('xpValue');
   const levelValue = document.getElementById('levelValue');
@@ -556,8 +705,8 @@
   const statPerfectDays = document.getElementById('statPerfectDays');
   const statDailyStreak = document.getElementById('statDailyStreak');
 
-  // Lock elements
   const companionLock = document.getElementById('companionLock');
+  const dragHandToggle = document.getElementById('dragHandToggle');
   const companionSwitchWrap = document.getElementById('companionSwitchWrap');
   const companionRow = document.getElementById('companionRow');
   const skinSelect = document.getElementById('skinSelect');
@@ -579,10 +728,12 @@
   const portalSpawnBtn = document.getElementById('portalSpawnBtn');
   const portalLock = document.getElementById('portalLock');
   const languageSelect = document.getElementById('languageSelect');
+  const disabledSitesSelect = document.getElementById('disabledSitesSelect');
+  const freePlayToggle = document.getElementById('freePlayToggle');
 
-  // Track previous XP to detect unlocks. The storage key remains catXP for older installs.
   let prevXP = -1;
   let latestXP = 0;
+  let latestFreePlayMode = false;
   let latestActivePet = defaultSettings.activePet;
   let latestDailyStreak = 0;
   let latestAchievementStats = {};
@@ -591,12 +742,16 @@
     { toggleId: 'companionToggle', key: 'infoCompanion' },
     { toggleId: 'loyalToggle', key: 'infoLoyal' },
     { toggleId: 'aggroToggle', key: 'infoAggressive' },
+    { toggleId: 'wallClimbToggle', key: 'infoWalkOnWalls' },
     { toggleId: 'speechToggle', key: 'infoSpeech' },
     { toggleId: 'memoryToggle', key: 'infoMemory' },
     { toggleId: 'hideInFullscreenToggle', key: 'infoFullscreen' },
+    { toggleId: 'showOnAllTabsToggle', key: 'infoShowOnAllTabs' },
     { toggleId: 'lowPowerToggle', key: 'infoLowPower' },
     { toggleId: 'uiMischiefToggle', key: 'infoMischief' },
-    { toggleId: 'rareEventsToggle', key: 'infoRareEvents' }
+    { toggleId: 'rareEventsToggle', key: 'infoRareEvents' },
+    { toggleId: 'freePlayToggle', key: 'infoFreePlay' },
+    { toggleId: 'dragHandToggle', key: 'infoDragHand' }
   ];
 
   const ECO_BLOCKED_TOGGLE_IDS = new Set([
@@ -637,13 +792,13 @@
     portalEnabled: false,
     catEnergyLevel: 'active',
     activePet: 'pet_cat',
+    activeHat: 'hat_none',
     catXP: 0
   });
   let latestLowPowerMode = false;
 
   setupToggleInfoButtons();
 
-  // Apply saved language immediately so the UI doesn't flash English first
   getLocal({ uiLanguage: 'en' }).then(result => {
     applyTranslations(result.uiLanguage || 'en');
     if (languageSelect) languageSelect.value = currentLanguage;
@@ -660,7 +815,475 @@
     });
   }
 
-  function getLocal(keys) {
+  if (dragHandToggle) {
+    dragHandToggle.addEventListener('change', () => {
+      const enabled = dragHandToggle.checked;
+      setLocal({ dragHandEnabled: enabled });
+      sendMessageToTabs({ action: 'updateSettings', settings: { dragHandEnabled: enabled } });
+    });
+  }
+
+  const openDisabledSitesBtn = document.getElementById('openDisabledSitesBtn');
+  const closeDisabledSitesBtn = document.getElementById('closeDisabledSitesBtn');
+  const disabledSitesRow = document.getElementById('disabledSitesRow');
+  const disabledSitesManagerContainer = document.getElementById('disabledSitesManagerContainer');
+  const addDisabledSiteInput = document.getElementById('addDisabledSiteInput');
+  const addDisabledSiteBtn = document.getElementById('addDisabledSiteBtn');
+  const addCurrentSiteBtn = document.getElementById('addCurrentSiteBtn');
+  const siteFilterModeHelpText = document.getElementById('siteFilterModeHelpText');
+  const disabledSitesListCardTitle = document.getElementById('disabledSitesListCardTitle');
+
+  const openOllamaBtn = document.getElementById('openOllamaBtn');
+  const closeOllamaTopBtn = document.getElementById('closeOllamaTopBtn');
+  const ollamaManagerContainer = document.getElementById('ollamaManagerContainer');
+  const ollamaToggle = document.getElementById('ollamaToggle');
+  const ollamaUrlInput = document.getElementById('ollamaUrlInput');
+  const verifyOllamaBtn = document.getElementById('verifyOllamaBtn');
+  const ollamaSetupBtn = document.getElementById('ollamaSetupBtn');
+  const ollamaHelpBtn = document.getElementById('ollamaHelpBtn');
+  const ollamaSetupCard = document.getElementById('ollamaSetupCard');
+  const ollamaHelpCard = document.getElementById('ollamaHelpCard');
+  const ollamaCopyBtn = document.getElementById('ollamaCopyBtn');
+  const ollamaModelSelect = document.getElementById('ollamaModelSelect');
+  const ollamaModelInput = document.getElementById('ollamaModelInput');
+  const toggleModelInputBtn = document.getElementById('toggleModelInputBtn');
+  const toggleModelIconEdit = document.getElementById('toggleModelIconEdit');
+  const toggleModelIconList = document.getElementById('toggleModelIconList');
+  const ollamaSystemPromptInput = document.getElementById('ollamaSystemPromptInput');
+
+  let currentDisabledSitesList = [];
+
+  function sanitizeDomainName(input) {
+    if (!input || typeof input !== 'string') return '';
+    return input.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  }
+
+  async function renderDisabledSitesList() {
+    if (!disabledSitesListContainer) return;
+    disabledSitesListContainer.replaceChildren();
+
+    const data = await getLocal({ disabledSitesList: [], disabledSites: 'none', siteFilterMode: 'blacklist' });
+    let list = Array.isArray(data.disabledSitesList) ? data.disabledSitesList : [];
+    const isAllowlist = data.siteFilterMode === 'allowlist';
+    const mode = isAllowlist ? 'allowlist' : 'blacklist';
+
+    if (allowlistModeToggle) allowlistModeToggle.checked = isAllowlist;
+
+    if (siteFilterModeHelpText) {
+      siteFilterModeHelpText.textContent = isAllowlist ? t('helpAllowlistOnly') : t('helpBlacklist');
+    }
+
+    if (disabledSitesListCardTitle) {
+      disabledSitesListCardTitle.textContent = isAllowlist ? t('allowlist') : t('blacklist');
+    }
+
+    if (list.length === 0 && data.disabledSites && data.disabledSites !== 'none') {
+      if (data.disabledSites === 'youtube') list = ['youtube.com'];
+      else if (data.disabledSites === 'google') list = ['google.com'];
+      else if (data.disabledSites === 'reddit') list = ['reddit.com'];
+      await setLocal({ disabledSitesList: list });
+    }
+
+    currentDisabledSitesList = list;
+
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'disabled-site-empty';
+      empty.textContent = t('noSitesAdded');
+      disabledSitesListContainer.appendChild(empty);
+      return;
+    }
+
+    list.forEach(domain => {
+      const item = document.createElement('div');
+      item.className = 'disabled-site-item';
+
+      const name = document.createElement('span');
+      name.className = 'disabled-site-domain';
+      name.textContent = domain;
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'disabled-site-delete-btn';
+      delBtn.title = 'Remove ' + domain;
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+
+      delBtn.addEventListener('click', async () => {
+        const newList = currentDisabledSitesList.filter(d => d !== domain);
+        await setLocal({ disabledSitesList: newList });
+        sendMessageToTabs({ action: 'updateSettings', settings: { disabledSitesList: newList } });
+        renderDisabledSitesList();
+      });
+
+      item.appendChild(name);
+      item.appendChild(delBtn);
+      disabledSitesListContainer.appendChild(item);
+    });
+  }
+
+  function setDisabledSitesViewMode(showManager) {
+    if (!settingsBasicView) return;
+    const children = Array.from(settingsBasicView.children);
+    children.forEach(child => {
+      if (child === disabledSitesManagerContainer) {
+        child.style.display = showManager ? 'flex' : 'none';
+      } else if (child === ollamaManagerContainer) {
+        child.style.display = 'none';
+      } else {
+        child.style.display = showManager ? 'none' : '';
+      }
+    });
+  }
+
+  function setOllamaViewMode(showManager) {
+    if (!settingsBasicView) return;
+    const children = Array.from(settingsBasicView.children);
+    children.forEach(child => {
+      if (child === ollamaManagerContainer) {
+        child.style.display = showManager ? 'flex' : 'none';
+      } else if (child === disabledSitesManagerContainer) {
+        child.style.display = 'none';
+      } else {
+        child.style.display = showManager ? 'none' : '';
+      }
+    });
+  }
+
+  function hideOllamaCards() {
+    if (ollamaSetupCard) ollamaSetupCard.style.display = 'none';
+    if (ollamaHelpCard) ollamaHelpCard.style.display = 'none';
+    if (ollamaSetupBtn) ollamaSetupBtn.classList.remove('is-active');
+    if (ollamaHelpBtn) ollamaHelpBtn.classList.remove('is-active');
+  }
+
+  function showOllamaCard(mode) {
+    hideOllamaCards();
+    if (mode === 'help') {
+      if (ollamaHelpCard) ollamaHelpCard.style.display = 'flex';
+      if (ollamaHelpBtn) ollamaHelpBtn.classList.add('is-active');
+    } else if (ollamaSetupCard) {
+      ollamaSetupCard.style.display = 'flex';
+      if (ollamaSetupBtn) ollamaSetupBtn.classList.add('is-active');
+    }
+  }
+
+  if (openOllamaBtn) {
+    openOllamaBtn.addEventListener('click', () => {
+      setOllamaViewMode(true);
+      loadOllamaSettings();
+      showOllamaCard('setup');
+    });
+  }
+
+  if (closeOllamaTopBtn) {
+    closeOllamaTopBtn.addEventListener('click', () => {
+      hideOllamaCards();
+      setOllamaViewMode(false);
+    });
+  }
+
+  if (ollamaSetupBtn) {
+    ollamaSetupBtn.addEventListener('click', () => {
+      showOllamaCard('setup');
+    });
+  }
+
+  if (ollamaHelpBtn) {
+    ollamaHelpBtn.addEventListener('click', () => {
+      showOllamaCard('help');
+    });
+  }
+
+  if (ollamaCopyBtn) {
+    ollamaCopyBtn.addEventListener('click', async () => {
+      const commands = '$env:OLLAMA_ORIGINS = "moz-extension://*"\nollama serve';
+      try {
+        await navigator.clipboard.writeText(commands);
+        ollamaCopyBtn.classList.add('is-copied');
+        setTimeout(() => ollamaCopyBtn.classList.remove('is-copied'), 1000);
+      } catch (_) {
+        const fallback = document.createElement('textarea');
+        fallback.value = commands;
+        fallback.style.position = 'fixed';
+        fallback.style.left = '-9999px';
+        document.body.appendChild(fallback);
+        fallback.select();
+        document.execCommand('copy');
+        fallback.remove();
+        ollamaCopyBtn.classList.add('is-copied');
+        setTimeout(() => ollamaCopyBtn.classList.remove('is-copied'), 1000);
+      }
+    });
+  }
+
+  async function loadOllamaSettings() {
+    const data = await getLocal({
+      ollamaEnabled: false,
+      ollamaUrl: "http://localhost:11434",
+      ollamaModel: "",
+      ollamaSystemPrompt: "You are Clippy, the friendly Microsoft Office assistant. Answer naturally and cheerfully in exactly one short sentence."
+    });
+    if (ollamaToggle) ollamaToggle.checked = data.ollamaEnabled;
+    if (ollamaUrlInput) ollamaUrlInput.value = data.ollamaUrl;
+    if (ollamaSystemPromptInput) ollamaSystemPromptInput.value = data.ollamaSystemPrompt;
+    if (data.ollamaModel) {
+      let foundInSelect = false;
+      if (ollamaModelSelect) {
+        foundInSelect = Array.from(ollamaModelSelect.options).some(o => o.value === data.ollamaModel);
+      }
+      
+      if (!foundInSelect && ollamaModelInput) {
+        if (ollamaModelSelect) ollamaModelSelect.style.display = 'none';
+        ollamaModelInput.style.display = 'block';
+        if (toggleModelIconEdit) toggleModelIconEdit.style.display = 'none';
+        if (toggleModelIconList) toggleModelIconList.style.display = 'block';
+        ollamaModelInput.value = data.ollamaModel;
+      } else if (ollamaModelSelect) {
+        ollamaModelSelect.value = data.ollamaModel;
+      }
+    }
+  }
+
+  if (ollamaToggle) {
+    ollamaToggle.addEventListener('change', async (e) => {
+      const enabled = e.target.checked;
+      const settingsPatch = { ollamaEnabled: enabled };
+      if (enabled) {
+        settingsPatch.speechEnabled = true;
+        if (speechToggle) speechToggle.checked = true;
+      }
+      await setLocal(settingsPatch);
+      sendMessageToTabs({ action: 'updateSettings', settings: settingsPatch });
+    });
+  }
+
+  if (ollamaUrlInput) {
+    const saveUrl = async () => {
+      const url = ollamaUrlInput.value.trim();
+      await setLocal({ ollamaUrl: url });
+      sendMessageToTabs({ action: 'updateSettings', settings: { ollamaUrl: url } });
+    };
+    ollamaUrlInput.addEventListener('change', saveUrl);
+  }
+
+  if (verifyOllamaBtn) {
+    let verifyResetTimer = null;
+    const setVerifyState = (state) => {
+      const iconRefresh = document.getElementById('verifyIconRefresh');
+      const iconSuccess = document.getElementById('verifyIconSuccess');
+      const iconError   = document.getElementById('verifyIconError');
+      if (iconRefresh) iconRefresh.style.display = (state === 'refresh' || state === 'loading') ? '' : 'none';
+      if (iconSuccess) iconSuccess.style.display = (state === 'success') ? '' : 'none';
+      if (iconError)   iconError.style.display   = (state === 'error') ? '' : 'none';
+
+      verifyOllamaBtn.classList.toggle('is-spinning', state === 'loading');
+      verifyOllamaBtn.classList.toggle('action-btn-success', state === 'success');
+      verifyOllamaBtn.classList.toggle('action-btn-error', state === 'error');
+    };
+
+    verifyOllamaBtn.addEventListener('click', async () => {
+      if (verifyResetTimer) {
+        clearTimeout(verifyResetTimer);
+        verifyResetTimer = null;
+      }
+      const url = ollamaUrlInput ? ollamaUrlInput.value.trim() : "http://localhost:11434";
+      await setLocal({ ollamaUrl: url });
+      sendMessageToTabs({ action: 'updateSettings', settings: { ollamaUrl: url } });
+      
+      setVerifyState('loading');
+      
+      API.runtime.sendMessage({ action: "fetchOllamaModels", url }, async (response) => {
+        if (response && response.success) {
+          setVerifyState('success');
+          
+          if (ollamaModelSelect && Array.isArray(response.models) && response.models.length > 0) {
+            ollamaModelSelect.replaceChildren();
+            response.models.forEach(modelObj => {
+              const opt = document.createElement('option');
+              opt.value = modelObj.name;
+              opt.textContent = modelObj.name;
+              ollamaModelSelect.appendChild(opt);
+            });
+          }
+          
+          const data = await getLocal({ ollamaModel: "" });
+          if (data.ollamaModel && ollamaModelSelect) {
+            let foundInSelect = Array.from(ollamaModelSelect.options).some(o => o.value === data.ollamaModel);
+            if (!foundInSelect && ollamaModelInput) {
+              ollamaModelInput.value = data.ollamaModel;
+            } else if (ollamaModelSelect) {
+              ollamaModelSelect.value = data.ollamaModel;
+            }
+          } else if (response.models && response.models.length > 0) {
+            if (ollamaModelSelect) ollamaModelSelect.value = response.models[0].name;
+            if (ollamaModelInput) ollamaModelInput.value = response.models[0].name;
+            await setLocal({ ollamaModel: response.models[0].name });
+            sendMessageToTabs({ action: 'updateSettings', settings: { ollamaModel: response.models[0].name } });
+          }
+        } else {
+          setVerifyState('error');
+        }
+
+        verifyResetTimer = setTimeout(() => {
+          setVerifyState('refresh');
+        }, 2200);
+      });
+    });
+  }
+
+  if (toggleModelInputBtn) {
+    toggleModelInputBtn.addEventListener('click', async () => {
+      const isSelectVisible = ollamaModelSelect && ollamaModelSelect.style.display !== 'none';
+      if (isSelectVisible) {
+        if (ollamaModelSelect) ollamaModelSelect.style.display = 'none';
+        if (ollamaModelInput) {
+          ollamaModelInput.style.display = 'block';
+          if (ollamaModelSelect) ollamaModelInput.value = ollamaModelSelect.value;
+        }
+        if (toggleModelIconEdit) toggleModelIconEdit.style.display = 'none';
+        if (toggleModelIconList) toggleModelIconList.style.display = 'block';
+      } else {
+        if (ollamaModelInput) ollamaModelInput.style.display = 'none';
+        if (ollamaModelSelect) {
+          ollamaModelSelect.style.display = 'block';
+          if (ollamaModelInput && ollamaModelInput.value) {
+            const found = Array.from(ollamaModelSelect.options).some(o => o.value === ollamaModelInput.value);
+            if (found) ollamaModelSelect.value = ollamaModelInput.value;
+          }
+        }
+        if (toggleModelIconList) toggleModelIconList.style.display = 'none';
+        if (toggleModelIconEdit) toggleModelIconEdit.style.display = 'block';
+      }
+      const activeVal = (ollamaModelSelect && ollamaModelSelect.style.display !== 'none') ? ollamaModelSelect.value : (ollamaModelInput ? ollamaModelInput.value : '');
+      if (activeVal) {
+        await setLocal({ ollamaModel: activeVal });
+        sendMessageToTabs({ action: 'updateSettings', settings: { ollamaModel: activeVal } });
+      }
+    });
+  }
+
+  if (ollamaModelSelect) {
+    ollamaModelSelect.addEventListener('change', async (e) => {
+      const model = e.target.value;
+      if (ollamaModelInput) ollamaModelInput.value = model;
+      await setLocal({ ollamaModel: model });
+      sendMessageToTabs({ action: 'updateSettings', settings: { ollamaModel: model } });
+    });
+  }
+
+  if (ollamaModelInput) {
+    const saveModelInput = async (e) => {
+      const model = e.target.value.trim();
+      await setLocal({ ollamaModel: model });
+      sendMessageToTabs({ action: 'updateSettings', settings: { ollamaModel: model } });
+    };
+    ollamaModelInput.addEventListener('change', saveModelInput);
+    ollamaModelInput.addEventListener('input', saveModelInput);
+  }
+
+  if (ollamaSystemPromptInput) {
+    const savePromptInput = async (e) => {
+      const prompt = e.target.value;
+      await setLocal({ ollamaSystemPrompt: prompt });
+      sendMessageToTabs({ action: 'updateSettings', settings: { ollamaSystemPrompt: prompt } });
+    };
+    ollamaSystemPromptInput.addEventListener('change', savePromptInput);
+    ollamaSystemPromptInput.addEventListener('input', savePromptInput);
+  }
+
+  if (openDisabledSitesBtn) {
+    openDisabledSitesBtn.addEventListener('click', () => {
+      setDisabledSitesViewMode(true);
+      renderDisabledSitesList();
+    });
+  }
+
+  if (closeDisabledSitesBtn) {
+    closeDisabledSitesBtn.addEventListener('click', () => {
+      setDisabledSitesViewMode(false);
+    });
+  }
+
+  const closeDisabledSitesTopBtn = document.getElementById('closeDisabledSitesTopBtn');
+  if (closeDisabledSitesTopBtn) {
+    closeDisabledSitesTopBtn.addEventListener('click', () => {
+      setDisabledSitesViewMode(false);
+    });
+  }
+
+  if (allowlistModeToggle) {
+    allowlistModeToggle.addEventListener('change', async (e) => {
+      const newMode = e.target.checked ? 'allowlist' : 'blacklist';
+      await setLocal({ siteFilterMode: newMode });
+      sendMessageToTabs({ action: 'updateSettings', settings: { siteFilterMode: newMode } });
+      renderDisabledSitesList();
+    });
+  }
+
+  async function handleAddDisabledSite() {
+    if (!addDisabledSiteInput) return;
+    const domain = sanitizeDomainName(addDisabledSiteInput.value);
+    if (!domain) return;
+
+    if (!currentDisabledSitesList.includes(domain)) {
+      const newList = [...currentDisabledSitesList, domain];
+      await setLocal({ disabledSitesList: newList });
+      sendMessageToTabs({ action: 'updateSettings', settings: { disabledSitesList: newList } });
+      addDisabledSiteInput.value = '';
+      renderDisabledSitesList();
+    } else {
+      addDisabledSiteInput.value = '';
+    }
+  }
+
+  if (addDisabledSiteBtn) {
+    addDisabledSiteBtn.addEventListener('click', handleAddDisabledSite);
+  }
+
+  if (addCurrentSiteBtn) {
+    addCurrentSiteBtn.addEventListener('click', async () => {
+      try {
+        if (API.tabs && typeof API.tabs.query === 'function') {
+          API.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+            if (tabs && tabs[0] && tabs[0].url) {
+              const domain = sanitizeDomainName(tabs[0].url);
+              if (domain && !currentDisabledSitesList.includes(domain)) {
+                const newList = [...currentDisabledSitesList, domain];
+                await setLocal({ disabledSitesList: newList });
+                sendMessageToTabs({ action: 'updateSettings', settings: { disabledSitesList: newList } });
+                renderDisabledSitesList();
+              }
+            }
+          });
+        }
+      } catch (_) {}
+    });
+  }
+
+  if (addDisabledSiteInput) {
+    addDisabledSiteInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddDisabledSite();
+      }
+    });
+  }
+
+  async function getLocal(keys) {
+    if (keys === null) {
+      let raw;
+      if (typeof API.storage.local.get === 'function' && API.storage.local.get.length <= 1) {
+        raw = await API.storage.local.get(null);
+      } else {
+        raw = await new Promise((resolve) => API.storage.local.get(null, resolve));
+      }
+      if (FairPlay && typeof FairPlay.ensure === 'function') {
+        const verified = await FairPlay.ensure(API.storage.local, null);
+        Object.assign(raw, verified);
+      }
+      return raw;
+    }
+
     if (FairPlay && typeof FairPlay.hasProtectedKey === 'function' && FairPlay.hasProtectedKey(keys)) {
       return FairPlay.ensure(API.storage.local, keys);
     }
@@ -695,6 +1318,13 @@
       return API.storage.local.remove(keys);
     }
     return new Promise((resolve) => API.storage.local.remove(keys, resolve));
+  }
+
+  function clearLocal() {
+    if (typeof API.storage.local.clear === 'function' && API.storage.local.clear.length <= 0) {
+      return API.storage.local.clear();
+    }
+    return new Promise((resolve) => API.storage.local.clear(resolve));
   }
 
   let storageWriteQueue = Promise.resolve();
@@ -735,6 +1365,20 @@
     return sendRuntimeMessage(message).catch(() => undefined);
   }
 
+  function openImportPage() {
+    const url = API.runtime.getURL('ui/import.html');
+    if (API.tabs && typeof API.tabs.create === 'function') {
+      try {
+        const result = API.tabs.create({ url });
+        if (result && typeof result.catch === 'function') {
+          result.catch(() => window.open(url, '_blank'));
+        }
+        return;
+      } catch (_) {}
+    }
+    window.open(url, '_blank');
+  }
+
   function updateMainToggleUI(enabled) {
     toggle.checked = enabled;
     statusText.textContent = enabled ? t('active') : t('disabled');
@@ -752,7 +1396,7 @@
       btn.classList.toggle('active', btn.dataset.subtab === subTabName);
     });
     if (dailyQuestsView) dailyQuestsView.style.display = subTabName === 'daily' ? 'flex' : 'none';
-    if (achievementsView) achievementsView.style.display = subTabName === 'achievements' ? 'grid' : 'none';
+    if (achievementsView) achievementsView.style.display = subTabName === 'achievements' ? 'flex' : 'none';
   }
 
   function setActiveSettingsTab(settingsTabName) {
@@ -764,16 +1408,66 @@
     if (settingsDangerView) settingsDangerView.style.display = settingsTabName === 'danger' ? 'flex' : 'none';
   }
 
+  let activeItemSubTab = 'balls';
+  let activePetSubTab = 'animals';
+
   function setActiveShopTab(shoptab) {
     document.querySelectorAll('[data-shoptab]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.shoptab === shoptab);
     });
+    const itemsSubTabRow = document.getElementById('itemsSubTabRow');
+    const petsSubTabRow = document.getElementById('petsSubTabRow');
     const shopBallsView = document.getElementById('shopBallsView');
-    const shopPetsView = document.getElementById('shopPetsView');
+    const shopHatsView = document.getElementById('shopHatsView');
+    const shopAnimalsView = document.getElementById('shopAnimalsView');
+    const shopCharactersView = document.getElementById('shopCharactersView');
     const shopBoostsView = document.getElementById('shopBoostsView');
-    if (shopBallsView) shopBallsView.style.display = shoptab === 'balls' ? 'grid' : 'none';
-    if (shopPetsView) shopPetsView.style.display = shoptab === 'pets' ? 'grid' : 'none';
+
+    const isItemsTab = shoptab === 'balls' || shoptab === 'items';
+    if (itemsSubTabRow) itemsSubTabRow.style.display = isItemsTab ? 'flex' : 'none';
+
+    if (isItemsTab) {
+      if (shopBallsView) shopBallsView.style.display = activeItemSubTab === 'balls' ? 'grid' : 'none';
+      if (shopHatsView) shopHatsView.style.display = activeItemSubTab === 'hats' ? 'grid' : 'none';
+    } else {
+      if (shopBallsView) shopBallsView.style.display = 'none';
+      if (shopHatsView) shopHatsView.style.display = 'none';
+    }
+
+    const isPetsTab = shoptab === 'pets';
+    if (petsSubTabRow) petsSubTabRow.style.display = isPetsTab ? 'flex' : 'none';
+
+    if (isPetsTab) {
+      if (shopAnimalsView) shopAnimalsView.style.display = activePetSubTab === 'animals' ? 'grid' : 'none';
+      if (shopCharactersView) shopCharactersView.style.display = activePetSubTab === 'characters' ? 'grid' : 'none';
+    } else {
+      if (shopAnimalsView) shopAnimalsView.style.display = 'none';
+      if (shopCharactersView) shopCharactersView.style.display = 'none';
+    }
+
     if (shopBoostsView) shopBoostsView.style.display = shoptab === 'boosts' ? 'grid' : 'none';
+  }
+
+  function setActiveItemSubTab(subtab) {
+    activeItemSubTab = subtab;
+    document.querySelectorAll('[data-itemtab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.itemtab === subtab);
+    });
+    const shopBallsView = document.getElementById('shopBallsView');
+    const shopHatsView = document.getElementById('shopHatsView');
+    if (shopBallsView) shopBallsView.style.display = subtab === 'balls' ? 'grid' : 'none';
+    if (shopHatsView) shopHatsView.style.display = subtab === 'hats' ? 'grid' : 'none';
+  }
+
+  function setActivePetSubTab(subtab) {
+    activePetSubTab = subtab;
+    document.querySelectorAll('[data-pettab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.pettab === subtab);
+    });
+    const shopAnimalsView = document.getElementById('shopAnimalsView');
+    const shopCharactersView = document.getElementById('shopCharactersView');
+    if (shopAnimalsView) shopAnimalsView.style.display = subtab === 'animals' ? 'grid' : 'none';
+    if (shopCharactersView) shopCharactersView.style.display = subtab === 'characters' ? 'grid' : 'none';
   }
 
   function setActiveInfoTab(infotab) {
@@ -922,7 +1616,6 @@
     });
   }
 
-
   function getEcoPatch(data) {
     if (!data || !data.lowPowerMode) return {};
     const patch = {};
@@ -1007,17 +1700,20 @@
     });
 
     const xp = Math.min(270, Math.max(0, Number(data && data.catXP) || 0));
+    const isFreePlay = Boolean(data && (data.freePlayMode || data.unlockAll));
     const activePet = (data && data.activePet) || 'pet_cat';
-    if (xp < 10) {
+    if (!isFreePlay && xp < 10) {
       out.speechEnabled = false;
       out.ballEnabled = false;
     }
-    if (xp < 25) out.spiderEnabled = false;
-    if (xp < 70) out.companionEnabled = false;
-    if (xp < 100 || activePet === 'pet_fox') out.uiMischiefEnabled = false;
-    if (activePet === 'pet_fox') out.aggressiveMode = false;
-    if (xp < 135) out.portalEnabled = false;
-    if (xp < 175 && out.catEnergyLevel === 'hyper') out.catEnergyLevel = 'active';
+    if (!isFreePlay && xp < 25) out.spiderEnabled = false;
+    if (!isFreePlay && xp < 70) out.companionEnabled = false;
+    const foxLikePet = activePet === 'pet_fox' || activePet === 'pet_red_panda' || activePet === 'pet_skeleton' || activePet === 'pet_penguin' || activePet === 'pet_fairy' || activePet === 'pet_pigeon';
+    if (!isFreePlay && xp < 100 && !foxLikePet) out.uiMischiefEnabled = false;
+    if (foxLikePet) out.uiMischiefEnabled = false;
+    if (foxLikePet) out.aggressiveMode = false;
+    if (!isFreePlay && xp < 135) out.portalEnabled = false;
+    if (!isFreePlay && xp < 175 && out.catEnergyLevel === 'hyper') out.catEnergyLevel = 'active';
     return out;
   }
 
@@ -1168,6 +1864,12 @@
       if (id === 'achievement100Pets') name.textContent = t('hundredPets');
       if (id === 'achievement7DayStreak') name.textContent = t('sevenDayStreak');
       if (id === 'achievementMasterMischief') name.textContent = t('masterMischief');
+      if (id === 'achievementGoldRush') name.textContent = t('goldRush');
+      if (id === 'achievementSpiderHero') name.textContent = t('spiderHero');
+      if (id === 'achievementSushiMaster') name.textContent = t('sushiMaster');
+      if (id === 'achievementConsistent') name.textContent = t('consistent');
+      if (id === 'achievementFishmonger') name.textContent = t('fishmonger');
+      if (id === 'achievementNightCrawler') name.textContent = t('nightCrawler');
     });
 
     [
@@ -1223,7 +1925,16 @@
       panel.classList.toggle('active', panel.dataset.panel === tabName);
     });
 
-    // Default sub-tabs when entering main panels
+    const isHome = (tabName === 'essential');
+    const homeBonusBanner = document.getElementById('homeBonusBanner');
+    const reviewBanner = document.getElementById('reviewBanner');
+    if (!isHome) {
+      if (homeBonusBanner) homeBonusBanner.style.display = 'none';
+      if (reviewBanner) reviewBanner.style.display = 'none';
+    } else {
+      refreshShop().catch(() => {});
+    }
+
     if (tabName === 'quests') {
       setActiveSubTab('daily');
       refreshQuests().catch(() => renderQuestPanel(null));
@@ -1240,12 +1951,24 @@
     latestAchievementStats = stats || latestAchievementStats || {};
     const achievementStats = latestAchievementStats;
     const achievements = [
-      { id: 'achievementFirstFriend', unlocked: achievementStats.lifetimePets >= 1 || achievementStats.lifetimeFish >= 1 },
-      { id: 'achievementSpiderHunter', unlocked: achievementStats.lifetimeSpidersCaught >= 10 },
-      { id: 'achievement100Pets', unlocked: achievementStats.lifetimePets >= 100 },
-      { id: 'achievement7DayStreak', unlocked: latestDailyStreak >= 7 },
-      { id: 'achievementMasterMischief', unlocked: latestXP >= MILESTONES.uiMischief.xp }
+      
+      { id: 'achievementFirstFriend',   unlocked: (achievementStats.lifetimePets || 0) >= 1 || (achievementStats.lifetimeFish || 0) >= 1 },
+      { id: 'achievementSpiderHunter',  unlocked: (achievementStats.lifetimeSpidersCaught || 0) >= 10 },
+      { id: 'achievement100Pets',       unlocked: (achievementStats.lifetimePets || 0) >= 100 },
+      { id: 'achievement7DayStreak',    unlocked: latestDailyStreak >= 7 },
+      { id: 'achievementMasterMischief',unlocked: latestXP >= MILESTONES.uiMischief.xp },
+      { id: 'achievementGoldRush',      unlocked: (achievementStats.lifetimeCoins || 0) >= 1000 },
+      
+      { id: 'achievementSpiderHero',    unlocked: (achievementStats.lifetimeSpidersCaught || 0) >= 50 },
+      { id: 'achievementSushiMaster',   unlocked: (achievementStats.lifetimeFish || 0) >= 500 },
+      { id: 'achievementConsistent',    unlocked: latestDailyStreak >= 14 },
+      { id: 'achievementFishmonger',    unlocked: (achievementStats.lifetimeFish || 0) >= 50 },
+      { id: 'achievementNightCrawler',  unlocked: (achievementStats.lifetimeGoogleSeconds || 0) >= 3600 }
     ];
+
+    if (latestFreePlayMode) {
+      achievements.forEach(a => a.unlocked = true);
+    }
 
     achievements.forEach(ach => {
       const el = document.getElementById(ach.id);
@@ -1256,37 +1979,88 @@
     });
   }
 
+  (function initAchPagination() {
+    const pages = Array.from(document.querySelectorAll('.achievement-page'));
+    const label = document.getElementById('achPageLabel');
+    const prev  = document.getElementById('achPrev');
+    const next  = document.getElementById('achNext');
+    if (!pages.length || !prev || !next) return;
+
+    let current = 0;
+    const total = pages.length;
+
+    function goTo(index) {
+      current = Math.max(0, Math.min(total - 1, index));
+      pages.forEach((p, i) => { p.style.display = i === current ? '' : 'none'; });
+      if (label) label.textContent = (current + 1) + ' / ' + total;
+      prev.disabled = current === 0;
+      next.disabled = current === total - 1;
+    }
+
+    prev.addEventListener('click', () => goTo(current - 1));
+    next.addEventListener('click', () => goTo(current + 1));
+    goTo(0);
+  })();
+
   function applyPetSpecificLocks(activePet) {
-    const foxActive = activePet === 'pet_fox';
-    const companionUnlocked = latestXP >= MILESTONES.companion.xp;
-    const mischiefUnlocked = latestXP >= MILESTONES.uiMischief.xp;
-    const mischiefRateUnlocked = latestXP >= MILESTONES.mischiefRate.xp;
+    const isClippy = activePet === 'pet_clippy' || activePet === 'clippy';
+    const noCompanionPet = isClippy || activePet === 'pet_bat' || activePet === 'bat';
+    const foxLikePet = activePet === 'pet_fox' || activePet === 'pet_red_panda' || activePet === 'red_panda' || activePet === 'pet_skeleton' || activePet === 'pet_penguin' || activePet === 'penguin' || activePet === 'pet_fairy' || activePet === 'fairy' || activePet === 'pet_pigeon' || activePet === 'pigeon';
+    const companionUnlocked = isMilestoneUnlocked('companion');
+    const mischiefUnlocked = isMilestoneUnlocked('uiMischief');
+    const mischiefRateUnlocked = isMilestoneUnlocked('mischiefRate');
+    const speechUnlocked = isMilestoneUnlocked('speech');
 
     if (companionToggle) {
-      companionToggle.disabled = !companionUnlocked;
-      if (!companionUnlocked) companionToggle.checked = false;
+      companionToggle.disabled = noCompanionPet || !companionUnlocked;
+      if (noCompanionPet || !companionUnlocked) companionToggle.checked = false;
     }
-    if (companionSwitchWrap) companionSwitchWrap.classList.toggle('control-locked', !companionUnlocked);
-    if (companionRow) companionRow.classList.toggle('control-locked', !companionUnlocked);
+    if (companionSwitchWrap) companionSwitchWrap.classList.toggle('control-locked', noCompanionPet || !companionUnlocked);
+    if (companionRow) companionRow.classList.toggle('control-locked', noCompanionPet || !companionUnlocked);
 
-    if (skinSelect) skinSelect.classList.remove('control-locked');
-    if (skinRow) skinRow.classList.remove('control-locked');
+    if (loyalToggle) {
+      loyalToggle.disabled = isClippy;
+      if (isClippy) loyalToggle.checked = false;
+    }
+
+    if (speechToggle) {
+      speechToggle.disabled = !isClippy || !speechUnlocked;
+      if (!isClippy) speechToggle.checked = false;
+    }
+    if (speechSwitchWrap) speechSwitchWrap.classList.toggle('control-locked', !isClippy || !speechUnlocked);
+    if (speechRow) speechRow.classList.toggle('control-locked', !isClippy || !speechUnlocked);
+
+    const skinLockedPet = activePet === 'pet_frog' || activePet === 'frog' || activePet === 'pet_penguin' || activePet === 'penguin' || isClippy || activePet === 'pet_fairy' || activePet === 'fairy';
+    if (skinSelect) {
+      skinSelect.classList.toggle('control-locked', skinLockedPet);
+      skinSelect.disabled = skinLockedPet;
+    }
+    if (skinRow) {
+      skinRow.classList.toggle('control-locked', skinLockedPet);
+      skinRow.style.display = '';
+    }
 
     if (aggroToggle) {
-      aggroToggle.disabled = foxActive;
-      if (foxActive) aggroToggle.checked = false;
+      aggroToggle.disabled = foxLikePet;
+      if (foxLikePet) aggroToggle.checked = false;
     }
-    if (aggroRow) aggroRow.classList.toggle('control-locked', foxActive);
+    if (aggroRow) aggroRow.classList.toggle('control-locked', foxLikePet);
 
     if (uiMischiefToggle) {
-      uiMischiefToggle.disabled = foxActive || !mischiefUnlocked;
-      if (foxActive || !mischiefUnlocked) uiMischiefToggle.checked = false;
+      uiMischiefToggle.disabled = foxLikePet || !mischiefUnlocked;
+      if (foxLikePet || !mischiefUnlocked) uiMischiefToggle.checked = false;
     }
-    if (mischiefSwitchWrap) mischiefSwitchWrap.classList.toggle('control-locked', foxActive || !mischiefUnlocked);
-    if (mischiefRow) mischiefRow.classList.toggle('control-locked', foxActive || !mischiefUnlocked);
-    if (mischiefMinus) mischiefMinus.disabled = foxActive || !mischiefRateUnlocked;
-    if (mischiefPlus) mischiefPlus.disabled = foxActive || !mischiefRateUnlocked;
-    if (mischiefRateRow) mischiefRateRow.classList.toggle('control-locked', foxActive || !mischiefRateUnlocked);
+    if (mischiefSwitchWrap) mischiefSwitchWrap.classList.toggle('control-locked', foxLikePet || !mischiefUnlocked);
+    if (mischiefRow) mischiefRow.classList.toggle('control-locked', foxLikePet || !mischiefUnlocked);
+    if (mischiefMinus) mischiefMinus.disabled = foxLikePet || !mischiefRateUnlocked;
+    if (mischiefPlus) mischiefPlus.disabled = foxLikePet || !mischiefRateUnlocked;
+    if (mischiefRateRow) mischiefRateRow.classList.toggle('control-locked', foxLikePet || !mischiefRateUnlocked);
+
+    [fishSpawnBtn, ballSpawnBtn, portalSpawnBtn].forEach((button) => {
+      if (!button) return;
+      button.style.opacity = '';
+      button.style.pointerEvents = '';
+    });
   }
 
   function formatResetCountdown(totalSeconds) {
@@ -1348,6 +2122,7 @@
   }
 
   function isMilestoneUnlocked(key) {
+    if (latestFreePlayMode) return true;
     const milestone = MILESTONES[key];
     return !milestone || latestXP >= milestone.xp;
   }
@@ -1357,41 +2132,52 @@
   }
 
   function getSkinStorageKey(activePet) {
-    return activePet === 'pet_fox' ? 'foxSkin' : 'catSkin';
+    if (activePet === 'pet_fox' || activePet === 'pet_red_panda' || activePet === 'fox' || activePet === 'red_panda') return 'foxSkin';
+    if (activePet === 'pet_pigeon' || activePet === 'pigeon') return 'pigeonSkin';
+    return 'catSkin';
   }
 
   function getDefaultSkinForPet(activePet) {
-    return activePet === 'pet_fox' ? 'orange' : 'white';
+    if (activePet === 'pet_fox' || activePet === 'pet_red_panda' || activePet === 'fox' || activePet === 'red_panda') return 'orange';
+    if (activePet === 'pet_pigeon' || activePet === 'pigeon') return 'black';
+    return 'white';
   }
 
   function getActiveSkinFromData(data, activePet) {
     const key = getSkinStorageKey(activePet);
     const fallback = getDefaultSkinForPet(activePet);
     const value = data && data[key];
-    return ['white', 'orange', 'rainbow'].includes(value) ? value : fallback;
+    return ['white', 'orange', 'rainbow', 'blue', 'black'].includes(value) ? value : fallback;
   }
 
   function getLockedSettingsPatch(data) {
-    const xp = Math.min(MAX_LEVEL_XP, Math.max(0, Number(data.catXP) || 0));
     const patch = {};
-    const foxActive = data.activePet === 'pet_fox';
+    const isClippy = data && (data.activePet === 'pet_clippy' || data.activePet === 'clippy');
+    if (!isClippy && data.speechEnabled) patch.speechEnabled = false;
+    if (isClippy) {
+      if (data.companionEnabled) patch.companionEnabled = false;
+      if (data.loyalMode) patch.loyalMode = false;
+    }
+    if (data && (data.freePlayMode || data.unlockAll)) return patch;
+    const xp = Math.min(MAX_LEVEL_XP, Math.max(0, Number(data.catXP) || 0));
+    const foxLikePet = data.activePet === 'pet_fox' || data.activePet === 'pet_red_panda' || data.activePet === 'red_panda' || data.activePet === 'pet_skeleton' || data.activePet === 'pet_penguin' || data.activePet === 'penguin' || data.activePet === 'pet_fairy' || data.activePet === 'fairy' || data.activePet === 'pet_pigeon' || data.activePet === 'pigeon';
 
     if (xp < MILESTONES.speech.xp && data.speechEnabled) patch.speechEnabled = false;
     if (xp < MILESTONES.ball.xp && data.ballEnabled) patch.ballEnabled = false;
     if (xp < MILESTONES.spider.xp && data.spiderEnabled) patch.spiderEnabled = false;
     if (xp < MILESTONES.rainbowSkin.xp && data.catSkin === 'rainbow') patch.catSkin = 'white';
     if (xp < MILESTONES.rainbowSkin.xp && data.foxSkin === 'rainbow') patch.foxSkin = 'orange';
-    if (xp < MILESTONES.size.xp && Number(data.sizeMultiplier) !== 1.0) patch.sizeMultiplier = 1.0;
+    if (xp < MILESTONES.rainbowSkin.xp && data.pigeonSkin === 'rainbow') patch.pigeonSkin = 'black';
     if (xp < MILESTONES.companion.xp && data.companionEnabled) patch.companionEnabled = false;
-    if ((xp < MILESTONES.uiMischief.xp || foxActive) && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
-    if (foxActive && data.aggressiveMode) patch.aggressiveMode = false;
+    if ((xp < MILESTONES.uiMischief.xp || foxLikePet) && data.uiMischiefEnabled) patch.uiMischiefEnabled = false;
+    if (foxLikePet && data.aggressiveMode) patch.aggressiveMode = false;
     if (xp < MILESTONES.hyper.xp && data.catEnergyLevel === 'hyper') patch.catEnergyLevel = 'active';
     if (xp < MILESTONES.portal.xp && data.portalEnabled) patch.portalEnabled = false;
     return patch;
   }
 
   async function forceCatOnlySettingsOffForFox(activePet) {
-    if (activePet !== 'pet_fox') return;
+    if (activePet !== 'pet_fox' && activePet !== 'pet_red_panda' && activePet !== 'pet_skeleton' && activePet !== 'pet_penguin' && activePet !== 'pet_fairy' && activePet !== 'pet_pigeon') return;
     const patch = { aggressiveMode: false, uiMischiefEnabled: false };
     await setLocal(patch);
     await sendMessageToTabs({ action: 'updateSettings', settings: patch });
@@ -1435,16 +2221,15 @@
       return;
     }
 
-    // Update achievements based on lifetime stats
     updateAchievements(snapshot.stats);
 
-    const remainingCount = Math.max(0, snapshot.totalCount - snapshot.completedCount);
-    const overallPct = snapshot.totalCount > 0 ? Math.round((snapshot.completedCount / snapshot.totalCount) * 100) : 0;
+    const displayTotalCount = snapshot.totalCount;
+    const displayCompletedCount = latestFreePlayMode ? snapshot.totalCount : snapshot.completedCount;
+    const displayPerfectDays = latestFreePlayMode ? '∞' : snapshot.stats.perfectDays;
 
     if (questResetText) questResetText.textContent = t('remaining', { time: formatResetCountdown(snapshot.secondsUntilReset) });
-    if (questCompletedValue) questCompletedValue.textContent = `${snapshot.completedCount} / ${snapshot.totalCount}`;
-    if (questPerfectDaysValue) questPerfectDaysValue.textContent = t('streak', { count: snapshot.stats.perfectDays });
-    
+    if (questCompletedValue) questCompletedValue.textContent = `${displayCompletedCount} / ${displayTotalCount}`;
+    if (questPerfectDaysValue) questPerfectDaysValue.textContent = t('streak', { count: displayPerfectDays });
 
     if (!Array.isArray(snapshot.quests) || snapshot.quests.length === 0) {
       const empty = document.createElement('div');
@@ -1455,9 +2240,11 @@
     }
 
     const questCards = snapshot.quests.map((quest) => {
-      const progressPct = quest.target > 0 ? Math.round((quest.progress / quest.target) * 100) : 0;
+      const isCompleted = latestFreePlayMode ? true : quest.completed;
+      const progress = latestFreePlayMode ? quest.target : quest.progress;
+      const progressPct = quest.target > 0 ? Math.round((progress / quest.target) * 100) : 0;
       const card = document.createElement('article');
-      card.className = `quest-card${quest.completed ? ' quest-complete' : ''}`;
+      card.className = `quest-card${isCompleted ? ' quest-complete' : ''}`;
       const body = document.createElement('div');
       body.className = 'quest-card-body';
       const top = document.createElement('div');
@@ -1465,22 +2252,27 @@
       const title = document.createElement('div');
       title.className = 'quest-card-title';
       title.textContent = getQuestTitle(quest);
+      
       let displayLabel = quest.progressLabel;
+      if (latestFreePlayMode) {
+        displayLabel = (quest.type === 'watch_seconds' || quest.type === 'google_active_seconds') ? '' : `${quest.target} / ${quest.target}`;
+      }
+      
       if (quest.type === 'watch_seconds' || quest.type === 'google_active_seconds') {
         const duration = document.createElement('span');
         duration.className = 'quest-title-meta';
         duration.textContent = ` (${formatDurationI18n(quest.target)})`;
         title.appendChild(duration);
-        const progMins = Math.floor(quest.progress / 60);
+        const progMins = Math.floor(progress / 60);
         const targMins = Math.floor(quest.target / 60);
         displayLabel = quest.target >= 60
           ? `${progMins} / ${targMins}`
-          : `${quest.progress} / ${quest.target}`;
+          : `${progress} / ${quest.target}`;
       }
 
       const status = document.createElement('div');
       status.className = 'quest-card-status';
-      status.textContent = quest.completed ? t('complete') : t('active');
+      status.textContent = isCompleted ? t('complete') : t('active');
       top.append(title, status);
 
       const row = document.createElement('div');
@@ -1514,7 +2306,7 @@
       const snapshot = await QuestEngine.getSnapshot(getQuestStorageArea());
       renderQuestPanel(snapshot);
     } catch (error) {
-      // Self-heal older or partially protected installs: fall back to raw local storage once.
+      
       try {
         const snapshot = await QuestEngine.getSnapshot(API.storage.local);
         renderQuestPanel(snapshot);
@@ -1525,7 +2317,12 @@
   }
 
   function setStat(el, value) {
-    if (el) el.textContent = Math.max(0, Number(value) || 0).toLocaleString();
+    if (!el) return;
+    if (value === '∞') {
+      el.textContent = '∞';
+      return;
+    }
+    el.textContent = Math.max(0, Number(value) || 0).toLocaleString();
   }
 
   async function refreshStats() {
@@ -1536,19 +2333,20 @@
 
     const data = await getLocal(defaults);
     const stats = QuestEngine && data[QuestEngine.STATS_KEY] ? data[QuestEngine.STATS_KEY] : {};
-    setStat(statFish, stats.lifetimeFish);
-    setStat(statSpiders, stats.lifetimeSpidersCaught);
-    setStat(statPets, stats.lifetimePets);
-    setStat(statCoinsCollected, stats.lifetimeCoins);
-    setStat(statBalls, stats.lifetimeBallCatches);
-    setStat(statQuests, stats.lifetimeCompleted);
-    setStat(statPerfectDays, stats.perfectDays);
-    setStat(statDailyStreak, data.dailyStreak);
+    
+    setStat(statFish, latestFreePlayMode ? '∞' : stats.lifetimeFish);
+    setStat(statSpiders, latestFreePlayMode ? '∞' : stats.lifetimeSpidersCaught);
+    setStat(statPets, latestFreePlayMode ? '∞' : stats.lifetimePets);
+    setStat(statCoinsCollected, latestFreePlayMode ? '∞' : stats.lifetimeCoins);
+    setStat(statBalls, latestFreePlayMode ? '∞' : stats.lifetimeBallCatches);
+    setStat(statQuests, latestFreePlayMode ? '∞' : stats.lifetimeCompleted);
+    setStat(statPerfectDays, latestFreePlayMode ? '∞' : stats.perfectDays);
+    setStat(statDailyStreak, latestFreePlayMode ? '∞' : data.dailyStreak);
+    
     latestDailyStreak = Math.max(0, Number(data.dailyStreak) || 0);
     updateAchievements(stats);
   }
 
-  //  LEVEL / XP UI UPDATE
   function applyXpUI(xp, flash) {
     const pct = Math.min(MAX_LEVEL_XP, Math.max(0, xp));
     const levelProgress = getLevelProgress(pct);
@@ -1557,30 +2355,37 @@
     updateAchievements(latestAchievementStats);
     const currentLevelXP = Math.floor(levelProgress.current);
     const neededLevelXP = Math.floor(levelProgress.needed);
-    xpBarFill.style.width = levelProgress.percent + '%';
-    if (levelValue) levelValue.textContent = t('level', { level });
-    xpValue.textContent = t('xpProgress', { current: currentLevelXP, needed: neededLevelXP });
-
-    if (pct < 10) {
-      xpHint.textContent = t('unlockSpeechBall');
-    } else if (pct < 25) {
-      xpHint.textContent = t('unlockSpiders');
-    } else if (pct < 45) {
-      xpHint.textContent = t('unlockSize');
-    } else if (pct < 70) {
-      xpHint.textContent = t('unlockCompanion');
-    } else if (pct < 100) {
-      xpHint.textContent = t('unlockMischief');
-    } else if (pct < 135) {
-      xpHint.textContent = t('unlockPortals');
-    } else if (pct < 175) {
-      xpHint.textContent = t('unlockHyper');
-    } else if (pct < 220) {
-      xpHint.textContent = t('level9Hint');
-    } else if (pct < 270) {
-      xpHint.textContent = t('level10Hint');
+    if (latestFreePlayMode) {
+      if (levelValue) levelValue.textContent = t('level', { level: '∞' });
+      xpValue.textContent = '∞ / ∞ XP';
+      xpBarFill.style.width = '100%';
+      xpHint.textContent = t('sandboxUnlockedHint');
     } else {
-      xpHint.textContent = t('maxLevel');
+      xpBarFill.style.width = levelProgress.percent + '%';
+      if (levelValue) levelValue.textContent = t('level', { level });
+      xpValue.textContent = t('xpProgress', { current: currentLevelXP, needed: neededLevelXP });
+
+      if (pct < 10) {
+        xpHint.textContent = t('unlockSpeechBall');
+      } else if (pct < 25) {
+        xpHint.textContent = t('unlockSpiders');
+      } else if (pct < 45) {
+        xpHint.textContent = t('unlockSize');
+      } else if (pct < 70) {
+        xpHint.textContent = t('unlockCompanion');
+      } else if (pct < 100) {
+        xpHint.textContent = t('unlockMischief');
+      } else if (pct < 135) {
+        xpHint.textContent = t('unlockPortals');
+      } else if (pct < 175) {
+        xpHint.textContent = t('unlockHyper');
+      } else if (pct < 220) {
+        xpHint.textContent = t('level9Hint');
+      } else if (pct < 270) {
+        xpHint.textContent = t('level10Hint');
+      } else {
+        xpHint.textContent = t('maxLevel');
+      }
     }
 
     function updateLockBanner(bannerEl, unlocked, milestone) {
@@ -1600,7 +2405,7 @@
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M7 11V7a5 5 0 0 1 10 0v4');
         iconSvg.appendChild(rect);
-        iconSvg.appendChild(path); // Lock
+        iconSvg.appendChild(path); 
       }
     }
 
@@ -1620,8 +2425,7 @@
       }
     }
 
-    //  SPEECH BUBBLES lock
-    const speechUnlocked = pct >= MILESTONES.speech.xp;
+    const speechUnlocked = isMilestoneUnlocked('speech');
     updateLockBanner(speechLock, speechUnlocked, MILESTONES.speech);
     if (speechUnlocked) {
       speechSwitchWrap.classList.remove('control-locked');
@@ -1632,38 +2436,26 @@
       speechToggle.disabled = true;
     }
 
-    //  BALL SPAWN lock
-    const ballUnlocked = pct >= MILESTONES.ball.xp;
+    const ballUnlocked = isMilestoneUnlocked('ball');
     if (ballUnlocked) {
       updateLockedButton(ballSpawnBtn, ballLock, true);
     } else {
       updateLockedButton(ballSpawnBtn, ballLock, false);
     }
 
-    //  SPIDER SPAWN lock
-    const spiderUnlocked = pct >= MILESTONES.spider.xp;
+    const spiderUnlocked = isMilestoneUnlocked('spider');
     if (spiderUnlocked) {
       updateLockedButton(spiderSpawnBtn, spiderLock, true);
     } else {
       updateLockedButton(spiderSpawnBtn, spiderLock, false);
     }
 
-    //  SIZE lock
-    const sizeUnlocked = pct >= MILESTONES.size.xp;
-    updateLockBanner(sizeLock, sizeUnlocked, MILESTONES.size);
-    if (sizeUnlocked) {
-      sizeRow.classList.remove('control-locked');
-      sizeMinus.disabled = false;
-      sizePlus.disabled = false;
-    } else {
-      sizeRow.classList.add('control-locked');
-      sizeMinus.disabled = true;
-      sizePlus.disabled = true;
-      sizeVal.textContent = '1.0x';
-    }
+    if (sizeLock) sizeLock.style.display = 'none';
+    if (sizeRow) sizeRow.classList.remove('control-locked');
+    if (sizeMinus) sizeMinus.disabled = false;
+    if (sizePlus) sizePlus.disabled = false;
 
-    //  COMPANION lock
-    const companionUnlocked = pct >= MILESTONES.companion.xp;
+    const companionUnlocked = isMilestoneUnlocked('companion');
     updateLockBanner(companionLock, companionUnlocked, MILESTONES.companion);
     if (companionUnlocked) {
       companionSwitchWrap.classList.remove('control-locked');
@@ -1674,8 +2466,7 @@
       companionToggle.disabled = true;
     }
 
-    //  UI MISCHIEF lock
-    const mischiefUnlocked = pct >= MILESTONES.uiMischief.xp;
+    const mischiefUnlocked = isMilestoneUnlocked('uiMischief');
     updateLockBanner(mischiefLock, mischiefUnlocked, MILESTONES.uiMischief);
     if (mischiefUnlocked) {
       mischiefSwitchWrap.classList.remove('control-locked');
@@ -1686,8 +2477,7 @@
       uiMischiefToggle.disabled = true;
     }
 
-    //  MISCHIEF RATE lock
-    const mischiefRateUnlocked = pct >= MILESTONES.mischiefRate.xp;
+    const mischiefRateUnlocked = isMilestoneUnlocked('mischiefRate');
     updateLockBanner(mischiefRateLock, mischiefRateUnlocked, MILESTONES.mischiefRate);
     if (mischiefRateUnlocked) {
       mischiefMinus.disabled = false;
@@ -1697,8 +2487,7 @@
       mischiefPlus.disabled = true;
     }
 
-    //  PORTAL SPAWN lock
-    const portalUnlocked = pct >= MILESTONES.portal.xp;
+    const portalUnlocked = isMilestoneUnlocked('portal');
     if (portalSpawnBtn) {
       if (portalUnlocked) {
         updateLockedButton(portalSpawnBtn, portalLock, true);
@@ -1707,15 +2496,13 @@
       }
     }
 
-    //  HYPER lock
-    const hyperUnlocked = pct >= MILESTONES.hyper.xp;
+    const hyperUnlocked = isMilestoneUnlocked('hyper');
     if (hyperUnlocked) {
       updateLockedButton(hyperBtn, hyperLock, true);
     } else {
       updateLockedButton(hyperBtn, hyperLock, false);
     }
 
-    // Flash newly unlocked rows
     if (flash && prevXP >= 0) {
       const milestones = [
         { threshold: MILESTONES.speech.xp,          el: speechRow },
@@ -1731,17 +2518,16 @@
       milestones.forEach(m => {
         if (prevXP < m.threshold && pct >= m.threshold && m.el) {
           m.el.classList.remove('unlock-flash');
-          void m.el.offsetWidth; // force reflow
+          void m.el.offsetWidth; 
           m.el.classList.add('unlock-flash');
           setTimeout(() => m.el.classList.remove('unlock-flash'), 900);
         }
       });
     }
 
-    //  TREATS TREE UPDATE 
     document.querySelectorAll('.tree-item[data-xp]').forEach((node) => {
       const requiredXP = Number(node.dataset.xp) || 0;
-      const unlocked = pct >= requiredXP;
+      const unlocked = latestFreePlayMode || pct >= requiredXP;
       node.classList.toggle('unlocked', unlocked);
     });
 
@@ -1752,17 +2538,43 @@
     prevXP = pct;
   }
 
-
   function updateSkinSwatches(activeSkin, activePet = 'pet_cat') {
+    const isFrogOrClippy = activePet === 'pet_frog' || activePet === 'frog' || activePet === 'pet_penguin' || activePet === 'penguin' || activePet === 'pet_clippy' || activePet === 'clippy' || activePet === 'pet_fairy' || activePet === 'fairy';
     const rainbowUnlocked = isMilestoneUnlocked('rainbowSkin');
     document.querySelectorAll('.color-box').forEach((box) => {
       const skin = box.dataset.skin;
-      const locked = skin === 'rainbow' && !rainbowUnlocked;
+      const isFox = activePet === 'pet_fox' || activePet === 'fox' || activePet === 'pet_red_panda' || activePet === 'red_panda';
+      const isPigeon = activePet === 'pet_pigeon' || activePet === 'pigeon';
+      const isBat = activePet === 'pet_bat' || activePet === 'bat';
+      if (skin === 'blue') {
+        box.style.display = isFox ? '' : 'none';
+      } else if (skin === 'black') {
+        box.style.display = isPigeon ? '' : 'none';
+      } else if (skin === 'orange') {
+        box.style.display = isPigeon ? 'none' : '';
+      }
+      const locked = isFrogOrClippy || (skin === 'rainbow' && !rainbowUnlocked);
       box.classList.toggle('skin-locked', locked);
       box.classList.toggle('active', skin === activeSkin && !locked);
       box.setAttribute('aria-disabled', String(locked));
-      if (skin === 'rainbow') {
+      if (isBat) {
+        if (skin === 'white' || skin === 'blue') box.style.background = 'linear-gradient(135deg, #3f3f46 0%, #18181b 100%)';
+        else if (skin === 'orange') box.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f97316 45%, #dc2626 100%)';
+        else if (skin === 'rainbow') box.style.background = 'linear-gradient(135deg, #86efac 0%, #22c55e 45%, #14532d 100%)';
+        else box.style.background = '';
+      } else {
+        box.style.background = '';
+      }
+      if (isFrogOrClippy) {
+        box.title = 'Color skins unavailable for this pet';
+      } else if (isBat) {
+        if (skin === 'white' || skin === 'blue') box.title = 'Vampire';
+        else if (skin === 'orange') box.title = 'Fire';
+        else if (skin === 'rainbow') box.title = 'Zombie';
+      } else if (skin === 'rainbow') {
         box.title = rainbowUnlocked ? 'Rainbow' : 'Rainbow - Level 3';
+      } else if (skin === 'blue') {
+        box.title = 'Nightly Blue';
       } else {
         box.title = skin.charAt(0).toUpperCase() + skin.slice(1);
       }
@@ -1772,6 +2584,7 @@
   async function refresh() {
     const data = await getLocal(defaultSettings);
     latestLowPowerMode = !!data.lowPowerMode;
+    latestFreePlayMode = !!(data.freePlayMode || data.unlockAll);
     await enforceEcoModeIfNeeded(data);
     const lockedPatch = getLockedSettingsPatch(data);
     if (Object.keys(lockedPatch).length) {
@@ -1784,33 +2597,43 @@
     }
     latestActivePet = data.activePet || 'pet_cat';
     updateMainToggleUI(data.catEnabled);
+    if (freePlayToggle) freePlayToggle.checked = latestFreePlayMode;
     companionToggle.checked = data.companionEnabled;
     loyalToggle.checked = data.loyalMode;
-    aggroToggle.checked = data.activePet === 'pet_fox' ? false : data.aggressiveMode;
+    const isNonCat = (data.activePet === 'pet_fox' || data.activePet === 'pet_red_panda' || data.activePet === 'pet_skeleton' || data.activePet === 'pet_penguin' || data.activePet === 'pet_fairy' || data.activePet === 'pet_pigeon');
+    const latestNonCat = (latestActivePet === 'pet_fox' || latestActivePet === 'pet_red_panda' || latestActivePet === 'pet_skeleton' || latestActivePet === 'pet_penguin' || latestActivePet === 'pet_fairy' || latestActivePet === 'pet_pigeon');
+    aggroToggle.checked = isNonCat ? false : data.aggressiveMode;
+    if (wallClimbToggle) wallClimbToggle.checked = data.wallClimbEnabled === true;
     if (data.spiderEnabled) spiderSpawnBtn.classList.add('active');
     else spiderSpawnBtn.classList.remove('active');
-    uiMischiefToggle.checked = latestActivePet === 'pet_fox' ? false : data.uiMischiefEnabled;
+    uiMischiefToggle.checked = latestNonCat ? false : data.uiMischiefEnabled;
     speechToggle.checked = data.speechEnabled;
     memoryToggle.checked = data.memoryEnabled;
     rareEventsToggle.checked = data.rareEventsEnabled;
     lowPowerToggle.checked = data.lowPowerMode;
     if (hideInFullscreenToggle) hideInFullscreenToggle.checked = data.hideInFullscreen;
-    speedVal.textContent = parseFloat(data.speedMultiplier).toFixed(1) + 'x';
+    if (showOnAllTabsToggle) showOnAllTabsToggle.checked = data.showOnAllTabs === true;
+    if (dragHandToggle) dragHandToggle.checked = data.dragHandEnabled === true;
+    if (typeof renderDisabledSitesList === 'function') renderDisabledSitesList();
+
     sizeVal.textContent = parseFloat(data.sizeMultiplier).toFixed(1) + 'x';
     mischiefRateVal.textContent = `${parseInt(data.uiMischiefRate, 10)}%`;
-    if (latestActivePet === 'pet_fox' && (data.aggressiveMode || data.uiMischiefEnabled)) {
+    if (latestNonCat && (data.aggressiveMode || data.uiMischiefEnabled)) {
       data.aggressiveMode = false;
       data.uiMischiefEnabled = false;
       uiMischiefToggle.checked = false;
       await forceCatOnlySettingsOffForFox(latestActivePet);
     }
 
-    // Coins
-    if (coinCount) coinCount.textContent = (data.coins || 0).toLocaleString();
+    if (coinCount) coinCount.textContent = latestFreePlayMode ? '∞' : (data.coins || 0).toLocaleString();
 
-    // Update spawn buttons
-    if (data.autoFishSpawnEnabled) fishSpawnBtn.classList.add('active');
-    else fishSpawnBtn.classList.remove('active');
+    if (latestFreePlayMode) {
+      fishSpawnBtn.classList.remove('active');
+    } else if (data.autoFishSpawnEnabled) {
+      fishSpawnBtn.classList.add('active');
+    } else {
+      fishSpawnBtn.classList.remove('active');
+    }
     
     if (data.ballEnabled) ballSpawnBtn.classList.add('active');
     else ballSpawnBtn.classList.remove('active');
@@ -1824,7 +2647,6 @@
       btn.classList.toggle('active', btn.dataset.energy === data.catEnergyLevel);
     });
 
-    // Apply level / XP UI
     applyXpUI(data.catXP || 0, false);
     applyPetSpecificLocks(latestActivePet);
     updateSkinSwatches(getActiveSkinFromData(data, latestActivePet), latestActivePet);
@@ -1846,10 +2668,38 @@
     const next = e.target.checked;
     await setLocal({ catEnabled: next });
     await sendMessageToTabs({ action: next ? 'startCat' : 'stopCat' });
+    if (!next) {
+      // Stop companion when main pet is toggled off
+      await sendMessageToTabs({ action: 'stopCompanion' });
+    } else {
+      const companionData = await getLocal({ companionEnabled: false });
+      if (companionData.companionEnabled) {
+        await sendMessageToTabs({ action: 'startCompanion' });
+      }
+    }
     updateMainToggleUI(next);
   });
 
+  if (freePlayToggle) {
+    freePlayToggle.addEventListener('change', async (e) => {
+      const next = e.target.checked;
+      latestFreePlayMode = next;
+      const patch = next ? { freePlayMode: next, unlockAll: next, autoFishSpawnEnabled: false } : { freePlayMode: next, unlockAll: next };
+      await setLocal(patch);
+      await sendMessageToTabs({ action: 'updateSettings', settings: patch });
+      await refresh();
+    });
+  }
+
   loyalToggle.addEventListener('change', async (e) => {
+    const active = await getLocal({ activePet: 'pet_cat' });
+    const isClippy = active.activePet === 'pet_clippy' || active.activePet === 'clippy';
+    if (isClippy) {
+      e.target.checked = false;
+      await setLocal({ loyalMode: false });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { loyalMode: false } });
+      return;
+    }
     const next = e.target.checked;
     await setLocal({ loyalMode: next });
     await sendMessageToTabs({ action: 'updateSettings', settings: { loyalMode: next } });
@@ -1858,8 +2708,12 @@
   companionToggle.addEventListener('change', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
-    if (!isMilestoneUnlocked('companion')) {
+    const isClippy = active.activePet === 'pet_clippy' || active.activePet === 'clippy';
+    const isBatPetUi = active.activePet === 'pet_bat' || active.activePet === 'bat';
+    if (isClippy || isBatPetUi || !isMilestoneUnlocked('companion')) {
       e.target.checked = false;
+      await setLocal({ companionEnabled: false });
+      await sendMessageToTabs({ action: 'stopCompanion' });
       return;
     }
     const next = e.target.checked;
@@ -1870,7 +2724,7 @@
   aggroToggle.addEventListener('change', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
-    if (active.activePet === 'pet_fox') {
+    if (active.activePet === 'pet_fox' || active.activePet === 'pet_red_panda' || active.activePet === 'pet_skeleton' || active.activePet === 'pet_penguin' || active.activePet === 'pet_fairy' || active.activePet === 'pet_pigeon') {
       e.target.checked = false;
       await setLocal({ aggressiveMode: false });
       await sendMessageToTabs({ action: 'updateSettings', settings: { aggressiveMode: false } });
@@ -1881,10 +2735,19 @@
     await sendMessageToTabs({ action: 'updateSettings', settings: { aggressiveMode: next } });
   });
 
+  if (wallClimbToggle) {
+    wallClimbToggle.addEventListener('change', async (e) => {
+      if (await blockResourceControlIfEco(e)) return;
+      const next = e.target.checked;
+      await setLocal({ wallClimbEnabled: next });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { wallClimbEnabled: next } });
+    });
+  }
+
   uiMischiefToggle.addEventListener('change', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
     const active = await getLocal({ activePet: 'pet_cat' });
-    if (active.activePet === 'pet_fox') {
+    if (active.activePet === 'pet_fox' || active.activePet === 'pet_red_panda' || active.activePet === 'pet_skeleton' || active.activePet === 'pet_penguin' || active.activePet === 'pet_fairy' || active.activePet === 'pet_pigeon') {
       e.target.checked = false;
       await setLocal({ uiMischiefEnabled: false });
       await sendMessageToTabs({ action: 'updateSettings', settings: { uiMischiefEnabled: false } });
@@ -1901,8 +2764,12 @@
 
   speechToggle.addEventListener('change', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
-    if (!isMilestoneUnlocked('speech')) {
+    const active = await getLocal({ activePet: 'pet_cat' });
+    const isClippy = active.activePet === 'pet_clippy' || active.activePet === 'clippy';
+    if (!isClippy || !isMilestoneUnlocked('speech')) {
       e.target.checked = false;
+      await setLocal({ speechEnabled: false });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { speechEnabled: false } });
       return;
     }
     const next = e.target.checked;
@@ -1924,10 +2791,6 @@
     await sendMessageToTabs({ action: 'updateSettings', settings: { rareEventsEnabled: next } });
   });
 
-  // ─── SPAWN BUTTONS: each is an independent toggle, multiple can be active ───
-  // When more than one is on, each type spawns on its own natural random timer
-  // in content.js — giving organic, unpredictable variety without coordination.
-
   spiderSpawnBtn.addEventListener('click', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
     if (!isMilestoneUnlocked('spider')) return;
@@ -1939,6 +2802,7 @@
 
   fishSpawnBtn.addEventListener('click', async (e) => {
     if (await blockResourceControlIfEco(e)) return;
+    if (latestFreePlayMode) return;
     const next = !fishSpawnBtn.classList.contains('active');
     fishSpawnBtn.classList.toggle('active', next);
     await setLocal({ autoFishSpawnEnabled: next });
@@ -1993,24 +2857,13 @@
     });
   }
 
-
-  speedMinus.addEventListener('click', async () => {
-    let data = await getLocal({ speedMultiplier: 1.0 });
-    let val = parseFloat(data.speedMultiplier);
-    val = Math.max(0.5, val - 0.5);
-    speedVal.textContent = val.toFixed(1) + 'x';
-    await setLocal({ speedMultiplier: val });
-    await sendMessageToTabs({ action: 'updateSettings', settings: { speedMultiplier: val } });
-  });
-
-  speedPlus.addEventListener('click', async () => {
-    let data = await getLocal({ speedMultiplier: 1.0 });
-    let val = parseFloat(data.speedMultiplier);
-    val = Math.min(2.5, val + 0.5);
-    speedVal.textContent = val.toFixed(1) + 'x';
-    await setLocal({ speedMultiplier: val });
-    await sendMessageToTabs({ action: 'updateSettings', settings: { speedMultiplier: val } });
-  });
+  if (showOnAllTabsToggle) {
+    showOnAllTabsToggle.addEventListener('change', async (e) => {
+      const next = e.target.checked;
+      await setLocal({ showOnAllTabs: next });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { showOnAllTabs: next } });
+    });
+  }
 
   sizeMinus.addEventListener('click', async () => {
     if (!isMilestoneUnlocked('size')) return;
@@ -2034,8 +2887,8 @@
 
   mischiefMinus.addEventListener('click', async () => {
     let data = await getLocal({ uiMischiefRate: 11, activePet: 'pet_cat' });
-    if (data.activePet === 'pet_fox') {
-      await forceCatOnlySettingsOffForFox('pet_fox');
+    if (data.activePet === 'pet_fox' || data.activePet === 'pet_red_panda' || data.activePet === 'pet_skeleton' || data.activePet === 'pet_penguin' || data.activePet === 'pet_fairy' || data.activePet === 'pet_pigeon') {
+      await forceCatOnlySettingsOffForFox(data.activePet);
       return;
     }
     let val = parseInt(data.uiMischiefRate, 10);
@@ -2047,8 +2900,8 @@
 
   mischiefPlus.addEventListener('click', async () => {
     let data = await getLocal({ uiMischiefRate: 11, activePet: 'pet_cat' });
-    if (data.activePet === 'pet_fox') {
-      await forceCatOnlySettingsOffForFox('pet_fox');
+    if (data.activePet === 'pet_fox' || data.activePet === 'pet_red_panda' || data.activePet === 'pet_skeleton' || data.activePet === 'pet_penguin' || data.activePet === 'pet_fairy' || data.activePet === 'pet_pigeon') {
+      await forceCatOnlySettingsOffForFox(data.activePet);
       return;
     }
     let val = parseInt(data.uiMischiefRate, 10);
@@ -2060,7 +2913,15 @@
 
   document.querySelectorAll('.color-box').forEach(box => {
     box.addEventListener('click', async () => {
-      const active = await getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange' });
+      const active = await getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange', pigeonSkin: 'black' });
+      latestActivePet = active.activePet || 'pet_cat';
+      if (latestActivePet === 'pet_frog' || latestActivePet === 'frog' || latestActivePet === 'pet_penguin' || latestActivePet === 'penguin' || latestActivePet === 'pet_clippy' || latestActivePet === 'clippy' || latestActivePet === 'pet_fairy' || latestActivePet === 'fairy') {
+        box.classList.remove('lock-shake');
+        void box.offsetWidth;
+        box.classList.add('lock-shake');
+        setTimeout(() => box.classList.remove('lock-shake'), 260);
+        return;
+      }
       const skin = box.dataset.skin;
       if (skin === 'rainbow' && !isMilestoneUnlocked('rainbowSkin')) {
         box.classList.remove('lock-shake');
@@ -2085,6 +2946,7 @@
 
   const infoIconInfo   = document.getElementById('infoIconInfo');
   const infoIconReturn = document.getElementById('infoIconReturn');
+  const infoIconClose  = document.getElementById('infoIconClose');
 
   let _lastTabBeforeInfo = 'essential';
 
@@ -2094,7 +2956,8 @@
     if (infoToggle) infoToggle.classList.add('active');
     if (infoIconInfo)   infoIconInfo.style.display   = 'none';
     if (infoIconReturn) infoIconReturn.style.display = '';
-    // activate the info panel itself
+    if (infoIconClose)  infoIconClose.style.display  = 'none';
+    
     panels.forEach(p => p.classList.toggle('active', p.dataset.panel === 'info'));
     tabButtons.forEach(b => b.classList.remove('active'));
     setActiveInfoTab('about');
@@ -2105,11 +2968,22 @@
     if (infoToggle) infoToggle.classList.remove('active');
     if (infoIconInfo)   infoIconInfo.style.display   = '';
     if (infoIconReturn) infoIconReturn.style.display = 'none';
+    if (infoIconClose)  infoIconClose.style.display  = 'none';
     setActiveTab(_lastTabBeforeInfo);
   }
 
   if (infoToggle) {
     infoToggle.addEventListener('click', () => {
+      
+      if (onboardingScreen && onboardingScreen.style.display === 'flex') {
+        _hideOnboarding();
+        if (_cameFromInfo) {
+          openInfoPanel();
+          setActiveInfoTab('stats');
+        }
+        return;
+      }
+
       if (document.body.classList.contains('info-panel-open')) {
         closeInfoPanel();
       } else {
@@ -2157,7 +3031,7 @@
 
   function clampSkillTreePan() {
     if (!skillTreeMap || !skillTreeViewport) return;
-    // Calculate dynamic limits based on current map and viewport dimensions
+    
     const mapW = skillTreeMap.offsetWidth || 800;
     const mapH = skillTreeMap.offsetHeight || 1000;
     const viewW = skillTreeViewport.offsetWidth || 215;
@@ -2221,12 +3095,12 @@
   document.querySelectorAll('.about-card').forEach((card) => {
     card.addEventListener('click', () => {
       const isOpen = card.classList.contains('open');
-      // Close all cards first
+      
       document.querySelectorAll('.about-card').forEach((c) => {
         c.classList.remove('open');
         c.setAttribute('aria-expanded', 'false');
       });
-      // If this card was closed, open it; if it was already open, leave it closed
+      
       if (!isOpen) {
         card.classList.add('open');
         card.setAttribute('aria-expanded', 'true');
@@ -2283,50 +3157,289 @@
 
     confirmReset.addEventListener('click', async (e) => {
       e.stopPropagation();
+
       await API.storage.local.clear();
-      await setLocal(defaultSettings);
+      if (FairPlay && typeof FairPlay.reset === 'function') {
+        await FairPlay.reset(API.storage.local, {});
+      }
+      
+      const prefKeys = ['catEnabled', 'catSkin', 'foxSkin', 'pigeonSkin', 'loyalMode', 'aggressiveMode', 'wallClimbEnabled',
+        'speedMultiplier', 'uiMischiefEnabled', 'speechEnabled', 'memoryEnabled',
+        'rareEventsEnabled', 'autoFishSpawnEnabled', 'lowPowerMode', 'hideInFullscreen', 'showOnAllTabs',
+        'sizeMultiplier', 'uiMischiefRate', 'catEnergyLevel', 'uiLanguage', 'disabledSites', 'activeHat'];
+      const prefDefaults = {};
+      prefKeys.forEach(k => { if (k in defaultSettings) prefDefaults[k] = defaultSettings[k]; });
+      await setLocal(prefDefaults);
       await sendMessageToTabs({ action: defaultSettings.catEnabled ? 'startCat' : 'stopCat' });
-      await sendMessageToTabs({ action: defaultSettings.companionEnabled ? 'startCompanion' : 'stopCompanion' });
-      await sendMessageToTabs({ action: 'updateSettings', settings: defaultSettings });
+      await sendMessageToTabs({ action: 'stopCompanion' });
+      await sendMessageToTabs({ action: 'updateSettings', settings: prefDefaults });
       window.location.reload();
     });
   }
 
-  // \u2500\u2500 LIVE XP REFRESH \u2500\u2500
+  const exportDataBtn  = document.getElementById('exportDataBtn');
+  const importDataBtn  = document.getElementById('importDataBtn');
+  const importFileInput = document.getElementById('importFileInput');
+  const ioStatusMsg     = document.getElementById('ioStatusMsg');
+
+  const _IO_SECRET = 'pcx\u0021v1\u2665' + 'K9mQ\u03c0\u03b1T' + 'seal\u00b72026\u00a7xZ';
+
+  async function _ioGetKey() {
+    const enc = new TextEncoder();
+    return crypto.subtle.importKey(
+      'raw',
+      enc.encode(_IO_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign', 'verify']
+    );
+  }
+
+  function _ioStableStringify(value) {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return '[' + value.map(_ioStableStringify).join(',') + ']';
+    return '{' + Object.keys(value).sort().map((key) => (
+      JSON.stringify(key) + ':' + _ioStableStringify(value[key])
+    )).join(',') + '}';
+  }
+
+  function _ioLegacyStringify(dataObj) {
+
+    return JSON.stringify(dataObj, Object.keys(dataObj).sort());
+  }
+
+  async function _ioSignText(msg) {
+    const enc = new TextEncoder();
+    const key = await _ioGetKey();
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(msg));
+    return Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function _ioSign(dataObj) {
+    return _ioSignText(_ioStableStringify(dataObj));
+  }
+
+  async function _ioSignLegacy(dataObj) {
+    return _ioSignText(_ioLegacyStringify(dataObj));
+  }
+
+  async function _ioVerify(dataObj, expectedHex) {
+    try {
+      const actual = await _ioSign(dataObj);
+      if (actual === expectedHex) return true;
+      const legacy = await _ioSignLegacy(dataObj);
+      return legacy === expectedHex;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function showIOStatus(msg, isError) {
+    const targets = [
+      document.getElementById('ioStatusMsg'),
+      document.getElementById('onboardIoStatusMsg')
+    ];
+    targets.forEach((el) => {
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'io-status ' + (isError ? 'err' : 'ok');
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(() => {
+        el.textContent = '';
+        el.className = 'io-status';
+      }, 4000);
+    });
+  }
+
+  async function doExport() {
+    try {
+      
+      const raw = await getLocal(null);
+
+      const sig = await _ioSign(raw);
+
+      const payload = {
+        _pixelcat: true,
+        _exportedAt: new Date().toISOString(),
+        _version: '2',
+        _sig: sig,
+        data: raw
+      };
+
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10);
+      a.href     = url;
+      a.download = `pixelcat-backup-${date}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      showIOStatus('Exported successfully!', false);
+    } catch (err) {
+      showIOStatus('Export failed.', true);
+    }
+  }
+
+  function doImport(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const payload = JSON.parse(text);
+
+        if (!payload || !payload._pixelcat || !payload.data || typeof payload.data !== 'object') {
+          showIOStatus('Not a valid PixelCat backup.', true);
+          return;
+        }
+
+        if (!payload._sig) {
+          showIOStatus('Unsigned backup — cannot import.', true);
+          return;
+        }
+
+        showIOStatus('Verifying…', false);
+        const valid = await _ioVerify(payload.data, payload._sig);
+        if (!valid) {
+          showIOStatus('Tampered file — import rejected.', true);
+          return;
+        }
+
+        const existingData = await getLocal({ reviewBannerDismissed: false });
+        const data = payload.data;
+        if (existingData && existingData.reviewBannerDismissed) {
+          data.reviewBannerDismissed = true;
+        }
+
+        await clearLocal();
+
+        let restored = data;
+
+        if (FairPlay && typeof FairPlay.commit === 'function') {
+          restored = await FairPlay.commit(API.storage.local, data);
+        } else if (typeof API.storage.local.set === 'function' && API.storage.local.set.length <= 1) {
+          await API.storage.local.set(data);
+        } else {
+          await new Promise((res) => API.storage.local.set(data, res));
+        }
+
+        await sendMessageToTabs({ action: 'updateSettings', settings: restored }).catch(() => {});
+        showIOStatus('Imported successfully! Reloading…', false);
+        setTimeout(() => window.location.reload(), 900);
+      } catch (err) {
+        showIOStatus('Import failed — invalid file.', true);
+      }
+    };
+    reader.onerror = () => {
+      showIOStatus('Failed to read file.', true);
+    };
+    reader.readAsText(file);
+  }
+
+  if (exportDataBtn) exportDataBtn.addEventListener('click', doExport);
+
+  if (importDataBtn) importDataBtn.addEventListener('click', () => {
+    openImportPage();
+  });
+
+  if (importFileInput) {
+    importFileInput.addEventListener('change', () => {
+      const file = importFileInput.files && importFileInput.files[0];
+      if (file) {
+        doImport(file);
+        importFileInput.value = ''; 
+      }
+    });
+  }
+
+  onboardingScreen           = document.getElementById('onboardingScreen');
+  const mainContent          = document.querySelector('.content:not(#onboardingScreen)');
+  const petNameInput         = document.getElementById('petNameInput');
+  const sexMaleBtn           = document.getElementById('sexMaleBtn');
+  const sexFemaleBtn         = document.getElementById('sexFemaleBtn');
+  const onboardingConfirmBtn = document.getElementById('onboardingConfirmBtn');
+
+  let _selectedSex = '';
+
+  function _showOnboarding() {
+    
+    if (document.body.classList.contains('info-panel-open')) {
+      closeInfoPanel();
+    }
+
+    if (infoToggle) {
+      if (_cameFromInfo) {
+        infoToggle.style.display = '';
+        if (infoIconInfo)   infoIconInfo.style.display   = 'none';
+        if (infoIconReturn) infoIconReturn.style.display = 'none';
+        if (infoIconClose)  infoIconClose.style.display  = '';
+      } else {
+        infoToggle.style.display = 'none'; 
+      }
+    }
+
+    if (onboardingScreen) onboardingScreen.style.display = 'flex';
+    if (mainContent)      mainContent.style.display = 'none';
+    if (petNameInput)     petNameInput.focus();
+  }
+
+  function _hideOnboarding() {
+    if (infoIconClose)  infoIconClose.style.display  = 'none';
+    if (infoToggle)     infoToggle.style.display     = ''; 
+    if (onboardingScreen) onboardingScreen.style.display = 'none';
+    if (mainContent)      mainContent.style.display = '';
+  }
+
   if (API.storage.onChanged) {
     API.storage.onChanged.addListener((changes) => {
+      if (changes.freePlayMode || changes.unlockAll) {
+        latestFreePlayMode = !!((changes.freePlayMode && changes.freePlayMode.newValue) || (changes.unlockAll && changes.unlockAll.newValue));
+        if (freePlayToggle) freePlayToggle.checked = latestFreePlayMode;
+        if (coinCount) coinCount.textContent = latestFreePlayMode ? '∞' : (parseInt(coinCount.textContent.replace(/[^\d]/g, ''), 10) || 0).toLocaleString();
+        applyXpUI(latestXP, false);
+      }
       if (changes.catXP) {
         const nextXP = Math.min(MAX_LEVEL_XP, Math.max(0, Number(changes.catXP.newValue) || 0));
         applyXpUI(nextXP, true);
-        if (nextXP < MILESTONES.rainbowSkin.xp) {
-          getLocal({ catSkin: 'white', foxSkin: 'orange' }).then((data) => {
+        applyPetSpecificLocks(latestActivePet);
+        if (!latestFreePlayMode && nextXP < MILESTONES.rainbowSkin.xp) {
+          getLocal({ catSkin: 'white', foxSkin: 'orange', pigeonSkin: 'black' }).then((data) => {
             const patch = {};
             if (data.catSkin === 'rainbow') patch.catSkin = 'white';
             if (data.foxSkin === 'rainbow') patch.foxSkin = 'orange';
+            if (data.pigeonSkin === 'rainbow') patch.pigeonSkin = 'black';
             if (!Object.keys(patch).length) return;
             setLocal(patch);
             sendMessageToTabs({ action: 'updateSettings', settings: patch });
-            getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange' }).then((fresh) => {
+            getLocal({ activePet: 'pet_cat', catSkin: 'white', foxSkin: 'orange', pigeonSkin: 'black' }).then((fresh) => {
               const activePet = fresh.activePet || latestActivePet || 'pet_cat';
               updateSkinSwatches(getActiveSkinFromData(Object.assign({}, data, patch, fresh), activePet), activePet);
-            }).catch(() => updateSkinSwatches(patch.foxSkin || patch.catSkin || getDefaultSkinForPet(latestActivePet), latestActivePet));
+            }).catch(() => updateSkinSwatches(patch.pigeonSkin || patch.foxSkin || patch.catSkin || getDefaultSkinForPet(latestActivePet), latestActivePet));
           }).catch(() => {});
         }
       }
       if (changes.activePet) {
         latestActivePet = changes.activePet.newValue || 'pet_cat';
         applyPetSpecificLocks(latestActivePet);
-        getLocal({ catSkin: 'white', foxSkin: 'orange' }).then((data) => updateSkinSwatches(getActiveSkinFromData(data, latestActivePet), latestActivePet)).catch(() => {});
+        getLocal({ catSkin: 'white', foxSkin: 'orange', pigeonSkin: 'black' }).then((data) => updateSkinSwatches(getActiveSkinFromData(data, latestActivePet), latestActivePet)).catch(() => {});
       }
       if (changes.coins && coinCount) {
         const newVal = changes.coins.newValue || 0;
-        coinCount.textContent = newVal.toLocaleString();
-        document.querySelectorAll('.shop-buy-btn').forEach(btn => {
-           const price = parseInt(btn.textContent.replace(/[^\d]/g, ''), 10);
-           if (!isNaN(price) && !btn.classList.contains('owned-btn') && !btn.classList.contains('ball-active-btn') && !btn.classList.contains('set-active-btn')) {
-             btn.disabled = newVal < price;
-           }
-        });
+        coinCount.textContent = latestFreePlayMode ? '∞' : newVal.toLocaleString();
+        if (!latestFreePlayMode) {
+          document.querySelectorAll('.shop-buy-btn').forEach(btn => {
+             const price = parseInt(btn.textContent.replace(/[^\d]/g, ''), 10);
+             if (!isNaN(price) && !btn.classList.contains('owned-btn') && !btn.classList.contains('ball-active-btn') && !btn.classList.contains('set-active-btn')) {
+               btn.disabled = newVal < price;
+             }
+          });
+        }
       }
       if ((QuestEngine && changes[QuestEngine.STORAGE_KEY]) || (QuestEngine && changes[QuestEngine.STATS_KEY])) {
         refreshQuests().catch(() => {});
@@ -2338,10 +3451,131 @@
     });
   }
 
+  function _onboardUpdateConfirm() {
+    if (!onboardingConfirmBtn) return;
+    const hasName = petNameInput && petNameInput.value.trim().length > 0;
+    const hasSex  = _selectedSex !== '';
+    onboardingConfirmBtn.disabled = !(hasName && hasSex);
+  }
+
+  function _selectSex(sex) {
+    _selectedSex = sex;
+    
+    if (sexMaleBtn)   sexMaleBtn.classList.toggle('active',   sex === 'male');
+    if (sexFemaleBtn) sexFemaleBtn.classList.toggle('active', sex === 'female');
+    
+    const iconEl = document.getElementById('onboardCatEmoji');
+    if (iconEl) iconEl.textContent = sex === 'female' ? '😺' : '🐱';
+    _onboardUpdateConfirm();
+  }
+
+  if (sexMaleBtn)   sexMaleBtn.addEventListener('click',  () => _selectSex('male'));
+  if (sexFemaleBtn) sexFemaleBtn.addEventListener('click', () => _selectSex('female'));
+  if (petNameInput) petNameInput.addEventListener('input', _onboardUpdateConfirm);
+
+  if (onboardingConfirmBtn) {
+    onboardingConfirmBtn.addEventListener('click', async () => {
+      const name = petNameInput ? petNameInput.value.trim() : '';
+      const sex  = _selectedSex;
+      if (!name || !sex) return;
+
+      await setLocal({ petName: name, petSex: sex });
+      await sendMessageToTabs({ action: 'updateSettings', settings: { petName: name, petSex: sex } }).catch(() => {});
+      _updatePetIdentityDisplay(name, sex);
+      _hideOnboarding();
+
+      if (_cameFromInfo) {
+        openInfoPanel();
+        setActiveInfoTab('stats');
+      }
+    });
+  }
+
+  function _updatePetIdentityDisplay(name, sex) {
+    const nameEl  = document.getElementById('petNameDisplay');
+    const badgeEl = document.getElementById('petSexBadge');
+    if (nameEl)  nameEl.textContent = name || 'Your Pet';
+    if (badgeEl) {
+      badgeEl.textContent = sex === 'male' ? '♂' : sex === 'female' ? '♀' : '';
+      badgeEl.setAttribute('data-sex', sex || '');
+      badgeEl.style.display = sex ? 'inline-flex' : 'none';
+    }
+  }
+
+  const onboardImportInput = document.getElementById('onboardImportInput');
+  const onboardImportBtn   = document.getElementById('onboardImportBtn');
+  const onboardImportRow   = document.getElementById('onboardImportRow');
+
+  if (onboardImportBtn && onboardImportInput) {
+    onboardImportBtn.addEventListener('click', openImportPage);
+    onboardImportInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      
+      doImport(file);
+      onboardImportInput.value = '';
+    });
+  }
+
+  const renameBtn = document.getElementById('renameBtn');
+  if (renameBtn) {
+    renameBtn.addEventListener('click', () => {
+      getLocal({ petName: '', petSex: '' }).then((stored) => {
+        if (petNameInput) petNameInput.value = stored.petName || '';
+        if (stored.petSex) _selectSex(stored.petSex);
+        else { 
+          _selectedSex = '';
+          if (sexMaleBtn)   sexMaleBtn.classList.remove('active');
+          if (sexFemaleBtn) sexFemaleBtn.classList.remove('active');
+        }
+        _onboardUpdateConfirm();
+        
+        const titleEl = document.getElementById('onboardTitle');
+        const subEl   = document.getElementById('onboardSub');
+        if (titleEl) titleEl.textContent = t('onboardRename');
+        if (subEl)   subEl.textContent   = t('onboardPickNew');
+        if (onboardImportRow) onboardImportRow.style.display = 'none';
+        _cameFromInfo = true; 
+        _showOnboarding();
+      }).catch(() => {});
+    });
+  }
+
+  getLocal({ petName: '', petSex: '', catXP: 0, coins: 0 }).then((stored) => {
+    if (!stored.petName) {
+      const isNewUser = !stored.catXP && !stored.coins;
+
+      const titleEl       = document.getElementById('onboardTitle');
+      const subEl         = document.getElementById('onboardSub');
+      const updateBadge   = document.getElementById('onboardUpdateBadge');
+      const safeNote      = document.getElementById('onboardSafeNote');
+
+      if (isNewUser) {
+        
+        if (titleEl)     titleEl.textContent  = t('onboardMeetTitle');
+        if (subEl)       subEl.textContent    = t('onboardPick');
+        if (updateBadge) updateBadge.style.display = 'none';
+        if (safeNote)    safeNote.style.display    = 'none';
+        if (onboardImportRow) onboardImportRow.style.display = 'block';
+      } else {
+        
+        if (titleEl)     titleEl.textContent  = t('onboardQuick');
+        if (subEl)       subEl.textContent    = t('onboardGive');
+        if (updateBadge) updateBadge.style.display = 'inline-block';
+        if (safeNote)    safeNote.style.display    = 'block';
+        if (onboardImportRow) onboardImportRow.style.display = 'none';
+      }
+
+      _cameFromInfo = false; 
+      _showOnboarding();
+      if (stored.petSex) _selectSex(stored.petSex);
+    }
+    _updatePetIdentityDisplay(stored.petName || '', stored.petSex || '');
+  }).catch(() => {});
+
   setActiveTab('essential');
   refresh().catch(() => {});
 
-  //  SHOP SYSTEM 
   const shopBallsView  = document.getElementById('shopBallsView');
   const shopPetsView   = document.getElementById('shopPetsView');
   const shopBoostsView = document.getElementById('shopBoostsView');
@@ -2350,16 +3584,27 @@
   const homeBonusSub    = document.getElementById('homeBonusSub');
   const homeBonusIcon   = document.getElementById('homeBonusIcon');
   const homeBonusBtn    = document.getElementById('homeBonusBtn');
-  let _shopBallPage = 0; // current ball pagination page
+  let _shopBallPage = 0; 
+  let _shopHatPage = 0; 
+  let _shopAnimalPage = 0; 
 
-  // Shop sub-tab switching
   document.querySelectorAll('[data-shoptab]').forEach(btn => {
     btn.addEventListener('click', () => {
       setActiveShopTab(btn.dataset.shoptab);
     });
   });
+  document.querySelectorAll('[data-itemtab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setActiveItemSubTab(btn.dataset.itemtab);
+    });
+  });
 
-  // Streak rewards: [day1, day2, day3, day4, day5, day6, day7+]
+  document.querySelectorAll('[data-pettab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setActivePetSubTab(btn.dataset.pettab);
+    });
+  });
+
   const STREAK_REWARDS = [5, 8, 12, 15, 20, 25, 35];
 
   function getDateKey() {
@@ -2367,19 +3612,19 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
-  // Build a single shop item card
-  function buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, container) {
+  function buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, container, activeHat = 'hat_none') {
     const normalizedOwned = Array.isArray(owned) ? owned : [];
-    const isFree    = !!item.free || item.id === 'pet_cat';
-    const isOwned   = isFree || normalizedOwned.includes(item.id);
+    const isFree    = !!item.free || item.id === 'pet_cat' || item.id === 'hat_none';
+    const isFreePlay = !!latestFreePlayMode;
+    const isOwned   = isFree || isFreePlay || normalizedOwned.includes(item.id);
     const isActive  = item.type === 'ball'
       ? activeBall === item.id
-      : (item.type === 'pet' ? activePet === item.id : isOwned && activeBoosts.includes(item.id));
-    const canAfford = coins >= item.price;
+      : (item.type === 'hat' ? activeHat === item.id : (item.type === 'pet' ? activePet === item.id : (normalizedOwned.includes(item.id) || isFreePlay) && Array.isArray(activeBoosts) && activeBoosts.includes(item.id)));
+    const canAfford = isFreePlay || coins >= item.price;
 
-    // Card classes
     let cardClass = 'shop-item';
-    if (isActive)                     cardClass += ' ball-active';
+    if (item.upcoming)                cardClass += ' cant-afford upcoming-item';
+    else if (isActive)                cardClass += ' ball-active';
     else if (isOwned)                 cardClass += ' owned';
     else if (!canAfford && !isOwned)  cardClass += ' cant-afford';
     
@@ -2388,15 +3633,18 @@
     card.classList.add(`shop-type-${item.type}`);
     card.dataset.id = item.id;
 
-    // Icon: real <img> for balls/pets, emoji for boosts
     if (item.imgFile) {
       const basePath = item.type === 'pet' ? 'assets/animations' : 'assets/balls';
       const src = (typeof browser !== 'undefined' ? browser : chrome).runtime.getURL(`${basePath}/${item.imgFile}`);
       const img = document.createElement('img');
-      img.className = 'shop-item-img';
+      img.className = `shop-item-img img-${item.id}`;
       img.src = src;
       img.alt = item.nameKey ? t(item.nameKey) : item.name;
       card.appendChild(img);
+    } else if (item.hatClass) {
+      const icon = document.createElement('div');
+      icon.className = `shop-item-hat ${item.hatClass}`;
+      card.appendChild(icon);
     } else {
       const emoji = document.createElement('div');
       emoji.className = 'shop-item-emoji';
@@ -2404,9 +3652,12 @@
       card.appendChild(emoji);
     }
 
-    // Button label/state
     let btnLabel, btnClass, btnDisabled;
-    if (item.type === 'ball' || item.type === 'pet') {
+    if (item.upcoming) {
+      btnLabel = t('upcoming') || 'Upcoming';
+      btnClass = 'shop-buy-btn upcoming-btn';
+      btnDisabled = true;
+    } else if (item.type === 'ball' || item.type === 'pet' || item.type === 'hat') {
       if (isActive) {
         btnLabel = `* ${t('activeItem')}`; btnClass = 'shop-buy-btn ball-active-btn'; btnDisabled = true;
       } else if (isOwned) {
@@ -2417,7 +3668,7 @@
         btnLabel = t('buyCoins', { price: item.price }); btnClass = 'shop-buy-btn'; btnDisabled = true;
       }
     } else {
-      // boost
+      
       if (isOwned) {
         btnLabel = isActive ? t('disable') : t('enable');
         btnClass = isActive ? 'shop-buy-btn boost-active-btn' : 'shop-buy-btn set-active-btn';
@@ -2425,6 +3676,13 @@
       } else {
         btnLabel = t('buyCoins', { price: item.price }); btnClass = 'shop-buy-btn'; btnDisabled = !canAfford;
       }
+    }
+
+    const isFrogActive = activePet === 'pet_frog' || activePet === 'frog';
+    if (item.type === 'hat' && !isFrogActive && !isActive) {
+      btnDisabled = true;
+      card.style.opacity = '0.45';
+      card.classList.add('control-locked');
     }
 
     const name = document.createElement('div');
@@ -2444,16 +3702,24 @@
     btn.disabled = btnDisabled;
     btn.textContent = btnLabel;
     card.appendChild(btn);
-    if (!btnDisabled) {
-      btn.addEventListener('click', async () => {
-        const result = await updateLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, activeBall: 'ball_baseball', activePet: 'pet_cat' }, (fresh) => {
+    btn.addEventListener('click', async () => {
+      if (item.upcoming) return;
+      if (item.type === 'hat' && !isFrogActive) {
+        card.classList.remove('lock-shake');
+        void card.offsetWidth;
+        card.classList.add('lock-shake');
+        setTimeout(() => card.classList.remove('lock-shake'), 260);
+        return;
+      }
+      const result = await updateLocal({ freePlayMode: false, unlockAll: false, coins: 0, shopOwned: [], shopActiveBoosts: null, activeBall: 'ball_baseball', activePet: 'pet_cat', activeHat: 'hat_none' }, (fresh) => {
+          const isFreePlay = !!(fresh.freePlayMode || fresh.unlockAll);
           const freshCoins = fresh.coins || 0;
           const freshOwned = Array.isArray(fresh.shopOwned) ? fresh.shopOwned : [];
           const freshOwnedSet = new Set(freshOwned);
           const freshActiveBoosts = Array.isArray(fresh.shopActiveBoosts)
             ? fresh.shopActiveBoosts
             : freshOwned.filter(id => SHOP_ITEMS.some(shopItem => shopItem.id === id && shopItem.type === 'boost'));
-          const nowOwned = item.free || item.id === 'pet_cat' || freshOwnedSet.has(item.id);
+          const nowOwned = item.free || item.id === 'pet_cat' || isFreePlay || freshOwnedSet.has(item.id);
 
           if (item.type === 'ball') {
             if (nowOwned) {
@@ -2470,19 +3736,39 @@
             };
           }
 
-          if (item.type === 'pet') {
-            const foxPatch = item.id === 'pet_fox' ? { aggressiveMode: false, uiMischiefEnabled: false } : {};
+          if (item.type === 'hat') {
             if (nowOwned) {
               return {
-                values: { activePet: item.id, ...foxPatch },
-                settings: { activePet: item.id, ...foxPatch }
+                values: { activeHat: item.id },
+                settings: { activeHat: item.id }
               };
             }
             if (freshCoins < item.price) return null;
             const newOwned = Array.from(new Set([...freshOwned, item.id]));
             return {
-              values: { coins: freshCoins - item.price, shopOwned: newOwned, activePet: item.id, ...foxPatch },
-              settings: { activePet: item.id, shopOwned: newOwned, ...foxPatch }
+              values: { coins: freshCoins - item.price, shopOwned: newOwned, activeHat: item.id },
+              settings: { activeHat: item.id, shopOwned: newOwned }
+            };
+          }
+
+          if (item.type === 'pet') {
+            const foxPatch = (item.id === 'pet_fox' || item.id === 'pet_red_panda' || item.id === 'pet_skeleton' || item.id === 'pet_penguin' || item.id === 'pet_fairy' || item.id === 'pet_pigeon') ? { aggressiveMode: false, uiMischiefEnabled: false } : {};
+            const batPatch = (item.id === 'pet_bat') ? { companionEnabled: false } : {};
+            const skinKey = getSkinStorageKey(item.id);
+            const defaultSkin = getDefaultSkinForPet(item.id);
+            const skinResetPatch = { [skinKey]: defaultSkin };
+            const petPatch = { ...foxPatch, ...batPatch, ...skinResetPatch };
+            if (nowOwned) {
+              return {
+                values: { activePet: item.id, ...petPatch },
+                settings: { activePet: item.id, ...petPatch }
+              };
+            }
+            if (freshCoins < item.price) return null;
+            const newOwned = Array.from(new Set([...freshOwned, item.id]));
+            return {
+              values: { coins: freshCoins - item.price, shopOwned: newOwned, activePet: item.id, ...petPatch },
+              settings: { activePet: item.id, shopOwned: newOwned, ...petPatch }
             };
           }
 
@@ -2523,14 +3809,10 @@
           const fresh = await getLocal(defaultSettings);
           applyXpUI(fresh.catXP || 0, false);
           updateSkinSwatches(getActiveSkinFromData(fresh, latestActivePet), latestActivePet);
-          if (fresh.companionEnabled) {
-            await sendMessageToTabs({ action: 'stopCompanion' }).catch(() => {});
-            await sendMessageToTabs({ action: 'startCompanion' }).catch(() => {});
-          }
+          // updateSettings updates main pet and companion in place
           await refreshQuests().catch(() => {});
         }
       });
-    }
 
     container.appendChild(card);
     return card;
@@ -2545,9 +3827,7 @@
       const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
       const isConsecutive = data.lastStreakDate === yKey;
       const newStreak = isConsecutive ? (data.dailyStreak || 0) + 1 : 1;
-      // Use newStreak - 1 as the reward index: day-1 = STREAK_REWARDS[0],
-      // day-2 = STREAK_REWARDS[1], etc. This ensures a broken streak always
-      // pays the tier-1 rate instead of the old (potentially high) streak tier.
+
       const rewardIdx = Math.min(newStreak - 1, STREAK_REWARDS.length - 1);
       const reward = STREAK_REWARDS[rewardIdx];
       const newCoins = (data.coins || 0) + reward;
@@ -2559,12 +3839,12 @@
     });
     if (!result) return;
     await refreshShop();
-    // Sync coin display on home tab
+    
     if (coinCount) coinCount.textContent = result.coins.toLocaleString();
   }
 
   async function refreshShop() {
-    const data = await getLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, dailyStreak: 0, lastStreakDate: '', activeBall: 'ball_baseball', activePet: 'pet_cat' });
+    const data = await getLocal({ coins: 0, shopOwned: [], shopActiveBoosts: null, dailyStreak: 0, lastStreakDate: '', activeBall: 'ball_baseball', activePet: 'pet_cat', activeHat: 'hat_none', reviewBannerDismissed: false });
     const coins      = data.coins || 0;
     const owned      = Array.from(new Set(Array.isArray(data.shopOwned) ? data.shopOwned : []));
     const activeBoosts = Array.isArray(data.shopActiveBoosts)
@@ -2580,36 +3860,51 @@
     const rewardIdx  = Math.min(streak, STREAK_REWARDS.length - 1);
     const nextReward = STREAK_REWARDS[rewardIdx];
 
-    // --- Home banner ---
+    const activeTab = document.querySelector('.tab-button.active')?.dataset.tab || 'essential';
+    const isHomeSection = (activeTab === 'essential' && !document.body.classList.contains('info-panel-open'));
+
     if (homeBonusBanner) {
-      if (!alreadyClaimed) {
+      if (isHomeSection && !alreadyClaimed) {
         homeBonusBanner.style.display = 'flex';
         if (homeBonusTitle) homeBonusTitle.textContent = t('dailyBonusReady');
         if (homeBonusSub) homeBonusSub.textContent = t('claimCoinsToday', { count: nextReward });
-        if (homeBonusBtn) homeBonusBtn.textContent = t('coinsAmount', { count: nextReward });
+        if (homeBonusBtn) homeBonusBtn.textContent = t('claim') || 'Claim';
       } else {
-        homeBonusBanner.style.transition = 'opacity 0.35s ease';
-        homeBonusBanner.style.opacity = '0';
-        setTimeout(() => { homeBonusBanner.style.display = 'none'; homeBonusBanner.style.opacity = ''; }, 380);
+        homeBonusBanner.style.display = 'none';
       }
     }
 
-    // --- Render Balls grid with pagination ---
+    let syncDismissed = false;
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        const syncRes = await new Promise(res => chrome.storage.sync.get({ reviewBannerDismissed: false }, res));
+        if (syncRes && syncRes.reviewBannerDismissed) syncDismissed = true;
+      }
+    } catch (e) {}
+
+    const isDismissed = data.reviewBannerDismissed || syncDismissed;
+    const reviewBanner = document.getElementById('reviewBanner');
+    if (reviewBanner) {
+      if (isHomeSection && !isDismissed) {
+        reviewBanner.style.display = 'flex';
+      } else {
+        reviewBanner.style.display = 'none';
+      }
+    }
+
     if (shopBallsView) {
       shopBallsView.replaceChildren();
       const allBalls = SHOP_ITEMS.filter(i => i.type === 'ball');
-      const PAGE_SIZE = 4;
+      const PAGE_SIZE = 6;
       const totalPages = Math.ceil(allBalls.length / PAGE_SIZE);
       if (_shopBallPage >= totalPages) _shopBallPage = Math.max(0, totalPages - 1);
       const pageBalls = allBalls.slice(_shopBallPage * PAGE_SIZE, (_shopBallPage + 1) * PAGE_SIZE);
 
-      // Add items with a tiny staggered delay for premium feel
       pageBalls.forEach((item, idx) => {
         const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopBallsView);
         card.style.animationDelay = `${idx * 40}ms`;
       });
 
-      // Pagination row (always shown if more than 1 page)
       if (totalPages > 1) {
         const nav = document.createElement('div');
         nav.className = 'ball-page-nav';
@@ -2637,16 +3932,113 @@
       }
     }
 
-    // --- Render Pets grid ---
-    if (shopPetsView) {
-      shopPetsView.replaceChildren();
-      SHOP_ITEMS.filter(i => i.type === 'pet').forEach((item, idx) => {
-        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopPetsView);
+    const shopHatsView = document.getElementById('shopHatsView');
+    if (shopHatsView) {
+      shopHatsView.replaceChildren();
+      
+      const activePet = data.activePet || 'pet_cat';
+      const isFrogActive = activePet === 'pet_frog' || activePet === 'frog';
+
+      const hint = document.createElement('div');
+      hint.style.gridColumn = '1 / -1';
+      hint.style.textAlign = 'center';
+      hint.style.fontSize = '11px';
+      hint.style.fontWeight = '600';
+      hint.style.color = '#ffaa22';
+      hint.style.backgroundColor = 'rgba(255, 170, 34, 0.12)';
+      hint.style.border = '1px solid rgba(255, 170, 34, 0.3)';
+      hint.style.borderRadius = '6px';
+      hint.style.padding = '6px 8px';
+      hint.style.marginBottom = '6px';
+      hint.style.whiteSpace = 'nowrap';
+      hint.style.overflow = 'hidden';
+      hint.style.textOverflow = 'ellipsis';
+      hint.textContent = t('hatsHint');
+      shopHatsView.appendChild(hint);
+
+      const allHats = SHOP_ITEMS.filter(i => i.type === 'hat');
+      const activeHat = data.activeHat || 'hat_none';
+      const PAGE_SIZE = 6;
+      const totalPages = Math.ceil(allHats.length / PAGE_SIZE);
+      if (_shopHatPage >= totalPages) _shopHatPage = Math.max(0, totalPages - 1);
+      const pageHats = allHats.slice(_shopHatPage * PAGE_SIZE, (_shopHatPage + 1) * PAGE_SIZE);
+
+      pageHats.forEach((item, idx) => {
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopHatsView, activeHat);
+        card.style.animationDelay = `${idx * 40}ms`;
+      });
+
+      if (totalPages > 1) {
+        const nav = document.createElement('div');
+        nav.className = 'ball-page-nav';
+        const prev = document.createElement('button');
+        prev.className = 'ball-page-btn';
+        prev.disabled = _shopHatPage === 0;
+        prev.textContent = '<';
+        const label = document.createElement('span');
+        label.className = 'ball-page-label';
+        label.textContent = `${_shopHatPage + 1} / ${totalPages}`;
+        const next = document.createElement('button');
+        next.className = 'ball-page-btn';
+        next.disabled = _shopHatPage >= totalPages - 1;
+        next.textContent = '>';
+        nav.append(prev, label, next);
+        shopHatsView.appendChild(nav);
+        prev.addEventListener('click', () => {
+          if (_shopHatPage > 0) { _shopHatPage--; refreshShop(); }
+        });
+        next.addEventListener('click', () => {
+          if (_shopHatPage < totalPages - 1) { _shopHatPage++; refreshShop(); }
+        });
+      }
+    }
+
+    if (shopAnimalsView) {
+      shopAnimalsView.replaceChildren();
+      const allAnimals = SHOP_ITEMS.filter(i => i.type === 'pet' && i.subType === 'animal');
+      const PAGE_SIZE = 6;
+      const totalPages = Math.ceil(allAnimals.length / PAGE_SIZE);
+      if (_shopAnimalPage >= totalPages) _shopAnimalPage = Math.max(0, totalPages - 1);
+      const pageAnimals = allAnimals.slice(_shopAnimalPage * PAGE_SIZE, (_shopAnimalPage + 1) * PAGE_SIZE);
+
+      pageAnimals.forEach((item, idx) => {
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopAnimalsView);
+        card.style.animationDelay = `${idx * 40}ms`;
+      });
+
+      if (totalPages > 1) {
+        const nav = document.createElement('div');
+        nav.className = 'ball-page-nav';
+        const prev = document.createElement('button');
+        prev.className = 'ball-page-btn';
+        prev.disabled = _shopAnimalPage === 0;
+        prev.textContent = '<';
+        const label = document.createElement('span');
+        label.className = 'ball-page-label';
+        label.textContent = `${_shopAnimalPage + 1} / ${totalPages}`;
+        const next = document.createElement('button');
+        next.className = 'ball-page-btn';
+        next.disabled = _shopAnimalPage >= totalPages - 1;
+        next.textContent = '>';
+        nav.append(prev, label, next);
+        shopAnimalsView.appendChild(nav);
+        prev.addEventListener('click', () => {
+          if (_shopAnimalPage > 0) { _shopAnimalPage--; refreshShop(); }
+        });
+        next.addEventListener('click', () => {
+          if (_shopAnimalPage < totalPages - 1) { _shopAnimalPage++; refreshShop(); }
+        });
+      }
+    }
+
+    if (shopCharactersView) {
+      shopCharactersView.replaceChildren();
+      SHOP_ITEMS.filter(i => i.type === 'pet' && i.subType === 'character').forEach((item, idx) => {
+        const card = buildShopCard(item, coins, owned, activeBall, activePet, activeBoosts, shopCharactersView);
         card.style.animationDelay = `${idx * 40}ms`;
       });
     }
 
-    // --- Render Boosts grid ---
     if (shopBoostsView) {
       shopBoostsView.replaceChildren();
       SHOP_ITEMS.filter(i => i.type === 'boost').forEach((item, idx) => {
@@ -2656,19 +4048,51 @@
     }
   }
 
-  // Home banner claim button
   if (homeBonusBtn) {
     homeBonusBtn.addEventListener('click', performStreakClaim);
   }
 
-  // Refresh shop when shop tab is opened
+  const reviewClaimBtn = document.getElementById('reviewClaimBtn');
+
+  if (reviewClaimBtn) {
+    reviewClaimBtn.addEventListener('click', async () => {
+      const reviewBanner = document.getElementById('reviewBanner');
+      if (reviewBanner) {
+        reviewBanner.style.transition = 'opacity 0.25s ease';
+        reviewBanner.style.opacity = '0';
+        setTimeout(() => { reviewBanner.style.display = 'none'; reviewBanner.style.opacity = ''; }, 260);
+      }
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+          chrome.storage.sync.set({ reviewBannerDismissed: true });
+        }
+      } catch (err) {}
+      const result = await updateLocal({ coins: 0, reviewBannerDismissed: false }, (data) => {
+        if (data.reviewBannerDismissed) return null;
+        const newCoins = (data.coins || 0) + 50;
+        return {
+          values: { coins: newCoins, reviewBannerDismissed: true },
+          coins: newCoins
+        };
+      });
+      if (result && coinCount) {
+        coinCount.textContent = result.coins.toLocaleString();
+      }
+      await refreshShop().catch(() => {});
+      const isFirefox = typeof browser !== 'undefined' || navigator.userAgent.includes('Firefox');
+      const reviewUrl = isFirefox 
+        ? 'https://addons.mozilla.org/en-US/firefox/addon/pixelcat/reviews/' 
+        : `https://chromewebstore.google.com/detail/${API.runtime.id}/reviews`;
+      window.open(reviewUrl, '_blank');
+    });
+  }
+
   document.querySelectorAll('.tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.dataset.tab === 'shop') refreshShop().catch(() => {});
     });
   });
 
-  // Sync popup UI when content scripts update progress, quests, or stats.
   if (API.storage && API.storage.onChanged) {
     let refreshScheduled = false;
     const schedulePopupRefresh = () => {
@@ -2687,7 +4111,7 @@
       const keys = Object.keys(changes);
       const affectsProgress = keys.some((key) => [
         'catXP', 'coins', 'dailyQuestState', 'dailyQuestStats',
-        'dailyStreak', 'lastStreakDate', 'shopOwned', 'shopActiveBoosts', 'activeBall', 'activePet'
+        'dailyStreak', 'lastStreakDate', 'shopOwned', 'shopActiveBoosts', 'activeBall', 'activePet', 'activeHat'
       ].includes(key));
       if (affectsProgress) schedulePopupRefresh();
     });

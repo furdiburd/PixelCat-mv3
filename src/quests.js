@@ -5,9 +5,8 @@
   const STATS_KEY = 'dailyQuestStats';
   const QUEST_VERSION = 5;
 
-  // minXP: quest only enters the pool once catXP >= this value
   const QUEST_DEFINITIONS = [
-    //  Always available 
+    
     {
       type: 'pet_sessions',
       icon: 'care',
@@ -41,7 +40,6 @@
       description: (t) => `Collect ${t} coin drop${t === 1 ? '' : 's'}.`
     },
 
-    //  Google tab quests
     {
       type: 'google_visits',
       icon: 'google',
@@ -66,7 +64,7 @@
       targets: [60, 120, 180],
       description: (t) => `Stay with your pet on Google for ${formatDuration(t)}.`
     },
-    //  Unlocked at XP 10 (ball) 
+    
     {
       type: 'ball_catches',
       icon: 'ball',
@@ -75,7 +73,7 @@
       targets: [2, 4, 6],
       description: (t) => `Catch ${t} ball${t === 1 ? '' : 's'}.`
     },
-    //  Unlocked at XP 25 (spider) 
+    
     {
       type: 'spiders_caught',
       icon: 'shield',
@@ -84,7 +82,7 @@
       targets: [1, 2, 3],
       description: (t) => `Catch ${t} spider${t === 1 ? '' : 's'}.`
     },
-    //  Unlocked at XP 70 (companion) 
+    
     {
       type: 'pet_sessions',
       icon: 'care',
@@ -93,7 +91,7 @@
       targets: [4, 5],
       description: (t) => `Complete ${t} pet sessions in one day.`
     },
-    //  Unlocked at XP 100 (mischief/fish) 
+    
     {
       type: 'fish_served',
       icon: 'treat',
@@ -248,17 +246,12 @@
     return type === 'google_visits' || type === 'google_searches' || type === 'google_active_seconds';
   }
 
-  // Generate today's quests filtered by current XP level.
-  // Difficulty rises slowly with daily streak/perfect quest days and XP, but is capped.
-  function generateState(dateKey, catXP, stats, dailyStreak) {
-    const xp = Math.max(0, catXP || 0);
+  function generateState(dateKey, catXP, stats, dailyStreak, freePlayMode) {
+    const isFreePlay = Boolean(freePlayMode);
+    const xp = isFreePlay ? 270 : Math.max(0, catXP || 0);
     const difficultyLevel = getQuestDifficulty(stats, dailyStreak, xp);
     const random = mulberry32(seedFromString(`pixelcat:${dateKey}:quests:v${QUEST_VERSION}:${difficultyLevel}`));
-
-    // Only pool quests whose minXP <= current XP.
-    // Keep Google quests in the mix, but limit them to one daily slot so the list
-    // never becomes all-Google or annoying for users who mostly use YouTube.
-    const pool = QUEST_DEFINITIONS.filter(d => xp >= d.minXP);
+    const pool = QUEST_DEFINITIONS.filter(d => isFreePlay || xp >= d.minXP);
     const googlePool = pool.filter(d => isGoogleQuestType(d.type));
     const normalPool = pool.filter(d => !isGoogleQuestType(d.type));
     const chosen = [];
@@ -309,19 +302,20 @@
     };
   }
 
-  function ensureState(rawState, dateKey, catXP, stats, dailyStreak) {
+  function ensureState(rawState, dateKey, catXP, stats, dailyStreak, freePlayMode) {
+    const isFreePlay = Boolean(freePlayMode);
     const normalizedDateKey = dateKey || getDateKey();
     const state = rawState && typeof rawState === 'object' ? rawState : null;
 
     if (!state || state.version !== QUEST_VERSION || state.dateKey !== normalizedDateKey || !Array.isArray(state.quests)) {
-      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak), changed: true };
+      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak, isFreePlay), changed: true };
     }
 
     const quests = state.quests.map(normalizeQuest).filter(Boolean);
-    const availableQuestCount = QUEST_DEFINITIONS.filter(d => Math.max(0, catXP || 0) >= d.minXP).length;
+    const availableQuestCount = QUEST_DEFINITIONS.filter(d => (isFreePlay || Math.max(0, catXP || 0) >= d.minXP)).length;
     const expectedQuestCount = Math.min(3, availableQuestCount);
     if (quests.length < expectedQuestCount) {
-      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak), changed: true };
+      return { state: generateState(normalizedDateKey, catXP, stats, dailyStreak, isFreePlay), changed: true };
     }
 
     const changed = quests.length !== state.quests.length || quests.some((quest, index) => {
@@ -342,7 +336,6 @@
     }
     return `${s} sec`;
   }
-
 
   function formatQuestProgress(quest) {
     if (quest.type === 'watch_seconds' || quest.type === 'google_active_seconds') {
@@ -390,9 +383,9 @@
   }
 
   async function getSnapshot(storageArea) {
-    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0 });
+    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0, freePlayMode: false, unlockAll: false });
     const stats = normalizeStats(data[STATS_KEY]);
-    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0);
+    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0, data.freePlayMode || data.unlockAll);
     if (ensured.changed) {
       await localSet(storageArea, { [STORAGE_KEY]: ensured.state, [STATS_KEY]: stats });
     }
@@ -410,9 +403,9 @@
     const increment = Math.max(0, Number(amount) || 0);
     if (!increment) return getSnapshot(storageArea);
 
-    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0 });
+    const data = await localGet(storageArea, { [STORAGE_KEY]: null, [STATS_KEY]: null, catXP: 0, dailyStreak: 0, freePlayMode: false, unlockAll: false });
     const stats = normalizeStats(data[STATS_KEY]);
-    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0);
+    const ensured = ensureState(data[STORAGE_KEY], getDateKey(), data.catXP || 0, stats, data.dailyStreak || 0, data.freePlayMode || data.unlockAll);
     const state = ensured.state;
     let stateChanged = ensured.changed;
     let statsChanged = false;
